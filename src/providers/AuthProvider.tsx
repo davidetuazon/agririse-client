@@ -21,19 +21,20 @@ export const useAuth = () => useContext(AuthContext);
 export default function AuthProvider(props: Props) {
     const [user, setUser] = useState<any>(null);
 
-    useEffect(() => {
-        const init = async () => {
-            const token = Cookies.get(ACCESS_TOKEN);
-            if (!token) return;
+    const init = async () => {
+        const token = Cookies.get(ACCESS_TOKEN);
+        if (!token) return;
 
-            try {
-                const res = await me();
-                setUser(res);
-            } catch (e) {
-                setUser(null);
-            }
-        };
-        
+        try {
+            const res = await me();
+            setUser(res);
+        } catch (e) {
+            setUser(null);
+        }
+    };
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         init();
     }, []);
 

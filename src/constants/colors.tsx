@@ -15,6 +15,7 @@ const colors = {
     // Backgrounds
     primaryBackground: '#001E2B',     // Slate Blue
     secondaryBackground: '#023430',   // Evergreen
+    mutedBackground: '#F0F3F2',        // Light Gray
 
     // Text
     textPrimary: '#000000',    // main text
