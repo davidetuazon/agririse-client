@@ -17,12 +17,11 @@ const colors = {
     secondaryBackground: '#023430',   // Evergreen
 
     // Text
-    textPrimary: '#E8EDEB',    // main text
+    textPrimary: '#000000',    // main text
     textSecondary: '#C1C7C6',  // muted text
-    textBlack: '#000000',
 
     // Borders / Dividers
-    border: '#3D4F58',         // light dark separator
+    border: '#E8EDEB',         // light dark separator
 
     // Feedback
     error: '#B91C1C',           // lighter red for contrast

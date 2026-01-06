@@ -35,3 +35,13 @@ export const login = async (email: string, password: string) => {
         throw e;
     }
 }
+
+export const latest = async () => {
+    // eslint-disable-next-line no-useless-catch
+    try {
+        const res = await api.get('/iot/latest');
+        return res.data;
+    } catch (e) {
+        throw e;
+    }
+}

@@ -6,14 +6,15 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #FFFFFF;
+  color: #001E2B;
 }
 
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #001E2B;
+  /* background-color: #001E2B; */
+  background-color: #FFFFFF;
 }
 
 code {
