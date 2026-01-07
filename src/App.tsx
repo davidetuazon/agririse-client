@@ -12,6 +12,7 @@ import { Toaster } from 'react-hot-toast';
 import AuthProvider from './providers/AuthProvider';
 import './App.css';
 
+import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Home from './pages/Home';
 
@@ -39,9 +40,11 @@ function App() {
           <Route 
             path='/home'
             element={
-              <RequireAuth>
-                <Home />
-              </RequireAuth>
+              <AppLayout>
+                <RequireAuth>
+                  <Home />
+                </RequireAuth>
+              </AppLayout>
             }
           />
         </Routes>

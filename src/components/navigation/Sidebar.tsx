@@ -1,10 +1,24 @@
 import React, { useState } from "react";
 import colors from "../../constants/colors";
+import { useLocation } from "react-router-dom";
 
 import Text from "../commons/Text";
+import DashboardSection from "./DashboardSection";
+import AllocationsSection from "./AllocationsSection";
+import AnalyticsSection from "./AnalyticsSection";
+import HistorySection from "./HistorySection";
+
+type PageOptions = 'dashboard' | 'allocations' | 'analytics' | 'history';
 
 export default function Sidebar() {
     const [isHovered, setIsHovered] = useState<any | null>(null);
+
+    const location = useLocation();
+    const getActivePage = (): PageOptions => {
+        if (location.pathname.startsWith('/allocations')) return 'allocations';
+        return 'dashboard';
+    }
+    const [isActive, setIsActive] = useState<PageOptions>(getActivePage());
 
     return (
         <div style={styles.container}>
@@ -20,68 +34,59 @@ export default function Sidebar() {
                 </Text>
             </header>
             <main style={styles.main}>
-                {/* 
-                    TODO:
-                    > can break these 2 sections into components
-                    > handle querying for history and analytics per sensor type in those components
-                */}
                 <section style={styles.sections}>
-                    <div
+                    <DashboardSection
                         style={{
                             ...styles.sectionCategory,
-                            backgroundColor: isHovered === 'allocations' ? colors.textSecondary : colors.mutedBackground,
+                            backgroundColor: isHovered === 'dashboard'
+                                ? colors.textSecondary
+                                : isActive === 'dashboard'
+                                ? colors.accentTwo
+                                : colors.mutedBackground,
+                        }}
+                        onMouseEnter={() => setIsHovered('dashboard')}
+                        onMouseLeave={() => setIsHovered(null)}
+                        onClick={() => setIsActive('dashboard')}
+                    />
+                </section>
+                <section style={styles.sections}>
+                    <AllocationsSection
+                        style={{
+                            ...styles.sectionCategory,
+                            backgroundColor: isHovered === 'allocations'
+                                ? colors.textSecondary
+                                : isActive === 'allocations'
+                                ? colors.accentTwo
+                                : colors.mutedBackground,
                         }}
                         onMouseEnter={() => setIsHovered('allocations')}
                         onMouseLeave={() => setIsHovered(null)}
-                    >
-                        <Text
-                            variant="subtitle"
-                            style={{
-                                color: colors.primary,
-                            }}
-                        >
-                            Allocations
-                        </Text>
-                    </div>
+                        onClick={() => setIsActive('allocations')}
+                    />
                 </section>
                 <section style={styles.sections}>
-                    <div
+                    <AnalyticsSection
                         style={{
                             ...styles.sectionCategory,
-                            backgroundColor: isHovered === 'analytics' ? colors.textSecondary : colors.mutedBackground,
+                            backgroundColor: isHovered === 'analytics'
+                                ? colors.textSecondary
+                                : colors.mutedBackground,
                         }}
                         onMouseEnter={() => setIsHovered('analytics')}
                         onMouseLeave={() => setIsHovered(null)}
-                    >
-                        <Text
-                            variant="subtitle"
-                            style={{
-                                color: colors.primary,
-                            }}
-                        >
-                            Analytics
-                        </Text>
-                    </div>
+                    />
                 </section>
                 <section style={styles.sections}>
-                    <div
+                    <HistorySection
                         style={{
                             ...styles.sectionCategory,
-                            backgroundColor: isHovered === 'history' ? colors.textSecondary : colors.mutedBackground,
-                            
+                            backgroundColor: isHovered === 'history'
+                                ? colors.textSecondary
+                                : colors.mutedBackground,
                         }}
                         onMouseEnter={() => setIsHovered('history')}
                         onMouseLeave={() => setIsHovered(null)}
-                    >
-                        <Text
-                            variant="subtitle"
-                            style={{
-                                color: colors.primary,
-                            }}
-                        >
-                            History
-                        </Text>
-                    </div>
+                    />
                 </section>
             </main>
         </div>
@@ -94,7 +99,7 @@ const styles: {[key: string]: React.CSSProperties} = {
         display: 'flex',
         flexDirection: 'column',
         flex: 1,
-        // height: '100%',
+        height: 'fit-content',
     },
     header: {
         borderBottom: `1px solid ${colors.border}`,
