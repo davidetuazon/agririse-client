@@ -45,3 +45,12 @@ export const latest = async () => {
         throw e;
     }
 }
+
+export const getAnalytics = async ({ sensorType, period }: {sensorType: string, period: string}) => {
+    try {
+        const res = await api.get('/iot/analytics', { params: { sensorType, period } });
+        return res.data;
+    } catch (e) {
+        throw new Error('Failed data fetch');
+    }
+}

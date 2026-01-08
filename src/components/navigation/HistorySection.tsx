@@ -1,16 +1,44 @@
 import React, { useState } from "react";
 import colors from "../../constants/colors";
+import { Link, useLocation } from "react-router-dom";
 
 import Text from "../commons/Text";
 
 type Props = {
     style?: React.CSSProperties,
     onMouseEnter?: () => void,
-    onMouseLeave?: () => void;
+    onMouseLeave?: () => void,
 }
+
+type SensorType = 'damWaterLevel' | 'humidity' | 'rainfall' | 'temperature' | 'default';
 
 export default function HistorySection(props: Props) {
     const [isVisible, setIsVisible] = useState<boolean>(true);
+    const [isHovered, setIsHovered] = useState<SensorType>('default');
+
+    const location = useLocation();
+        const isActive = (
+                routePrefix: string,
+                sensorType: SensorType
+        ) => {
+            if (!location.pathname.startsWith(routePrefix)) return false;
+    
+            return (
+                new URLSearchParams(location.search).get('sensorType') === sensorType
+            );
+        };
+
+    const sensors: { label: string, type: SensorType }[] = [
+        { label: 'Dam Water Level', type: 'damWaterLevel' },
+        { label: 'Humidity', type: 'humidity' },
+        { label: 'Effective Rainfall', type: 'rainfall' },
+        { label: 'Temperature', type: 'temperature' }
+    ];
+
+    const historyUrl = (
+            sensorType: SensorType,
+            period: string = '1month'
+        ) => `/iot/history?sensorType=${sensorType}&period=${period}`;
 
     return (
         <>
@@ -38,30 +66,34 @@ export default function HistorySection(props: Props) {
                 willChange: 'max-height',
             }}
         >
-            <Text
-                variant="caption"
-                style={styles.category}
-            >
-                Dam Water Level
-            </Text>
-            <Text
-                variant="caption"
-                style={styles.category}
-            >
-                Humidity
-            </Text>
-            <Text
-                variant="caption"
-                style={styles.category}
-            >
-                Effective Rainfall
-            </Text>
-            <Text
-                variant="caption"
-                style={styles.category}
-            >
-                Temperature
-            </Text>
+            { sensors.map(({ label, type }) => {
+                const active = isActive('/iot/history', type);
+                const hovered = isHovered === type;
+
+                return (
+                    <Link
+                        key={type}
+                        to={historyUrl(type)}
+                        style={{ textDecoration: 'none' }}
+                        onMouseEnter={() => setIsHovered(type)}
+                        onMouseLeave={() => setIsHovered('default')}
+                    >
+                        <Text
+                            variant="caption"
+                            style={{
+                                ...styles.category,
+                                backgroundColor: hovered
+                                    ? colors.textSecondary
+                                    : active
+                                    ? colors.accentTwo
+                                    : colors.mutedBackground,
+                            }}
+                        >
+                            {label}
+                        </Text>
+                    </Link>
+                );
+            }) }
         </div>
         </>
     )
@@ -77,5 +109,6 @@ const styles: {[key: string]: React.CSSProperties} = {
         cursor: 'pointer',
         margin: 0,
         padding: '5px 30px',
+        color: colors.primaryBackground,
     }
 }

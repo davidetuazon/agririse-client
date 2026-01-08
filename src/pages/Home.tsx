@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../providers/AuthProvider";
 import colors from "../constants/colors";
-
-import Text from "../components/commons/Text";
-import Dashboard from "../components/home/Dashboard";
 import { latest, me } from "../services/api";
 
+import Text from "../components/commons/Text";
+import Section from "../components/commons/Section";
+import Dashboard from "../components/home/Dashboard";
 
 type IoTReadings = {
     damWaterLevel: {
@@ -65,7 +65,7 @@ export default function Home() {
             </Text>
 
             {/* Dashboard */}
-            <section style={styles.dashboard}>
+            <Section style={styles.dashboard}>
                 <div
                     style={{ padding: '0px 20px' }}
                 >
@@ -79,43 +79,40 @@ export default function Home() {
                 <div>
                     <Dashboard data={latestReadings} />
                 </div>
-            </section>
+            </Section>
 
             {/* 
                 TODO:
                 > can separate this section into 2 components
                 > separate concerns for trends and optimization 
             */}
-            <section style={styles.core}>
-                <div style={styles.trends}>
+            <div style={styles.core}>
+                <Section style={styles.trends}>
                     <Text
                         variant="heading"
+                        style={{ margin: 0 }}
                     >
                         Trends
                     </Text>
-                </div>
-                <div style={styles.optimization}>
+                </Section>
+                <Section style={styles.optimization}>
                     <Text
                         variant="heading"
+                        style={{ margin: 0 }}
                     >
                         Optimization
                     </Text>
-                </div>
-            </section>
+                </Section>
+            </div>
         </>
     )
 }
 
 const styles: {[key: string]: React.CSSProperties} = {
     dashboard: {
-        border: `1px solid ${colors.border}`,
-        borderRadius: '18px',
         display: 'flex',
-        width: '100%',
-        padding: '20px 0px',
         flexDirection: 'column',
         gap: 20,
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
     },
     core: {
         display: 'flex',
@@ -125,18 +122,10 @@ const styles: {[key: string]: React.CSSProperties} = {
     },
     trends: {
         flex: 1,
-        border: `1px solid ${colors.border}`,
-        borderRadius: '18px',
-        padding: '0px 20px',
-        width: '100%',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        padding: '20px'
     },
     optimization: {
         flex: 1,
-        border: `1px solid ${colors.border}`,
-        borderRadius: '18px',
-        padding: '0px 20px',
-        width: '100%',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        padding: '20px'
     }
 }

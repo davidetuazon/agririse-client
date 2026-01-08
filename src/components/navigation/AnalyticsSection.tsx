@@ -2,15 +2,43 @@ import React, { useState } from "react";
 import colors from "../../constants/colors";
 
 import Text from "../commons/Text";
+import { Link, useLocation } from "react-router-dom";
 
 type Props = {
     style?: React.CSSProperties,
     onMouseEnter?: () => void,
-    onMouseLeave?: () => void;
+    onMouseLeave?: () => void,
 }
+
+type SensorType = 'damWaterLevel' | 'humidity' | 'rainfall' | 'temperature' | 'default';
 
 export default function AnalyticsSection(props: Props) {
     const [isVisible, setIsVisible] = useState<boolean>(true);
+    const [isHovered, setIsHovered] = useState<SensorType>('default');
+
+    const location = useLocation();
+    const isActive = (
+            routePrefix: string,
+            sensorType: SensorType
+    ) => {
+        if (!location.pathname.startsWith(routePrefix)) return false;
+
+        return (
+            new URLSearchParams(location.search).get('sensorType') === sensorType
+        );
+    };
+
+    const sensors: { label: string, type: SensorType }[] = [
+        { label: 'Dam Water Level', type: 'damWaterLevel' },
+        { label: 'Humidity', type: 'humidity' },
+        { label: 'Effective Rainfall', type: 'rainfall' },
+        { label: 'Temperature', type: 'temperature' }
+    ];
+    
+    const analyticsUrl = (
+            sensorType: SensorType,
+            period: string = '1month'
+        ) => `/iot/analytics?sensorType=${sensorType}&period=${period}`;
 
     return (
         <>
@@ -38,46 +66,34 @@ export default function AnalyticsSection(props: Props) {
                 willChange: 'max-height',
             }}
         >
-        {/* <div
-            style={{
-                ...styles.subSection,
-                maxHeight: isVisible ? '220px' : '0px',
-                overflow: 'hidden',
-                pointerEvents: isVisible ? 'auto' : 'none',
-                opacity: isVisible ? 1 : 0,
-                transform: isVisible ? 'translateY(0)' : 'translateY(-2px)',
-                transition: `
-                max-height 420ms cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 220ms ease 120ms,
-                transform 280ms ease
-                `,
-                willChange: 'max-height, opacity, transform',
-            }}
-        > */}
-            <Text
-                variant="caption"
-                style={styles.category}
-            >
-                Dam Water Level
-            </Text>
-            <Text
-                variant="caption"
-                style={styles.category}
-            >
-                Humidity
-            </Text>
-            <Text
-                variant="caption"
-                style={styles.category}
-            >
-                Effective Rainfall
-            </Text>
-            <Text
-                variant="caption"
-                style={styles.category}
-            >
-                Temperature
-            </Text>
+        { sensors.map(({ label, type }) => {
+            const active = isActive('/iot/analytics', type);
+            const hovered = isHovered === type;
+
+            return (
+                <Link
+                    key={type}
+                    to={analyticsUrl(type)}
+                    style={{ textDecoration: 'none' }}
+                    onMouseEnter={() => setIsHovered(type)}
+                    onMouseLeave={() => setIsHovered('default')}
+                >
+                    <Text
+                        variant="caption"
+                        style={{
+                            ...styles.category,
+                            backgroundColor: hovered
+                                ? colors.textSecondary
+                                : active
+                                ? colors.accentTwo
+                                : colors.mutedBackground,
+                        }}
+                    >
+                        {label}
+                    </Text>
+                </Link>
+            );
+        }) }
         </div>
         </>
     )
@@ -93,5 +109,6 @@ const styles: {[key: string]: React.CSSProperties} = {
         cursor: 'pointer',
         margin: 0,
         padding: '5px 30px',
+        color: colors.primaryBackground,
     }
 }

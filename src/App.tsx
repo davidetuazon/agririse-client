@@ -15,6 +15,9 @@ import './App.css';
 import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Home from './pages/Home';
+import Allocations from './pages/Allocations';
+import Analytics from './pages/Analytics';
+import History from './pages/History';
 
 function App() {
   return (
@@ -42,7 +45,37 @@ function App() {
             element={
               <AppLayout>
                 <RequireAuth>
-                  <Home />
+                  <Home/>
+                </RequireAuth>
+              </AppLayout>
+            }
+          />
+          <Route
+            path='/allocations'
+            element={
+              <AppLayout>
+                <RequireAuth>
+                  <Allocations/>
+                </RequireAuth>
+              </AppLayout>
+            }
+          />
+          <Route
+            path='/iot/analytics'
+            element={
+              <AppLayout>
+                <RequireAuth>
+                  <Analytics/>
+                </RequireAuth>
+              </AppLayout>
+            }
+          />
+          <Route
+            path='/iot/history'
+            element={
+              <AppLayout>
+                <RequireAuth>
+                  <History/>
                 </RequireAuth>
               </AppLayout>
             }

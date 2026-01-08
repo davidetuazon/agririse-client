@@ -1,5 +1,6 @@
 import React from "react";
 import colors from "../../constants/colors";
+import { Link } from "react-router-dom";
 
 import Text from "../commons/Text";
 
@@ -13,7 +14,8 @@ type Props = {
 export default function AllocationsSection(props: Props) {
 
     return (
-        <div
+        <Link
+            to={'/allocations'}
             style={Object.assign({}, props.style)}
             onMouseEnter={props.onMouseEnter}
             onMouseLeave={props.onMouseLeave}
@@ -27,6 +29,6 @@ export default function AllocationsSection(props: Props) {
             >
                 Allocations
             </Text>
-        </div>
+        </Link>
     )
 }
