@@ -46,11 +46,22 @@ export const latest = async () => {
     }
 }
 
-export const getAnalytics = async ({ sensorType, period }: {sensorType: string, period: string}) => {
+export const getAnalytics = async ({ sensorType, period }: { sensorType: string, period: string }) => {
+    // eslint-disable-next-line no-useless-catch
     try {
         const res = await api.get('/iot/analytics', { params: { sensorType, period } });
         return res.data;
     } catch (e) {
-        throw new Error('Failed data fetch');
+        throw e;
+    }
+}
+
+export const getHistory = async ({ sensorType, period }: { sensorType: string, period: string }) => {
+    // eslint-disable-next-line no-useless-catch
+    try {
+        const res = await api.get('/iot/history', { params: { sensorType, period } });
+        return res.data;
+    } catch (e) {
+        throw e;
     }
 }

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../providers/AuthProvider";
-import colors from "../constants/colors";
 import { latest, me } from "../services/api";
 
 import Text from "../components/commons/Text";
