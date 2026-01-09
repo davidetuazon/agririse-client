@@ -35,25 +35,25 @@ export default function Dashboard(props: Props) {
     return (
         <div style={styles.container}>
             <Cards
-                sensorType="Dam Water Level"
+                label="Dam Water Level"
                 value={damWaterLevel?.value}
                 unit={damWaterLevel?.unit}
                 recordedAt={damWaterLevel?.recordedAt}
             />
             <Cards
-                sensorType="Humidity"
+                label="Humidity"
                 value={humidity?.value}
                 unit={humidity?.unit}
                 recordedAt={humidity?.recordedAt}
             />
             <Cards
-                sensorType="Effective Rainfall"
+                label="Effective Rainfall"
                 value={rainfall?.value}
                 unit={rainfall?.unit}
                 recordedAt={rainfall?.recordedAt}
             />
             <Cards
-                sensorType="Temperature"
+                label="Temperature"
                 value={temperature?.value}
                 unit={temperature?.unit}
                 recordedAt={temperature?.recordedAt}

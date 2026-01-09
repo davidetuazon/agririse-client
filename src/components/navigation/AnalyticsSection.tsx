@@ -108,7 +108,7 @@ const styles: {[key: string]: React.CSSProperties} = {
         fontFamily: 'Poppins-Light',
         cursor: 'pointer',
         margin: 0,
-        padding: '5px 30px',
+        padding: '10px 30px',
         color: colors.primaryBackground,
     }
 }

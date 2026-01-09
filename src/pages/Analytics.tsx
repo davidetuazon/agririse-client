@@ -5,12 +5,12 @@ import { printSensorType, printPeriod } from "../utils/switchCases";
 
 import Text from "../components/commons/Text";
 import Section from "../components/commons/Section";
-
-
+import Cards from "../components/commons/Card";
 
 export default function Analytics() {
     const [searchParams] = useSearchParams();
     const [data, setData] = useState<any>(null);
+    const [metaData, setMetaData] = useState<any>(null);
     const [pageInfo, setPageInfo] = useState<any>(null);
 
     const sensorType = searchParams.get('sensorType') ?? 'damWaterLevel';
@@ -19,8 +19,9 @@ export default function Analytics() {
     const init = async () => {
         try {
             const res = await getAnalytics({sensorType, period});
-            const { data, pageInfo } = res;
-            setData(data);
+            const { series, meta, pageInfo } = res;
+            setData(series);
+            setMetaData(meta);
             setPageInfo(pageInfo);
         } catch (e) {
             setData(null);
@@ -40,69 +41,95 @@ export default function Analytics() {
                 variant="heading"
                 style={{ margin: 5 }}
             >
-                Analytics
+                {printSensorType(sensorType)} Analytics
             </Text>
 
-            <Section style={styles.section}>
-                <div style={styles.content}>
-                    <Text
-                        variant="heading"
-                        style={{ margin: 0 }}
-                    >
-                        {printSensorType(sensorType)}
-                    </Text>
-                </div>
+            <Section style={styles.kpiSection}>
                 {data && data.length > 0 ? (
-                    <div style={styles.data}>
+                    <div>
+                        <div
+                            style={{ padding: '20px' }}
+                        >
+                            <Text
+                                variant="caption"
+                                style={{ margin: 0 }}
+                            >
+                                display metadata here
+                            </Text>
+                        </div>
                         {data.map((d:any) => (
-                            <div key={d.bucket}>
-                                <Text variant="subtitle">
-                                    Period: {printPeriod(d.period)}
-                                </Text>
-                                <Text variant="subtitle">
-                                    Bucket: {d.bucket}
-                                </Text>
-                                <Text variant="subtitle">
-                                    Average Value: {d.avgValue?.toFixed(4)}
-                                </Text>
-                                <Text variant="subtitle">
-                                    Max Value: {d.maxValue?.toFixed(4)}
-                                </Text>
-                                <Text variant="subtitle">
-                                    Min Value: {d.minValue?.toFixed(4)}
-                                </Text>
-                                <Text variant="subtitle">
-                                    Standard Deviation: {d.stdDev?.toFixed(4)}
-                                </Text>
-                                <Text variant="subtitle">
-                                    Total Value: {d.totalValue?.toFixed(4)}
-                                </Text>
+                            <div key={d.timestamp} style={styles.container}>
+                                <Cards
+                                    label="Average Value"
+                                    value={d.avg}
+                                    unit='%'
+                                    recordedAt={d.timestamp}
+                                    style={styles.cards}
+                                />
+                                <Cards
+                                    label="Minimum Value"
+                                    value={d.min}
+                                    unit='%'
+                                    recordedAt={d.timestamp}
+                                    style={styles.cards}
+                                />
+                                <Cards
+                                    label="Maximum Value"
+                                    value={d.max}
+                                    unit='%'
+                                    recordedAt={d.timestamp}
+                                    style={styles.cards}
+                                />
+                                <Cards
+                                    label="Standard Deviation"
+                                    value={d.stdDev}
+                                    recordedAt={d.timestamp}
+                                    style={styles.cards}
+                                />
                             </div>
                         ))}
                     </div>
                 ) : (
                     <div style={styles.data}>
                         <Text variant="title">
-                            No data available.
+                            No data available yet.
                         </Text>
                     </div>
                 )}
+            </Section>
+            <Section style={styles.chartsSection}>
+                <div style={styles.container}>
+                    <Text variant="caption">
+                        display charts here
+                    </Text>
+                </div>
             </Section>
         </>
     )
 }
 
 const styles: {[key: string]: React.CSSProperties} = {
-    section: {
+    kpiSection: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 20,
+    },
+    container: {
         // border: '1px solid red',
+        display: 'flex',
+        flex: 1,
+        flexDirection: 'row',
+        height: 'fit-content',
+        gap: 20,
+        padding: '0px 20px'
+    },
+    cards: {
+        minWidth: '150px'
+    },
+    chartsSection: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 20,
         flex: 1,
     },
-    content: {
-        padding: '0px 20px',
-    },
-    data: {
-        padding: '0px 20px',
-        display: 'flex',
-        gap: 20, 
-    }
 }

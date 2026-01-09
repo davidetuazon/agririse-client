@@ -42,7 +42,7 @@ export default function History() {
                 variant="heading"
                 style={{ margin: 5 }}
             >
-                History
+                {printSensorType(sensorType)} History
             </Text>
             <Section style={styles.section}>
                 <div style={styles.content}>

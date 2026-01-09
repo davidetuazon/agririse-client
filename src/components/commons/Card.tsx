@@ -5,14 +5,15 @@ import Text from "./Text";
 
 type Props = {
     style?: React.CSSProperties,
-    sensorType: string,
+    textStyle?: React.CSSProperties,
+    label: string,
     value: any,
-    unit: any,
-    recordedAt: any,
+    unit?: any,
+    recordedAt?: any,
 }
 
 export default function Cards(props: Props) {
-    const date = new Date(props.recordedAt);
+    const date = props.recordedAt ? new Date(props.recordedAt).toLocaleString() : null;
 
     return (
         <div style={ Object.assign({}, styles.container, props.style) }>
@@ -24,7 +25,7 @@ export default function Cards(props: Props) {
                         color: colors.primary
                     }}
                 >
-                    {date.toLocaleString()}
+                    {date}
                 </Text>
                 <Text
                     variant="subtitle"
@@ -32,7 +33,7 @@ export default function Cards(props: Props) {
                         margin: 5,
                     }}
                 >
-                    {props.sensorType}
+                    {props.label}
                 </Text>
             </div>
             <div>
