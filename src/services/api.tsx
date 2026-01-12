@@ -56,10 +56,10 @@ export const getAnalytics = async ({ sensorType, period }: { sensorType: string,
     }
 }
 
-export const getHistory = async ({ sensorType, period }: { sensorType: string, period: string }) => {
+export const getHistory = async ({ sensorType, period, limit }: { sensorType: string, period: string, limit: number }) => {
     // eslint-disable-next-line no-useless-catch
     try {
-        const res = await api.get('/iot/history', { params: { sensorType, period } });
+        const res = await api.get('/iot/history', { params: { sensorType, period, limit } });
         return res.data;
     } catch (e) {
         throw e;

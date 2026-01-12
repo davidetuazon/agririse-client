@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getHistory } from "../services/api";
 import { printPeriod, printSensorType } from "../utils/switchCases";
+import colors from "../constants/colors";
 
 import Text from "../components/commons/Text";
 import Section from "../components/commons/Section";
@@ -9,16 +10,19 @@ import Section from "../components/commons/Section";
 export default function History() {
     const [searchParams] = useSearchParams();
     const [data, setData] = useState<any>(null);
+    const [metaData, setMetaData] = useState<any>(null);
     const [pageInfo, setPageInfo] = useState<any>(null);
 
     const sensorType = searchParams.get('sensorType') ?? 'damWaterLevel';
     const period = searchParams.get('period') ?? '1month';
+    const limit = Number(searchParams.get('limit')) || 10;
 
     const init = async () => {
         try {
-            const res = await getHistory({ sensorType, period });
-            const { data, pageInfo } = res;
+            const res = await getHistory({ sensorType, period, limit });
+            const { data, meta, pageInfo } = res;
             setData(data);
+            setMetaData(meta);
             setPageInfo(pageInfo);
         } catch (e) {
             setData(null);
@@ -30,11 +34,7 @@ export default function History() {
     useEffect(() => {
         init();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sensorType, period]);
-
-    useEffect(() => {
-        console.log(data);
-    }, [data, pageInfo])
+    }, [sensorType, period, limit]);
 
     return (
         <>
@@ -45,29 +45,76 @@ export default function History() {
                 {printSensorType(sensorType)} History
             </Text>
             <Section style={styles.section}>
-                <div style={styles.content}>
-                    <Text
-                        variant="heading"
-                        style={{ margin: 0 }}
-                    >
-                        {printSensorType(sensorType)}
-                    </Text>
+                <div style={styles.header}>
+                    <div style={{ padding: '0px 20px' }}>
+                        <Text variant="title" style={{ margin: 0, color: colors.primary }}>
+                            Raw Data
+                        </Text>
+                    </div>
+                    <div style={styles.metaData}>
+                        <Text variant="subtitle" style={{ margin: 0 }}>
+                            <span style={{ color: colors.primary }}>
+                                Period:&nbsp;
+                            </span>
+                            {printPeriod(metaData?.period)}
+                        </Text>
+                    </div>
                 </div>
                 { data && data.length > 0 ? (
-                    <div style={styles.data}>
+                    <div style={styles.table}>
+                        <div style={styles.gridContainer}>
+                            <div style={styles.categoryWrapper}>
+                                <Text variant="heading" style={styles.category}>
+                                    Time (UTC)
+                                </Text>
+                            </div>
+                            <div 
+                                style={{
+                                    ...styles.categoryWrapper,
+                                    borderRight: 'none',
+                                    borderLeft: 'none',
+                                }}
+                            >
+                                <Text variant="heading" style={styles.category}>
+                                    Value
+                                </Text>
+                            </div>
+                            <div style={styles.categoryWrapper}>
+                                <Text variant="heading" style={styles.category}>
+                                    Unit
+                                </Text>
+                            </div>
+                        </div>
                         {data.map((d:any) => (
-                            <div key={d._id}>
-                                <Text variant="title">
-                                    Value: {d.value}{d.unit}
-                                </Text>
-                                <Text variant="subtitle">
-                                    Recorded At: {new Date(d.recordedAt).toLocaleString()}
-                                </Text>
+                            <div key={d._id} style={styles.gridContainer}>
+                                <div style={{
+                                    ...styles.wrapper,
+                                    borderRight: `2px solid ${colors.primaryBackground}`,
+                                    borderLeft: `2px solid ${colors.primaryBackground}`,
+                                }}>
+                                    <Text variant="title">
+                                        {new Date(d.recordedAt).toISOString().replace('T', ' ').slice(0,19)}
+                                    </Text>
+                                </div>
+                                <div style={styles.wrapper}>
+                                    <Text variant="title">
+                                        {d.value.toFixed(2)}
+                                    </Text>
+                                </div>
+                                <div style={{
+                                    ...styles.wrapper,
+                                    borderRight: `2px solid ${colors.primaryBackground}`,
+                                    borderLeft: `2px solid ${colors.primaryBackground}`,
+                                }}>
+                                    <Text variant="title">
+                                        {d.unit}
+                                    </Text>
+                                </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div style={styles.data}>
+                    <div>
                         <Text variant="title">
                             No data available.
                         </Text>
@@ -80,15 +127,45 @@ export default function History() {
 
 const styles: {[key: string]: React.CSSProperties} = {
     section: {
-        // border: '1px solid red',
+        display: 'flex',
         flex: 1,
+        flexDirection: 'column',
+        gap: 20,
     },
-    content: {
-        padding: '0px 20px',
+    header: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 20,
     },
-    data: {
+    metaData: {
+        padding: '10px 20px',
+    },
+    table: {
         padding: '0px 20px',
         display: 'flex',
         flexDirection: 'column',
+    },
+    gridContainer: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        textAlign: 'center',
+        alignItems: 'center',
+    },
+    category: {
+        color: colors.primary,
+    },
+    categoryWrapper: {
+        border: `2px solid ${colors.primaryBackground}`,
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    wrapper: {
+        borderBottom: `2px solid ${colors.primaryBackground}`,
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
     }
 }

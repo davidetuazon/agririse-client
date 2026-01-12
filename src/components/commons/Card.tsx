@@ -18,6 +18,14 @@ export default function Cards(props: Props) {
     return (
         <div style={ Object.assign({}, styles.container, props.style) }>
             <div>
+                <Text
+                    variant="subtitle"
+                    style={{
+                        margin: 5,
+                    }}
+                >
+                    {props.label}
+                </Text>
                 <Text 
                     variant='caption'
                     style={{
@@ -26,14 +34,6 @@ export default function Cards(props: Props) {
                     }}
                 >
                     {date}
-                </Text>
-                <Text
-                    variant="subtitle"
-                    style={{
-                        margin: 5,
-                    }}
-                >
-                    {props.label}
                 </Text>
             </div>
             <div>

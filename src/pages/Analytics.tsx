@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getAnalytics } from "../services/api";
 import { printSensorType, printPeriod } from "../utils/switchCases";
+import colors from "../constants/colors";
 
 import Text from "../components/commons/Text";
 import Section from "../components/commons/Section";
@@ -44,61 +45,108 @@ export default function Analytics() {
                 {printSensorType(sensorType)} Analytics
             </Text>
 
-            <Section style={styles.kpiSection}>
+            <Section>
                 {data && data.length > 0 ? (
                     <div>
-                        <div
-                            style={{ padding: '20px' }}
-                        >
-                            <Text
-                                variant="caption"
-                                style={{ margin: 0 }}
-                            >
-                                display metadata here
-                            </Text>
-                        </div>
                         {data.map((d:any) => (
-                            <div key={d.timestamp} style={styles.container}>
-                                <Cards
-                                    label="Average Value"
-                                    value={d.avg}
-                                    unit='%'
-                                    recordedAt={d.timestamp}
-                                    style={styles.cards}
-                                />
-                                <Cards
-                                    label="Minimum Value"
-                                    value={d.min}
-                                    unit='%'
-                                    recordedAt={d.timestamp}
-                                    style={styles.cards}
-                                />
-                                <Cards
-                                    label="Maximum Value"
-                                    value={d.max}
-                                    unit='%'
-                                    recordedAt={d.timestamp}
-                                    style={styles.cards}
-                                />
-                                <Cards
-                                    label="Standard Deviation"
-                                    value={d.stdDev}
-                                    recordedAt={d.timestamp}
-                                    style={styles.cards}
-                                />
+                            <div key={d.timestamp} style={styles.summary}>
+                                <div style={{ padding: '0px 20px' }}>
+                                    <Text
+                                        variant="title"
+                                        style={{ margin: 0, color: colors.primary }}
+                                    >
+                                        Aggregated Metrics
+                                    </Text>
+                                </div>
+                                <div style={styles.metaData}>
+                                    <Text
+                                        variant="subtitle"
+                                        style={{ margin: 0 }}
+                                    >
+                                        <span style={{ color: colors.primary }}>
+                                            From:&nbsp;
+                                        </span>
+                                        {new Date(d.timestamp).toLocaleString()}
+                                    </Text>
+                                    <Text
+                                        variant="subtitle"
+                                        style={{ margin: 0 }}
+                                    >
+                                        <span style={{ color: colors.primary }}>
+                                            To:&nbsp;
+                                        </span>
+                                        {new Date(Date.now()).toLocaleString()}
+                                    </Text>
+                                    <Text
+                                        variant="subtitle"
+                                        style={{ margin: 0 }}
+                                    >
+                                        <span style={{ color: colors.primary }}>
+                                            Period:&nbsp;
+                                        </span>
+                                        {printPeriod(metaData?.period)}
+                                    </Text>
+                                    <Text
+                                        variant="subtitle"
+                                        style={{ margin: 0 }}
+                                    >
+                                        <span style={{ color: colors.primary }}>
+                                            Granularity:&nbsp;
+                                        </span>
+                                        {metaData?.granularity}
+                                    </Text>
+                                    <Text
+                                        variant="subtitle"
+                                        style={{ margin: 0 }}
+                                    >
+                                        <span style={{ color: colors.primary }}>
+                                            Metric:&nbsp;
+                                        </span>
+                                        {metaData?.metric}
+                                    </Text>
+                                </div>
+                                <div style={styles.cardsContainer}>
+                                    <Cards
+                                        label="Average Value"
+                                        value={d.avg}
+                                        unit='%'
+                                        // recordedAt={d.timestamp}
+                                        style={styles.cards}
+                                    />
+                                    <Cards
+                                        label="Minimum Value"
+                                        value={d.min}
+                                        unit='%'
+                                        // recordedAt={d.timestamp}
+                                        style={styles.cards}
+                                    />
+                                    <Cards
+                                        label="Maximum Value"
+                                        value={d.max}
+                                        unit='%'
+                                        // recordedAt={d.timestamp}
+                                        style={styles.cards}
+                                    />
+                                    <Cards
+                                        label="Standard Deviation"
+                                        value={d.stdDev}
+                                        // recordedAt={d.timestamp}
+                                        style={styles.cards}
+                                    />
+                                </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div style={styles.data}>
+                    <div>
                         <Text variant="title">
-                            No data available yet.
+                            No data available.
                         </Text>
                     </div>
                 )}
             </Section>
             <Section style={styles.chartsSection}>
-                <div style={styles.container}>
+                <div style={{ display: 'flex', flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <Text variant="caption">
                         display charts here
                     </Text>
@@ -109,12 +157,19 @@ export default function Analytics() {
 }
 
 const styles: {[key: string]: React.CSSProperties} = {
-    kpiSection: {
+    summary: {
         display: 'flex',
         flexDirection: 'column',
         gap: 20,
     },
-    container: {
+    metaData: {
+        // border: '1px solid red',
+        padding: '10px 20px',
+        display:'flex',
+        flexDirection: 'row',
+        gap: 20,
+    },
+    cardsContainer: {
         // border: '1px solid red',
         display: 'flex',
         flex: 1,
