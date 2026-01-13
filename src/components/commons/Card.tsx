@@ -13,7 +13,9 @@ type Props = {
 }
 
 export default function Cards(props: Props) {
-    const date = props.recordedAt ? new Date(props.recordedAt).toLocaleString() : null;
+    const date = props.recordedAt
+        ? `${new Date(props.recordedAt).toISOString().replace('T', ' ').slice(0,19)} UTC`
+        : null;
 
     return (
         <div style={ Object.assign({}, styles.container, props.style) }>
@@ -26,6 +28,19 @@ export default function Cards(props: Props) {
                 >
                     {props.label}
                 </Text>
+            </div>
+            <div>
+                <Text 
+                    variant='heading'
+                    style={{
+                        margin: 5,
+                        padding: '5px 0px',
+                    }}
+                >
+                    {props.value?.toFixed(2)}{props.unit}
+                </Text>
+            </div>
+            <div>
                 <Text 
                     variant='caption'
                     style={{
@@ -34,17 +49,6 @@ export default function Cards(props: Props) {
                     }}
                 >
                     {date}
-                </Text>
-            </div>
-            <div>
-                <Text 
-                    variant='title'
-                    style={{
-                        margin: 5,
-                        paddingTop: 5,
-                    }}
-                >
-                    {props.value?.toFixed(2)}{props.unit}
                 </Text>
             </div>
         </div>

@@ -38,7 +38,7 @@ export default function HistorySection(props: Props) {
     const historyUrl = (
             sensorType: SensorType,
             period: string = '1month',
-            limit: number = 10
+            limit: number = 25
         ) => `/iot/history?sensorType=${sensorType}&period=${period}&limit=${limit}`;
 
     return (

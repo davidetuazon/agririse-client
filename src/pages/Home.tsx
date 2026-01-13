@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../providers/AuthProvider";
 import { latest, me } from "../services/api";
+import colors from "../constants/colors";
 
 import Text from "../components/commons/Text";
 import Section from "../components/commons/Section";
@@ -60,7 +61,7 @@ export default function Home() {
                 variant="heading"
                 style={{ margin: 5 }}
             >
-                {locality?.city} Overview
+                Overview / <span style={{ color: colors.primary }}>{locality?.city}</span>
             </Text>
 
             {/* Dashboard */}

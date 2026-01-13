@@ -45,7 +45,7 @@ const styles: {[key: string]: React.CSSProperties} = {
     container: {
         // border: '1px solid #E5E7EB',
         border: 'none',
-        backgroundColor: colors.primaryLight,
+        backgroundColor: colors.waterPrimary,
         borderRadius: '12px',
         padding: 20,
         margin: 10,
