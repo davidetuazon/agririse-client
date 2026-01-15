@@ -6,21 +6,25 @@ type IoTReadings = {
         value: number,
         unit: string,
         recordedAt: string,
+        sensorType: string,
     },
     humidity: {
         value: number,
         unit: string,
         recordedAt: string,
+        sensorType: string,
     },
     rainfall: {
         value: number,
         unit: string,
         recordedAt: string,
+        sensorType: string,
     },
     temperature: {
         value: number,
         unit: string,
         recordedAt: string,
+        sensorType: string,
     }
 }
 
@@ -35,25 +39,25 @@ export default function Dashboard(props: Props) {
     return (
         <div style={styles.container}>
             <Cards
-                label="Dam Water Level"
+                label={damWaterLevel?.sensorType}
                 value={damWaterLevel?.value}
                 unit={damWaterLevel?.unit}
                 recordedAt={damWaterLevel?.recordedAt}
             />
             <Cards
-                label="Humidity"
+                label={humidity?.sensorType}
                 value={humidity?.value}
                 unit={humidity?.unit}
                 recordedAt={humidity?.recordedAt}
             />
             <Cards
-                label="Effective Rainfall"
+                label={rainfall?.sensorType}
                 value={rainfall?.value}
                 unit={rainfall?.unit}
                 recordedAt={rainfall?.recordedAt}
             />
             <Cards
-                label="Temperature"
+                label={temperature?.sensorType}
                 value={temperature?.value}
                 unit={temperature?.unit}
                 recordedAt={temperature?.recordedAt}

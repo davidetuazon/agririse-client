@@ -1,45 +1,102 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getHistory } from "../services/api";
-import { printPeriod, printSensorType } from "../utils/switchCases";
 import colors from "../constants/colors";
 
 import Text from "../components/commons/Text";
 import Section from "../components/commons/Section";
-import Button from "../components/commons/Button";
 
 export default function History() {
     const [searchParams] = useSearchParams();
+    // data
     const [data, setData] = useState<any>(null);
     const [metaData, setMetaData] = useState<any>(null);
+    const [error, setError] = useState<any>(null);
+    // pagination
     const [pageInfo, setPageInfo] = useState<any>(null);
+    const [cursor, setCursor] = useState<any>(null);
+    const sentinelRef = useRef<HTMLDivElement>(null);
+    
 
     const sensorType = searchParams.get('sensorType') ?? 'damWaterLevel';
-    const period = searchParams.get('period') ?? '1month';
+    const endDate = searchParams.get('endDate') ?? new Date().toISOString().split('T')[0];
+    const startDate = searchParams.get('startDate') 
+    ?? new Date(new Date(endDate).getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const limit = Number(searchParams.get('limit')) || 10;
 
     const init = async () => {
-        try {
-            const res = await getHistory({ sensorType, period, limit });
-            const { data, meta, pageInfo } = res;
-            setData(data);
-            setMetaData(meta);
-            setPageInfo(pageInfo);
-        } catch (e) {
+        if (!startDate || !endDate) return;
+        const res = await getHistory({ sensorType, startDate, endDate, limit, cursor });
+
+        if (res.error) {
             setData(null);
             setPageInfo(null);
-            console.error(e);
+            setError(res.error);
+            console.error(res.error);
         }
+
+        setData(res.data);
+        setMetaData(res.meta);
+        setPageInfo(res.pageInfo);
     }
 
     useEffect(() => {
         init();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sensorType, period, limit]);
+    }, [sensorType, startDate, endDate, limit]);
+
+    // pagination logic
+    const fetchMore = async () => {
+        if (!pageInfo?.hasNext) return;
+        const res = await getHistory({ sensorType, startDate, endDate, limit, cursor: pageInfo?.nextCursor || '' });
+
+        if (res.error) {
+            setData(null);
+            setPageInfo(null);
+            setError(res.error);
+            console.error(res.error);
+        }
+
+        setData((prev: any) => [...prev, ...res.data]);
+        setMetaData(res.meta);
+        setPageInfo(res.pageInfo);
+    }
+
+    useEffect(() => {
+        if (!sentinelRef.current) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    fetchMore();
+                }
+            },
+            { root: null, rootMargin: '100px', threshold: 0.1 }
+        )
+
+        observer.observe(sentinelRef.current);
+
+        return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sentinelRef.current, pageInfo?.nextCursor, pageInfo?.hasNext]);
+
+    useEffect(() => {
+        setData([]);
+        setPageInfo(null);
+        setCursor(null);
+        init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sensorType, startDate, endDate]);
 
     // useEffect(() => {
     //     console.log({ pageInfo, data })
     // }, [pageInfo, data])
+
+    // meta data timestamp display
+    // UTC/GMT format
+    // can add option to convert to locale time if needed, make function
+    const from = metaData?.dateRange?.startDate ? `${metaData?.dateRange?.startDate.replace('T', ' ').slice(0,19)} UTC` : '';
+    const to = metaData?.dateRange?.endDate ? `${metaData?.dateRange?.endDate.replace('T', ' ').slice(0,19)} UTC` : '';
 
     return (
         <>
@@ -47,7 +104,7 @@ export default function History() {
                 variant="heading"
                 style={{ margin: 5 }}
             >
-                History / <span style={{ color: colors.primary }}>{printSensorType(sensorType)}</span>
+                History / <span style={{ color: colors.primary }}>{metaData?.sensorType}</span>
             </Text>
 
             <Section style={styles.section}>
@@ -56,15 +113,9 @@ export default function History() {
                     <div style={styles.metaData}>
                         <Text variant="subtitle" style={{ margin: 0 }}>
                             <span style={{ color: colors.primary }}>
-                                Period:&nbsp;
-                            </span>
-                            {printPeriod(metaData?.period)}
-                        </Text>
-                        <Text variant="subtitle" style={{ margin: 0 }}>
-                            <span style={{ color: colors.primary }}>
                                 Sensor Type:&nbsp;
                             </span>
-                                {printSensorType(metaData?.sensorType)}
+                                {metaData?.sensorType}
                         </Text>
                         <Text variant="subtitle" style={{ margin: 0 }}>
                             <span style={{ color: colors.primary }}>
@@ -72,9 +123,27 @@ export default function History() {
                             </span>
                                 {metaData?.unit}
                         </Text>
+                        <Text variant="subtitle" style={{ margin: 0 }}>
+                            <span style={{ color: colors.primary }}>
+                                From:&nbsp;
+                            </span>
+                                {from}
+                        </Text>
+                        <Text variant="subtitle" style={{ margin: 0 }}>
+                            <span style={{ color: colors.primary }}>
+                                To:&nbsp;
+                            </span>
+                                {to}
+                        </Text>
                     </div>
                 </div>
 
+                {/* 
+                    TODO:
+                    > add infinite scroll for data
+                    > use server side caching for minimal optimization
+                    > csv export option should export entire cached data
+                */}
                 {/* data table */}
                 { data && data.length > 0 ? (
                     
@@ -87,16 +156,6 @@ export default function History() {
                         */}
                         <div style={styles.gridContainer}>
                             <div style={styles.categoryWrapper}>
-                                <Text variant="title" style={styles.category}>
-                                    # (latest)
-                                </Text>
-                            </div>
-                            <div 
-                                style={{
-                                    ...styles.categoryWrapper,
-                                    borderLeft: 'none',
-                                }}
-                            >
                                 <Text variant="title" style={styles.category}>
                                     Timestamp (UTC)
                                 </Text>
@@ -121,6 +180,16 @@ export default function History() {
                                     Δ (from previous)
                                 </Text>
                             </div>
+                            <div 
+                                style={{
+                                    ...styles.categoryWrapper,
+                                    borderLeft: 'none',
+                                }}
+                            >
+                                <Text variant="title" style={styles.category}>
+                                    Age
+                                </Text>
+                            </div>
                         </div>
 
                         {/* data */}
@@ -133,14 +202,6 @@ export default function History() {
                                     ...styles.wrapper,
                                     borderRight: `2px solid ${colors.primaryBackground}`,
                                     borderLeft: `2px solid ${colors.primaryBackground}`,
-                                }}>
-                                    <Text variant="subtitle">
-                                        {idx+1}
-                                    </Text>
-                                </div>
-                                <div style={{
-                                    ...styles.wrapper,
-                                    borderRight: `2px solid ${colors.primaryBackground}`,
                                 }}>
                                     <Text variant="subtitle">
                                         {new Date(d.recordedAt).toISOString().replace('T', ' ').slice(0,19)}
@@ -162,8 +223,17 @@ export default function History() {
                                         {delta === '-' ? '-' : `${delta >= 0 ? '+': ''}${delta.toFixed(2)}`}
                                     </Text>
                                 </div>
+                                <div style={{
+                                    ...styles.wrapper,
+                                    borderRight: `2px solid ${colors.primaryBackground}`,
+                                }}>
+                                    <Text variant="subtitle">
+                                        {idx+1}
+                                    </Text>
+                                </div>
                             </div>
                         )})}
+                        <div ref={sentinelRef} />
                     </div>
                 ) : (
                     // style this
@@ -173,20 +243,6 @@ export default function History() {
                         </Text>
                     </div>
                 )}
-
-                {/* pagination buttons */}
-                <footer style={styles.footer}>
-                    {/* style these buttons */}
-                    <Button
-                        title="<"
-                        style={styles.button}
-                    />
-                    <Button
-                        title=">"
-                        style={styles.button}
-                        disabled={!pageInfo?.hasNext}
-                    />
-                </footer>
             </Section>
         </>
     )

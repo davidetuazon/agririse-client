@@ -118,6 +118,7 @@ export default function Login() {
                                     style={{ 
                                         margin: 0,
                                         padding: '10px 15px',
+                                        backgroundColor: colors.primaryLight
                                     }}
                                     onButtonPress={handleSubmit(onSubmit)}
                                     disabled={isSubmitting}

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getAnalytics } from "../services/api";
-import { printSensorType, printPeriod } from "../utils/switchCases";
 import colors from "../constants/colors";
 
 import Text from "../components/commons/Text";
@@ -21,30 +20,32 @@ export default function Analytics() {
     const [searchParams] = useSearchParams();
     const [data, setData] = useState<AnalyticsData[] | null>(null);
     const [metaData, setMetaData] = useState<any>(null);
-    // const [pageInfo, setPageInfo] = useState<any>(null);
+    const [error, setError] = useState<any>(null);
 
     const sensorType = searchParams.get('sensorType') ?? 'damWaterLevel';
-    const period = searchParams.get('period') ?? '1month';
+    const endDate = searchParams.get('endDate') ?? new Date().toISOString().split('T')[0];
+    const startDate = searchParams.get('startDate') 
+    ?? new Date(new Date(endDate).getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     const init = async () => {
-        try {
-            const res = await getAnalytics({sensorType, period});
-            const { series, meta } = res;
-            setData(series);
-            setMetaData(meta);
-            // setPageInfo(pageInfo);
-        } catch (e) {
+        if (!startDate || !endDate) return;
+        const res = await getAnalytics({ sensorType, startDate, endDate, limit: 50, cursor: '' });
+
+        if (res.error) {
             setData(null);
             setMetaData(null);
-            // setPageInfo(null);
-            console.error(e);
+            setError(res.error);
+            console.error(res.error);
         }
+
+        setData(res.series);
+        setMetaData(res.meta);
     }
 
     useEffect(() => {
         init();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sensorType, period]);
+    }, [sensorType, startDate, endDate]);
 
     // display the latest aggregated data only for the summary
     const hasData = data && data.length > 0;
@@ -53,12 +54,8 @@ export default function Analytics() {
     // meta data timestamp display
     // UTC/GMT format
     // can add option to convert to locale time if needed, make function
-    const from = hasData
-        ? `${new Date(data[0]?.timestamp).toISOString().replace('T', ' ').slice(0,19)} UTC`
-        : null;
-    const to = hasData
-        ? `${new Date(data[data.length - 1]?.timestamp).toISOString().replace('T', ' ').slice(0,19)} UTC`
-        : null;
+    const from = `${metaData?.dateRange?.startDate.replace('T', ' ').slice(0,19)} UTC`;
+    const to = `${metaData?.dateRange?.endDate.replace('T', ' ').slice(0,19)} UTC`;
 
     // log this to see aggregated data series
     // data for doing charts
@@ -70,9 +67,9 @@ export default function Analytics() {
         <>
             <Text
                 variant="heading"
-                style={{ margin: 5 }}
+                style={{ margin: 5, color: colors.primary  }}
             >
-                Analytics / <span style={{ color: colors.primary }}>{printSensorType(sensorType)}</span>
+                Analytics / <span style={{ color: colors.textPrimary }}>{metaData?.sensorType}</span>
             </Text>
 
             {/* summary */}
@@ -140,9 +137,9 @@ export default function Analytics() {
                                 style={{ margin: 0 }}
                             >
                                 <span style={{ color: colors.primary }}>
-                                    Period:&nbsp;
+                                    Metric:&nbsp;
                                 </span>
-                                {printPeriod(metaData?.period)}
+                                {metaData?.metric}
                             </Text>
                             <Text
                                 variant="subtitle"
@@ -152,15 +149,6 @@ export default function Analytics() {
                                     Granularity:&nbsp;
                                 </span>
                                 {metaData?.granularity}
-                            </Text>
-                            <Text
-                                variant="subtitle"
-                                style={{ margin: 0 }}
-                            >
-                                <span style={{ color: colors.primary }}>
-                                    Metric:&nbsp;
-                                </span>
-                                {metaData?.metric}
                             </Text>
                         </div>
                     </div>

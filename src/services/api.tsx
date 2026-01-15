@@ -46,22 +46,50 @@ export const latest = async () => {
     }
 }
 
-export const getAnalytics = async ({ sensorType, period }: { sensorType: string, period: string }) => {
-    // eslint-disable-next-line no-useless-catch
+export const getAnalytics = async (
+    {
+        sensorType,
+        startDate,
+        endDate,
+        limit,
+        cursor,
+    }: { 
+        sensorType: string,
+        startDate: string,
+        endDate: string,
+        limit: number,
+        cursor: string
+    }
+) => {
     try {
-        const res = await api.get('/iot/analytics', { params: { sensorType, period } });
-        return res.data;
-    } catch (e) {
-        throw e;
+        const res = await api.get('/iot/analytics', { params: { sensorType, startDate, endDate, limit, cursor } });
+         return res.data;
+    } catch (e:any) {
+        if (e.response.data.error) return { data: null, error: e.response.data.error }
+        return { data: null, error: e.message || 'Unkown error occured' };
     }
 }
 
-export const getHistory = async ({ sensorType, period, limit }: { sensorType: string, period: string, limit: number }) => {
-    // eslint-disable-next-line no-useless-catch
+export const getHistory = async (
+    {
+        sensorType,
+        startDate,
+        endDate,
+        limit,
+        cursor
+    }: { 
+        sensorType: string,
+        startDate: string,
+        endDate: string,
+        limit: number,
+        cursor: string
+    }
+) => {
     try {
-        const res = await api.get('/iot/history', { params: { sensorType, period, limit } });
+        const res = await api.get('/iot/history', { params: { sensorType, startDate, endDate, limit, cursor } });
         return res.data;
-    } catch (e) {
-        throw e;
+    } catch (e:any) {
+        if (e.response.data.error) return { data: null, error: e.response.data.error }
+        return { data: null, error: e.message || 'Unkown error occured' };
     }
 }

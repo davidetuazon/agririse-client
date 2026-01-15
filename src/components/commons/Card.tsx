@@ -6,7 +6,7 @@ import Text from "./Text";
 type Props = {
     style?: React.CSSProperties,
     textStyle?: React.CSSProperties,
-    label: string,
+    label: any,
     value: any,
     unit?: any,
     recordedAt?: any,

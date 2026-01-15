@@ -12,21 +12,25 @@ type IoTReadings = {
         value: number,
         unit: string,
         recordedAt: string,
+        sensorType: string,
     },
     humidity: {
         value: number,
         unit: string,
         recordedAt: string,
+        sensorType: string,
     },
     rainfall: {
         value: number,
         unit: string,
         recordedAt: string,
+        sensorType: string,
     },
     temperature: {
         value: number,
         unit: string,
         recordedAt: string,
+        sensorType: string,
     }
 }
 

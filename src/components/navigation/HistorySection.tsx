@@ -35,11 +35,15 @@ export default function HistorySection(props: Props) {
         { label: 'Temperature', type: 'temperature' }
     ];
 
-    const historyUrl = (
-            sensorType: SensorType,
-            period: string = '1month',
-            limit: number = 25
-        ) => `/iot/history?sensorType=${sensorType}&period=${period}&limit=${limit}`;
+    const historyUrl = (sensorType: SensorType, defaultDays = 30, limit: number = 20) => {
+        const end = new Date();
+        const start = new Date(end.getTime() - defaultDays * 24 * 60 * 60 * 1000);
+
+        const startDate = start.toISOString().split('T')[0];
+        const endDate = end.toISOString().split('T')[0];
+
+        return `/iot/history?sensorType=${sensorType}&startDate=${startDate}&endDate=${endDate}&limit=${limit}`;
+    }
 
     return (
         <>
