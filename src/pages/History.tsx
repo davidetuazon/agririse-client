@@ -5,6 +5,7 @@ import colors from "../constants/colors";
 
 import Text from "../components/commons/Text";
 import Section from "../components/commons/Section";
+import { timeAgo } from "../utils/helpers";
 
 export default function History() {
     const [searchParams] = useSearchParams();
@@ -187,7 +188,7 @@ export default function History() {
                                 }}
                             >
                                 <Text variant="title" style={styles.category}>
-                                    Age
+                                    Elapsed
                                 </Text>
                             </div>
                         </div>
@@ -228,7 +229,7 @@ export default function History() {
                                     borderRight: `2px solid ${colors.primaryBackground}`,
                                 }}>
                                     <Text variant="subtitle">
-                                        {idx+1}
+                                        {timeAgo(d.recordedAt)}
                                     </Text>
                                 </div>
                             </div>

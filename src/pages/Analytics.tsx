@@ -18,6 +18,7 @@ type AnalyticsData = {
 
 export default function Analytics() {
     const [searchParams] = useSearchParams();
+    // data
     const [data, setData] = useState<AnalyticsData[] | null>(null);
     const [metaData, setMetaData] = useState<any>(null);
     const [error, setError] = useState<any>(null);
