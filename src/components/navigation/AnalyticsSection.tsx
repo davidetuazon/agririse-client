@@ -8,6 +8,7 @@ type Props = {
     style?: React.CSSProperties,
     onMouseEnter?: () => void,
     onMouseLeave?: () => void,
+    onLinkClick?: () => void,
 }
 
 type SensorType = 'damWaterLevel' | 'humidity' | 'rainfall' | 'temperature' | 'default';
@@ -82,6 +83,7 @@ export default function AnalyticsSection(props: Props) {
                     style={{ textDecoration: 'none' }}
                     onMouseEnter={() => setIsHovered(type)}
                     onMouseLeave={() => setIsHovered('default')}
+                    onClick={props.onLinkClick}
                 >
                     <Text
                         variant="caption"

@@ -6,6 +6,7 @@ import colors from "../constants/colors";
 import Text from "../components/commons/Text";
 import Section from "../components/commons/Section";
 import { timeAgo } from "../utils/helpers";
+import "./History.css";
 
 export default function History() {
     const [searchParams] = useSearchParams();
@@ -111,7 +112,7 @@ export default function History() {
             <Section style={styles.section}>
                 <div style={styles.header}>
                     {/* meta data */}
-                    <div style={styles.metaData}>
+                    <div style={styles.metaData} className="history-meta-data">
                         <Text variant="subtitle" style={{ margin: 0 }}>
                             <span style={{ color: colors.primary }}>
                                 Sensor Type:&nbsp;
@@ -148,14 +149,14 @@ export default function History() {
                 {/* data table */}
                 { data && data.length > 0 ? (
                     
-                    <div style={styles.table}>
+                    <div style={styles.table} className="history-table">
 
                         {/* category */}
                         {/* 
                             TODO:
                              > add time and unit conversion option
                         */}
-                        <div style={styles.gridContainer}>
+                        <div style={styles.gridContainer} className="history-grid-container">
                             <div style={styles.categoryWrapper}>
                                 <Text variant="title" style={styles.category}>
                                     Timestamp (UTC)
@@ -213,7 +214,7 @@ export default function History() {
                                     borderRight: `2px solid ${colors.primaryBackground}`,
                                 }}>
                                     <Text variant="subtitle">
-                                        {d.value.toFixed(2)}
+                                        {d.value.toFixed(2)}{metaData?.unit}
                                     </Text>
                                 </div>
                                 <div style={{
@@ -221,7 +222,7 @@ export default function History() {
                                     borderRight: `2px solid ${colors.primaryBackground}`,
                                 }}>
                                     <Text variant="subtitle">
-                                        {delta === '-' ? '-' : `${delta >= 0 ? '+': ''}${delta.toFixed(2)}`}
+                                        {delta === '-' ? '-' : `${delta >= 0 ? '+': ''}${delta.toFixed(2)}${metaData?.unit}`}
                                     </Text>
                                 </div>
                                 <div style={{
@@ -251,35 +252,44 @@ export default function History() {
 
 const styles: {[key: string]: React.CSSProperties} = {
     section: {
-        // border: '1px solid red',
         display: 'flex',
         flex: 1,
         flexDirection: 'column',
-        gap: 20,
+        gap: 'clamp(0.75rem, 2vw, 1.25rem)',
+        width: '100%',
+        minWidth: 0,
     },
     header: {
-        // border: '1px solid red',
         display: 'flex',
         flexDirection: 'column',
-        gap: 20,
+        gap: 'clamp(0.75rem, 2vw, 1.25rem)',
+        width: '100%',
     },
     metaData: {
-        padding: '10px 40px',
+        padding: 'clamp(0.5rem, 1.5vw, 0.625rem) clamp(1rem, 3vw, 2.5rem)',
         display:'flex',
-        flexDirection: 'row',
-        gap: 20,
+        flexDirection: 'column',
+        flexWrap: 'wrap',
+        gap: 'clamp(0.5rem, 1.5vw, 1rem)',
+        width: '100%',
+        boxSizing: 'border-box',
     },
     table: {
-        // border: '1px solid red',
-        padding: '0px 40px',
+        padding: '0px clamp(0.5rem, 2vw, 2.5rem)',
         display: 'flex',
         flexDirection: 'column',
+        width: '100%',
+        overflowX: 'auto',
+        overflowY: 'visible',
+        boxSizing: 'border-box',
     },
     gridContainer: {
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))',
         textAlign: 'center',
         alignItems: 'center',
+        minWidth: 'min-content',
+        width: '100%',
     },
     category: {
         color: colors.primary,
@@ -287,26 +297,32 @@ const styles: {[key: string]: React.CSSProperties} = {
     categoryWrapper: {
         border: `2px solid ${colors.primaryBackground}`,
         width: '100%',
+        minWidth: '120px',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
+        padding: 'clamp(0.5rem, 1.5vw, 0.75rem)',
+        wordBreak: 'break-word',
     },
     wrapper: {
         borderBottom: `2px solid ${colors.primaryBackground}`,
         width: '100%',
+        minWidth: '120px',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
+        padding: 'clamp(0.5rem, 1.5vw, 0.75rem)',
+        wordBreak: 'break-word',
     },
     footer: {
-        // border: '1px solid red',
-        padding: '20px',
+        padding: 'clamp(1rem, 2.5vw, 1.25rem)',
         display: 'flex',
         justifyContent: 'center',
-        gap: 20,
+        flexWrap: 'wrap',
+        gap: 'clamp(0.75rem, 2vw, 1.25rem)',
     },
     button: {
-        padding: '10px 5px',
+        padding: 'clamp(0.5rem, 1.5vw, 0.625rem) clamp(0.25rem, 1vw, 0.3125rem)',
         margin: 0,
     }
 }

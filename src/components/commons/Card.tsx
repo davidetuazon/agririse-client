@@ -58,8 +58,10 @@ export default function Cards(props: Props) {
 const styles: {[key: string]: React.CSSProperties} = {
     container: {
         border: `2px solid ${colors.secondaryBackground}`,
-        padding: 20,
-        borderRadius: '18px',
-        width: '100%'
+        padding: 'clamp(1rem, 2.5vw, 1.25rem)',
+        borderRadius: 'clamp(0.75rem, 2vw, 1.125rem)',
+        width: '100%',
+        minWidth: 0, // Prevent flex item overflow
+        boxSizing: 'border-box',
     }
 }

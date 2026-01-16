@@ -1,0 +1,25 @@
+/* Mobile-first: cards stack vertically */
+.dashboard-container {
+  flex-direction: column;
+}
+
+/* Tablet and up: cards in row, wrap */
+@media (min-width: 640px) {
+  .dashboard-container {
+    flex-direction: row;
+  }
+  
+  /* On tablet, 2 cards per row */
+  .dashboard-card {
+    flex: 1 1 calc(50% - 1rem);
+    min-width: min(250px, 100%);
+  }
+}
+
+/* Desktop: 4 cards in a row */
+@media (min-width: 1024px) {
+  .dashboard-card {
+    flex: 1 1 calc(25% - 1rem);
+    min-width: min(200px, 100%);
+  }
+}
