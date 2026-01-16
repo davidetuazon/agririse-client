@@ -6,6 +6,7 @@ import colors from "../constants/colors";
 import Text from "../components/commons/Text";
 import Section from "../components/commons/Section";
 import Dashboard from "../components/home/Dashboard";
+import "./Home.css";
 
 type IoTReadings = {
     damWaterLevel: {
@@ -71,7 +72,7 @@ export default function Home() {
             {/* Dashboard */}
             <Section style={styles.dashboard}>
                 <div
-                    style={{ padding: '0px 20px' }}
+                    style={{ padding: '0px clamp(0.75rem, 2vw, 1.25rem)' }}
                 >
                     <Text
                         variant="heading"
@@ -90,7 +91,7 @@ export default function Home() {
                 > can separate this section into 2 components
                 > separate concerns for trends and optimization 
             */}
-            <div style={styles.core}>
+            <div style={styles.core} className="home-core">
                 <Section style={styles.trends}>
                     <Text
                         variant="heading"
@@ -116,20 +117,28 @@ const styles: {[key: string]: React.CSSProperties} = {
     dashboard: {
         display: 'flex',
         flexDirection: 'column',
-        gap: 20,
+        gap: 'clamp(0.75rem, 2vw, 1.25rem)',
+        width: '100%',
+        minWidth: 0,
     },
     core: {
         display: 'flex',
-        flexDirection: 'row',
+        flexDirection: 'column',
         flex: 1,
-        gap: 20,
+        gap: 'clamp(0.75rem, 2vw, 1.25rem)',
+        width: '100%',
+        minWidth: 0,
     },
     trends: {
         flex: 1,
-        padding: '20px'
+        padding: 'clamp(1rem, 2.5vw, 1.25rem)',
+        width: '100%',
+        minWidth: 0,
     },
     optimization: {
         flex: 1,
-        padding: '20px'
+        padding: 'clamp(1rem, 2.5vw, 1.25rem)',
+        width: '100%',
+        minWidth: 0,
     }
 }

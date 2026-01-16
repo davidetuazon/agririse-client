@@ -1,0 +1,18 @@
+/* Dashboard cards responsive behavior */
+/* Cards wrap naturally on smaller screens, stay in row on larger screens */
+
+/* On tablet, ensure cards don't get too wide */
+@media (min-width: 640px) {
+  .dashboard-card {
+    flex: 1 1 calc(50% - 1rem);
+    min-width: min(250px, 100%);
+  }
+}
+
+/* Desktop: 4 cards in a row */
+@media (min-width: 1024px) {
+  .dashboard-card {
+    flex: 1 1 calc(25% - 1rem);
+    min-width: min(200px, 100%);
+  }
+}
