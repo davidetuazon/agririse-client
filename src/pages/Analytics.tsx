@@ -6,6 +6,7 @@ import colors from "../constants/colors";
 import Text from "../components/commons/Text";
 import Section from "../components/commons/Section";
 import Cards from "../components/commons/Card";
+import "./Analytics.css";
 
 type AnalyticsData = {
     timestamp: string,
@@ -77,7 +78,7 @@ export default function Analytics() {
             <Section>
                 {latest ? (
                     <div key={latest.timestamp} style={styles.summary}>
-                        <div style={{ padding: '0px 20px' }}>
+                        <div style={{ padding: '0px clamp(0.75rem, 2vw, 1.25rem)' }}>
                             <Text
                                 variant="title"
                                 style={{ margin: 0, color: colors.primary }}
@@ -87,34 +88,42 @@ export default function Analytics() {
                         </div>
 
                         {/* cards display */}
-                        <div style={styles.cardsContainer}>
-                            <Cards
-                                label="Average Value"
-                                value={latest.avg}
-                                unit='%'
-                                style={styles.cards}
-                            />
-                            <Cards
-                                label="Minimum Value"
-                                value={latest.min}
-                                unit='%'
-                                style={styles.cards}
-                            />
-                            <Cards
-                                label="Maximum Value"
-                                value={latest.max}
-                                unit='%'
-                                style={styles.cards}
-                            />
-                            <Cards
-                                label="Variability (σ)"
-                                value={latest.stdDev}
-                                style={styles.cards}
-                            />
+                        <div style={styles.cardsContainer} className="analytics-cards-container">
+                            <div className="analytics-card">
+                                <Cards
+                                    label="Average Value"
+                                    value={latest.avg}
+                                    unit='%'
+                                    style={styles.cards}
+                                />
+                            </div>
+                            <div className="analytics-card">
+                                <Cards
+                                    label="Minimum Value"
+                                    value={latest.min}
+                                    unit='%'
+                                    style={styles.cards}
+                                />
+                            </div>
+                            <div className="analytics-card">
+                                <Cards
+                                    label="Maximum Value"
+                                    value={latest.max}
+                                    unit='%'
+                                    style={styles.cards}
+                                />
+                            </div>
+                            <div className="analytics-card">
+                                <Cards
+                                    label="Variability (σ)"
+                                    value={latest.stdDev}
+                                    style={styles.cards}
+                                />
+                            </div>
                         </div>
 
                         {/* meta data display */}
-                        <div style={styles.metaData}>
+                        <div style={styles.metaData} className="analytics-meta-data">
                             <Text
                                 variant="subtitle"
                                 style={{ margin: 0 }}
@@ -183,31 +192,39 @@ const styles: {[key: string]: React.CSSProperties} = {
     summary: {
         display: 'flex',
         flexDirection: 'column',
-        gap: 20,
+        gap: 'clamp(0.75rem, 2vw, 1.25rem)',
+        width: '100%',
+        minWidth: 0,
     },
     metaData: {
-        // border: '1px solid red',
-        padding: '10px 20px',
+        padding: 'clamp(0.5rem, 1.5vw, 0.625rem) clamp(0.75rem, 2vw, 1.25rem)',
         display:'flex',
-        flexDirection: 'row',
-        gap: 20,
+        flexDirection: 'column',
+        flexWrap: 'wrap',
+        gap: 'clamp(0.5rem, 1.5vw, 1rem)',
+        width: '100%',
     },
     cardsContainer: {
-        // border: '1px solid red',
         display: 'flex',
         flex: 1,
         flexDirection: 'row',
+        flexWrap: 'wrap',
         height: 'fit-content',
-        gap: 20,
-        padding: '0px 20px'
+        gap: 'clamp(0.75rem, 2vw, 1.25rem)',
+        padding: '0px clamp(0.75rem, 2vw, 1.25rem)',
+        width: '100%',
+        boxSizing: 'border-box',
     },
     cards: {
-        minWidth: '150px'
+        minWidth: 'min(150px, 100%)',
+        flex: '1 1 calc(50% - 1rem)',
     },
     chartsSection: {
         display: 'flex',
         flexDirection: 'column',
-        gap: 20,
+        gap: 'clamp(0.75rem, 2vw, 1.25rem)',
         flex: 1,
+        width: '100%',
+        minWidth: 0,
     },
 }

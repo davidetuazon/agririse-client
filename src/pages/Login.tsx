@@ -12,6 +12,7 @@ import Text from "../components/commons/Text";
 import TextInput from "../components/commons/TextInputs";
 import Button from "../components/commons/Button";
 import { ACCESS_TOKEN } from "../utils/constants";
+import "./Login.css";
 
 type Inputs = {
     email: string,
@@ -51,15 +52,15 @@ export default function Login() {
 
     return (
         <div style={styles.root}>
-            <div style={styles.body}>
-                <section style={styles.hero}>
+            <div style={styles.body} className="login-body">
+                <section style={styles.hero} className="login-hero">
                     <Text variant='heading'>
                         Hero Section
                     </Text>
                 </section>
-                <section style={styles.login}>
+                <section style={styles.login} className="login-section">
                     <div
-                        style={{ width: '80%', }}
+                        style={{ width: '100%', maxWidth: 'min(400px, 90%)' }}
                     >
                         <Text
                             variant='heading'
@@ -138,35 +139,44 @@ const styles: {[key: string]: React.CSSProperties} = {
         flex: 1,
         flexDirection: 'column',
         height: '100%',
+        minHeight: '100dvh',
         overflow: 'hidden',
+        width: '100%',
+        maxWidth: '100vw',
     },
     body: {
         display: 'flex',
-        flexDirection: 'row',
-        width: '100dvw',
+        flexDirection: 'column',
+        width: '100%',
         flex: 1,
+        overflow: 'auto',
     },
     hero: {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        width: '70%',
+        width: '100%',
+        minHeight: '40vh',
         backgroundColor: colors.primary,
+        padding: 'clamp(1.5rem, 4vw, 3rem)',
     },
     login: {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        width: '30%',
+        width: '100%',
+        minHeight: '60vh',
         backgroundColor: colors.secondary,
-        gap: 10,
+        gap: 'clamp(0.5rem, 2vw, 1rem)',
+        padding: 'clamp(1rem, 4vw, 2rem)',
     },
     loginForm: {
-        width: '80%',
+        width: '100%',
+        maxWidth: 'min(400px, 90%)',
     },
     fields: {
-        marginTop: 20,
+        marginTop: 'clamp(0.75rem, 2vw, 1.25rem)',
     },
 }

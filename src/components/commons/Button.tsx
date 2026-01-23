@@ -43,15 +43,19 @@ export default function Button(props: Props & { type?: 'button' | 'submit' }) {
 
 const styles: {[key: string]: React.CSSProperties} = {
     container: {
-        // border: '1px solid #E5E7EB',
         border: 'none',
         backgroundColor: colors.waterPrimary,
-        borderRadius: '12px',
-        padding: 20,
-        margin: 10,
+        borderRadius: 'clamp(0.5rem, 1vw, 0.75rem)',
+        padding: 'clamp(0.625rem, 2vw, 1.25rem)',
+        margin: 'clamp(0.375rem, 1vw, 0.625rem)',
         cursor: 'pointer',
-        width: '110px',
-        minWidth: '70px',
+        width: 'auto',
+        minWidth: 'max(70px, 44px)', // Ensure touch target is at least 44px
+        minHeight: '44px', // Ensure touch target is at least 44px
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'background-color 0.2s, transform 0.1s',
     },
     title: {
         margin: 0,
@@ -59,9 +63,11 @@ const styles: {[key: string]: React.CSSProperties} = {
         fontFamily: 'Poppins-SemiBold',
         color: colors.textPrimary,
         fontSize: typography.subtitle,
+        whiteSpace: 'nowrap',
     },
     disabled: {
         pointerEvents: 'none',
         backgroundColor: colors.border,
+        opacity: 0.6,
     }
 }

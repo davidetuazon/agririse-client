@@ -10,7 +10,11 @@ import HistorySection from "./HistorySection";
 
 type PageOptions = 'dashboard' | 'allocations' | 'analytics' | 'history' | 'default';
 
-export default function Sidebar() {
+interface SidebarProps {
+    onLinkClick?: () => void;
+}
+
+export default function Sidebar({ onLinkClick }: SidebarProps) {
     const [isHovered, setIsHovered] = useState<any | null>(null);
 
     const location = useLocation();
@@ -54,6 +58,7 @@ export default function Sidebar() {
                         }}
                         onMouseEnter={() => setIsHovered('dashboard')}
                         onMouseLeave={() => setIsHovered(null)}
+                        onClick={onLinkClick}
                     />
                 </section>
                 <section style={styles.sections}>
@@ -68,6 +73,7 @@ export default function Sidebar() {
                         }}
                         onMouseEnter={() => setIsHovered('allocations')}
                         onMouseLeave={() => setIsHovered(null)}
+                        onClick={onLinkClick}
                     />
                 </section>
                 <section style={styles.sections}>
@@ -80,6 +86,7 @@ export default function Sidebar() {
                         }}
                         onMouseEnter={() => setIsHovered('analytics')}
                         onMouseLeave={() => setIsHovered(null)}
+                        onLinkClick={onLinkClick}
                     />
                 </section>
                 <section style={styles.sections}>
@@ -92,6 +99,7 @@ export default function Sidebar() {
                         }}
                         onMouseEnter={() => setIsHovered('history')}
                         onMouseLeave={() => setIsHovered(null)}
+                        onLinkClick={onLinkClick}
                     />
                 </section>
             </main>
@@ -101,11 +109,12 @@ export default function Sidebar() {
 
 const styles: {[key: string]: React.CSSProperties} = {
     container: {
-        // border: '1px solid red',
         display: 'flex',
         flexDirection: 'column',
         flex: 1,
         height: 'fit-content',
+        width: '100%',
+        minWidth: 0,
     },
     header: {
         borderBottom: `1px solid ${colors.border}`,
@@ -113,18 +122,24 @@ const styles: {[key: string]: React.CSSProperties} = {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        height: '50px',
+        minHeight: '50px',
+        height: 'auto',
+        padding: 'clamp(0.5rem, 1.5vw, 0.75rem)',
     },
     main: {
-        // border: '1px solid red',
+        width: '100%',
     },
     sections: {
         display: 'flex',
         flexDirection: 'column',
+        width: '100%',
     },
     sectionCategory: {
-        padding: '0px 20px',
+        padding: `clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 2.5vw, 1.25rem)`,
         cursor: 'pointer',
         textDecoration: 'none',
+        minHeight: '44px',
+        display: 'flex',
+        alignItems: 'center',
     },
 }

@@ -1,0 +1,20 @@
+/* Mobile-first: table scrolls horizontally, metadata stacks */
+
+/* Ensure table container allows horizontal scroll on small screens */
+.history-table {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Desktop: metadata in row */
+@media (min-width: 640px) {
+  .history-meta-data {
+    flex-direction: row !important;
+  }
+}
+
+/* Desktop: table columns can be wider */
+@media (min-width: 1024px) {
+  .history-grid-container {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

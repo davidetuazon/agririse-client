@@ -1,25 +1,61 @@
+/* Mobile-first responsive base styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* Prevent horizontal scroll */
+  overflow-x: hidden;
+  /* Support for 25% zoom - use base font size that works at extreme zoom */
+  font-size: 16px;
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0 auto;
-  max-width: 1920px;
+  /* Remove max-width constraint for full responsiveness */
+  width: 100%;
+  max-width: 100vw;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #001E2B;
+  /* Prevent horizontal scroll */
+  overflow-x: hidden;
+  /* Ensure proper height handling */
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  /* background-color: #001E2B; */
   background-color: #FFFFFF;
+}
+
+/* Images and media responsiveness */
+img, video, iframe, embed, object {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Prevent text overflow */
+p, h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+  /* Allow code to scroll horizontally if needed */
+  overflow-x: auto;
+  display: block;
+  white-space: pre;
 }
 
 @font-face {
