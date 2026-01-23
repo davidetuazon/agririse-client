@@ -8,7 +8,6 @@ import { toast } from "react-hot-toast";
 import { login } from "../services/api";
 import Cookies from "js-cookie";
 
-import Text from "../components/commons/Text";
 import TextInput from "../components/commons/TextInputs";
 import Button from "../components/commons/Button";
 import { ACCESS_TOKEN } from "../utils/constants";
@@ -53,33 +52,65 @@ export default function Login() {
     return (
         <div style={styles.root}>
             <div style={styles.body} className="login-body">
+                {/* Hero Section */}
                 <section style={styles.hero} className="login-hero">
-                    <Text variant='heading'>
-                        Hero Section
-                    </Text>
-                </section>
-                <section style={styles.login} className="login-section">
-                    <div
-                        style={{ width: '100%', maxWidth: 'min(400px, 90%)' }}
-                    >
-                        <Text
-                            variant='heading'
-                            textStyle={{ color: colors.primary }}
-                            style={{ margin: 5 }}
-                        >
-                            AgriRise
-                        </Text>
-                        <Text
-                            variant='heading'
-                            textStyle={{ color: colors.primary, fontFamily: 'Poppins-Light' }}
-                            style={{ margin: 5 }}
-                        >
-                            Log in to your account
-                        </Text>
+                    <div className="hero-overlay"></div>
+                    <div className="hero-content">
+                        <h1 className="hero-title">AgriRise</h1>
+                        <h2 className="hero-subtitle">Optimization of Water Allocation</h2>
+                        <div className="hero-cards-container">
+                            <div className="hero-card">
+                                <span className="hero-card-icon">🌾</span>
+                                <h3 className="hero-card-title">Smart Monitoring</h3>
+                                <p className="hero-card-description">
+                                    Real-time IoT sensor data collection for water levels, temperature, humidity, and rainfall to track agricultural conditions.
+                                </p>
+                            </div>
+                            <div className="hero-card">
+                                <span className="hero-card-icon">📊</span>
+                                <h3 className="hero-card-title">Data Analytics</h3>
+                                <p className="hero-card-description">
+                                    Advanced algorithms analyze sensor trends and patterns to provide insights for optimal water allocation decisions.
+                                </p>
+                            </div>
+                            <div className="hero-card">
+                                <span className="hero-card-icon">💧</span>
+                                <h3 className="hero-card-title">Water Optimization</h3>
+                                <p className="hero-card-description">
+                                    Intelligent irrigation scheduling based on data-driven recommendations to maximize efficiency and crop yield.
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <div style={styles.loginForm}>
-                        <form>
+                </section>
 
+                {/* Login Section */}
+                <section style={styles.login} className="login-section">
+                    {/* Decorative floating circles */}
+                    <div className="login-decor">
+                        <div className="login-decor-shape"></div>
+                        <div className="login-decor-shape"></div>
+                        <div className="login-decor-shape"></div>
+                        <div className="login-decor-shape"></div>
+                        <div className="login-decor-shape"></div>
+                        <div className="login-decor-shape"></div>
+                        <div className="login-decor-shape"></div>
+                        <div className="login-decor-shape"></div>
+                    </div>
+
+                    {/* Welcome text */}
+                    <div className="login-welcome">
+                        <p className="login-welcome-text">Welcome Back</p>
+                        <h2 className="login-welcome-title">Sign in to continue</h2>
+                    </div>
+
+                    {/* Login form card */}
+                    <div className="login-form-card">
+                        <div className="login-header">
+                            <h1 className="login-brand">Log In</h1>
+                            <p className="login-title">Enter your Credentials</p>
+                        </div>
+                        <form className="login-form">
                             {/* Email */}
                             <TextInput
                                 textProps={{
@@ -92,12 +123,11 @@ export default function Login() {
                                         }
                                     })
                                 }}
-                                error = {errors.email?.message}
+                                error={errors.email?.message}
                             />
 
                             {/* Password */}
                             <TextInput
-                                style={styles.fields}
                                 textProps={{
                                     type: 'password',
                                     placeholder: 'Password',
@@ -107,19 +137,20 @@ export default function Login() {
                                         }
                                     })
                                 }}
-                                error = {errors.password?.message}
+                                error={errors.password?.message}
                             />
 
                             {/* Submit button */}
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+                            <div className="login-submit-container">
                                 <Button
                                     type="submit"
-                                    title="Login"
+                                    title="Sign In"
                                     titleStyle={{ color: isSubmitting ? colors.secondary : colors.primary }}
                                     style={{ 
                                         margin: 0,
-                                        padding: '10px 15px',
-                                        backgroundColor: colors.primaryLight
+                                        padding: '12px 32px',
+                                        backgroundColor: colors.primaryLight,
+                                        width: '100%'
                                     }}
                                     onButtonPress={handleSubmit(onSubmit)}
                                     disabled={isSubmitting}
@@ -158,8 +189,9 @@ const styles: {[key: string]: React.CSSProperties} = {
         alignItems: 'center',
         width: '100%',
         minHeight: '40vh',
-        backgroundColor: colors.primary,
         padding: 'clamp(1.5rem, 4vw, 3rem)',
+        position: 'relative',
+        overflow: 'hidden',
     },
     login: {
         display: 'flex',
@@ -171,12 +203,7 @@ const styles: {[key: string]: React.CSSProperties} = {
         backgroundColor: colors.secondary,
         gap: 'clamp(0.5rem, 2vw, 1rem)',
         padding: 'clamp(1rem, 4vw, 2rem)',
-    },
-    loginForm: {
-        width: '100%',
-        maxWidth: 'min(400px, 90%)',
-    },
-    fields: {
-        marginTop: 'clamp(0.75rem, 2vw, 1.25rem)',
+        position: 'relative',
+        overflow: 'hidden',
     },
 }
