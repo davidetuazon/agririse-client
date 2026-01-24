@@ -1,0 +1,72 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 1.5vw, 0.75rem);
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userDetails {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+}
+
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-family: "Poppins-SemiBold";
+  letter-spacing: 0.01em;
+  margin-top: 0;
+  line-height: 1.1;
+}
+
+.roleBadgeDefault {
+  color: #2F6F73;
+  background: rgba(47, 111, 115, 0.12);
+}
+
+.roleBadgeAdmin {
+  color: #0B6A45;
+  background: rgba(0, 237, 100, 0.2);
+}
+
+.roleBadgeSuperAdmin {
+  color: #8B1E1E;
+  background: rgba(185, 28, 28, 0.18);
+}
+
+.logoutButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 8px;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.logoutButton:hover {
+  background: rgba(0, 104, 74, 0.1);
+}
+
+.logoutButton:active {
+  transform: scale(0.96);
+}
+
+.logoutIcon {
+  width: 20px;
+  height: 20px;
+  color: #00684A;
+}

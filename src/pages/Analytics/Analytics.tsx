@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getAnalytics } from "../../services/api";
-import colors from "../../constants/colors";
-
 import Text from "../../components/commons/Text";
 import Section from "../../components/commons/Section";
 import Cards from "../../components/commons/Card";
+import PageHeader from "../../components/commons/PageHeader";
 import cssStyles from "./Analytics.module.css";
 
 type AnalyticsData = {
@@ -22,7 +21,7 @@ export default function Analytics() {
     // data
     const [data, setData] = useState<AnalyticsData[] | null>(null);
     const [metaData, setMetaData] = useState<any>(null);
-    const [error, setError] = useState<any>(null);
+    const [, setError] = useState<any>(null);
 
     const sensorType = searchParams.get('sensorType') ?? 'damWaterLevel';
     const endDate = searchParams.get('endDate') ?? new Date().toISOString().split('T')[0];
@@ -67,12 +66,11 @@ export default function Analytics() {
 
     return (
         <>
-            <Text
-                variant="heading"
-                style={{ margin: 5, color: colors.primary  }}
-            >
-                Analytics / <span style={{ color: colors.textPrimary }}>{metaData?.sensorType}</span>
-            </Text>
+            <PageHeader
+                title="Analytics:"
+                chipValue={metaData?.sensorType}
+                subtitle={metaData?.sensorType ? `Aggregated metrics for ${metaData?.sensorType}` : undefined}
+            />
 
             {/* summary */}
             <Section>
@@ -81,7 +79,7 @@ export default function Analytics() {
                         <div style={{ padding: '0px clamp(0.75rem, 2vw, 1.25rem)' }}>
                             <Text
                                 variant="title"
-                                style={{ margin: 0, color: colors.primary }}
+                                style={{ margin: 0 }}
                             >
                                 Aggregated Metrics
                             </Text>
@@ -124,38 +122,26 @@ export default function Analytics() {
 
                         {/* meta data display */}
                         <div style={styles.metaData} className={cssStyles.analyticsMetaData}>
-                            <Text
-                                variant="subtitle"
-                                style={{ margin: 0 }}
-                            >
-                                <span style={{ color: colors.primary }}>
+                            <Text variant="subtitle" style={{ margin: 0 }}>
+                                <span style={{ color: "#00684A" }}>
                                     From:&nbsp;
                                 </span>
                                 {from}
                             </Text>
-                            <Text
-                                variant="subtitle"
-                                style={{ margin: 0 }}
-                            >
-                                <span style={{ color: colors.primary }}>
+                            <Text variant="subtitle" style={{ margin: 0 }}>
+                                <span style={{ color: "#00684A" }}>
                                     To:&nbsp;
                                 </span>
                                 {to}
                             </Text>
-                            <Text
-                                variant="subtitle"
-                                style={{ margin: 0 }}
-                            >
-                                <span style={{ color: colors.primary }}>
+                            <Text variant="subtitle" style={{ margin: 0 }}>
+                                <span style={{ color: "#00684A" }}>
                                     Metric:&nbsp;
                                 </span>
                                 {metaData?.metric}
                             </Text>
-                            <Text
-                                variant="subtitle"
-                                style={{ margin: 0 }}
-                            >
-                                <span style={{ color: colors.primary }}>
+                            <Text variant="subtitle" style={{ margin: 0 }}>
+                                <span style={{ color: "#00684A" }}>
                                     Granularity:&nbsp;
                                 </span>
                                 {metaData?.granularity}

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import colors from "../../../constants/colors";
 import { Link, useLocation } from "react-router-dom";
+import { CloudRain, Droplets, History, Thermometer, Waves } from "lucide-react";
 
 import Text from "../../commons/Text";
 
@@ -36,6 +37,21 @@ export default function HistorySection(props: Props) {
         { label: 'Temperature', type: 'temperature' }
     ];
 
+    const getSensorIcon = (sensorType: SensorType) => {
+        switch (sensorType) {
+            case 'damWaterLevel':
+                return <Waves size={14} color={colors.primary} />;
+            case 'humidity':
+                return <Droplets size={14} color={colors.primary} />;
+            case 'rainfall':
+                return <CloudRain size={14} color={colors.primary} />;
+            case 'temperature':
+                return <Thermometer size={14} color={colors.primary} />;
+            default:
+                return null;
+        }
+    };
+
     const historyUrl = (sensorType: SensorType, defaultDays = 30, limit: number = 20) => {
         const end = new Date();
         const start = new Date(end.getTime() - defaultDays * 24 * 60 * 60 * 1000);
@@ -54,14 +70,15 @@ export default function HistorySection(props: Props) {
             onMouseLeave={props.onMouseLeave}
             onClick={() => setIsVisible(prev => !prev)}
         >
-            <Text
-                variant="subtitle"
-                style={{
-                    color: colors.primary,
-                }}
-            >
-                History
-            </Text>
+            <span style={styles.sectionHeader}>
+                <History size={18} color={colors.primary} />
+                <Text
+                    variant="subtitle"
+                    style={styles.sectionLabel}
+                >
+                    History
+                </Text>
+            </span>
         </div>
         <div
             style={{
@@ -90,13 +107,19 @@ export default function HistorySection(props: Props) {
                             style={{
                                 ...styles.category,
                                 backgroundColor: hovered
-                                    ? colors.textSecondary
+                                    ? colors.waterLight
                                     : active
                                     ? colors.accentTwo
-                                    : colors.mutedBackground,
+                                    : 'transparent',
+                            borderColor: hovered || active
+                                ? colors.primary
+                                : 'transparent',
                             }}
                         >
-                            {label}
+                            <span style={styles.subItemContent}>
+                                {getSensorIcon(type)}
+                                {label}
+                            </span>
                         </Text>
                     </Link>
                 );
@@ -107,6 +130,15 @@ export default function HistorySection(props: Props) {
 }
 
 const styles: {[key: string]: React.CSSProperties} = {
+    sectionHeader: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.6rem',
+    },
+    sectionLabel: {
+        color: colors.primary,
+        margin: 0,
+    },
     subSection: {
         display: 'flex',
         flexDirection: 'column',
@@ -114,8 +146,16 @@ const styles: {[key: string]: React.CSSProperties} = {
     category: {
         fontFamily: 'Poppins-Light',
         cursor: 'pointer',
-        margin: 0,
-        padding: '10px 30px',
+        margin: '0.15rem 1rem',
+        padding: '8px 16px',
         color: colors.primaryBackground,
+        border: '1px solid transparent',
+        borderRadius: '8px',
+        transition: 'background-color 0.2s ease, border-color 0.2s ease',
+    },
+    subItemContent: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
     }
 }

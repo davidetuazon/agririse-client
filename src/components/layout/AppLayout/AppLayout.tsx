@@ -1,9 +1,9 @@
 import React, { type ReactNode, useState, useEffect } from "react";
-import { useAuth } from "../../../providers/AuthProvider";
+import { useLocation } from "react-router-dom";
 import colors from "../../../constants/colors";
 
-import Text from "../../commons/Text";
 import Sidebar from "../../navigation/Sidebar";
+import UserProfile from "../UserProfile";
 import cssStyles from "./AppLayout.module.css";
 
 interface Props {
@@ -11,9 +11,9 @@ interface Props {
 }
 
 export default function AppLayout({ children}: Props) {
-    const { user } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
+    const location = useLocation();
 
     useEffect(() => {
         const checkScreenSize = () => {
@@ -28,6 +28,14 @@ export default function AppLayout({ children}: Props) {
         window.addEventListener('resize', checkScreenSize);
         return () => window.removeEventListener('resize', checkScreenSize);
     }, []);
+
+    const pageName = (() => {
+        if (location.pathname.startsWith('/home')) return 'Dashboard';
+        if (location.pathname.startsWith('/allocations')) return 'Allocations';
+        if (location.pathname.startsWith('/iot/analytics')) return 'Analytics';
+        if (location.pathname.startsWith('/iot/history')) return 'History';
+        return 'Overview';
+    })();
 
     return (
         <div style={styles.root}>
@@ -52,50 +60,33 @@ export default function AppLayout({ children}: Props) {
             
             {/* main content & header */}
             <div style={styles.content}>
-                <header style={styles.header}>
-                    {/* Mobile menu button */}
-                    <button
-                        className={cssStyles.menuButton}
-                        style={styles.menuButton}
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                        aria-label="Toggle sidebar"
-                    >
-                        <svg
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
+                <header style={styles.header} className={cssStyles.header}>
+                    <div className={cssStyles.headerLeft}>
+                        {/* Mobile menu button */}
+                        <button
+                            className={cssStyles.menuButton}
+                            style={styles.menuButton}
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                            aria-label="Toggle sidebar"
                         >
-                            <path d="M3 12h18M3 6h18M3 18h18" />
-                        </svg>
-                    </button>
-
-                    <div
-                        style={styles.headerContent}
-                    >
-                        <Text
-                            variant="subtitle"
-                            style={{ margin: 5, color: colors.primary }}
-                        >
-                            {user?.fullName}&nbsp;
-                            <span style={{ color: colors.textSecondary }}>
-                                / {user?.role === 'admin' ? 'Admin' : 'Staff'}
-                            </span>
-                        </Text>
+                            <svg
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                            >
+                                <path d="M3 12h18M3 6h18M3 18h18" />
+                            </svg>
+                        </button>
+                        <div className={cssStyles.headerTitleGroup}>
+                            <span className={cssStyles.headerBrand}>AgriRise</span>
+                            <span className={cssStyles.headerPage}>{pageName}</span>
+                        </div>
                     </div>
-
-                    {/*
-                        TODO:
-                        > need separate component to handle logout and user profile
-                    */}
-                    <div
-                        style={styles.headerContent}
-                    >
-                        <Text variant="caption">
-                            user icon / logout icon
-                        </Text>
+                    <div style={styles.headerContent}>
+                        <UserProfile />
                     </div>
                 </header>
 

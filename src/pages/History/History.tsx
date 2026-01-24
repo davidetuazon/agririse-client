@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getHistory } from "../../services/api";
-import colors from "../../constants/colors";
-
 import Text from "../../components/commons/Text";
 import Section from "../../components/commons/Section";
 import { timeAgo } from "../../utils/helpers";
+import PageHeader from "../../components/commons/PageHeader";
 import cssStyles from "./History.module.css";
 
 export default function History() {
@@ -102,37 +101,36 @@ export default function History() {
 
     return (
         <>
-            <Text
-                variant="heading"
-                style={{ margin: 5 }}
-            >
-                History / <span style={{ color: colors.primary }}>{metaData?.sensorType}</span>
-            </Text>
+            <PageHeader
+                title="History:"
+                chipValue={metaData?.sensorType}
+                subtitle={metaData?.sensorType ? `Historical readings for ${metaData?.sensorType}` : undefined}
+            />
 
             <Section style={styles.section}>
                 <div style={styles.header}>
                     {/* meta data */}
                     <div style={styles.metaData} className={cssStyles.historyMetaData}>
                         <Text variant="subtitle" style={{ margin: 0 }}>
-                            <span style={{ color: colors.primary }}>
+                            <span style={{ color: "#00684A" }}>
                                 Sensor Type:&nbsp;
                             </span>
                                 {metaData?.sensorType}
                         </Text>
                         <Text variant="subtitle" style={{ margin: 0 }}>
-                            <span style={{ color: colors.primary }}>
+                            <span style={{ color: "#00684A" }}>
                                 Unit Measurement:&nbsp;
                             </span>
                                 {metaData?.unit}
                         </Text>
                         <Text variant="subtitle" style={{ margin: 0 }}>
-                            <span style={{ color: colors.primary }}>
+                            <span style={{ color: "#00684A" }}>
                                 From:&nbsp;
                             </span>
                                 {from}
                         </Text>
                         <Text variant="subtitle" style={{ margin: 0 }}>
-                            <span style={{ color: colors.primary }}>
+                            <span style={{ color: "#00684A" }}>
                                 To:&nbsp;
                             </span>
                                 {to}
@@ -202,8 +200,8 @@ export default function History() {
                             <div key={d._id} style={styles.gridContainer}>
                                 <div style={{
                                     ...styles.wrapper,
-                                    borderRight: `2px solid ${colors.primaryBackground}`,
-                                    borderLeft: `2px solid ${colors.primaryBackground}`,
+                                    borderRight: `2px solid #001E2B`,
+                                    borderLeft: `2px solid #001E2B`,
                                 }}>
                                     <Text variant="subtitle">
                                         {new Date(d.recordedAt).toISOString().replace('T', ' ').slice(0,19)}
@@ -211,7 +209,7 @@ export default function History() {
                                 </div>
                                 <div style={{
                                     ...styles.wrapper,
-                                    borderRight: `2px solid ${colors.primaryBackground}`,
+                                    borderRight: `2px solid #001E2B`,
                                 }}>
                                     <Text variant="subtitle">
                                         {d.value.toFixed(2)}{metaData?.unit}
@@ -219,7 +217,7 @@ export default function History() {
                                 </div>
                                 <div style={{
                                     ...styles.wrapper,
-                                    borderRight: `2px solid ${colors.primaryBackground}`,
+                                    borderRight: `2px solid #001E2B`,
                                 }}>
                                     <Text variant="subtitle">
                                         {delta === '-' ? '-' : `${delta >= 0 ? '+': ''}${delta.toFixed(2)}${metaData?.unit}`}
@@ -227,7 +225,7 @@ export default function History() {
                                 </div>
                                 <div style={{
                                     ...styles.wrapper,
-                                    borderRight: `2px solid ${colors.primaryBackground}`,
+                                    borderRight: `2px solid #001E2B`,
                                 }}>
                                     <Text variant="subtitle">
                                         {timeAgo(d.recordedAt)}
@@ -295,7 +293,7 @@ const styles: {[key: string]: React.CSSProperties} = {
         color: colors.primary,
     },
     categoryWrapper: {
-        border: `2px solid ${colors.primaryBackground}`,
+        border: `2px solid #001E2B`,
         width: '100%',
         minWidth: '120px',
         display: 'flex',
@@ -305,7 +303,7 @@ const styles: {[key: string]: React.CSSProperties} = {
         wordBreak: 'break-word',
     },
     wrapper: {
-        borderBottom: `2px solid ${colors.primaryBackground}`,
+        borderBottom: `2px solid #001E2B`,
         width: '100%',
         minWidth: '120px',
         display: 'flex',

@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import colors from "../../../constants/colors";
 import { Link, useLocation } from "react-router-dom";
+import { Sprout } from "lucide-react";
 
 import Text from "../../commons/Text";
 import DashboardSection from "../DashboardSection";
 import AllocationsSection from "../AllocationsSection";
 import AnalyticsSection from "../AnalyticsSection";
 import HistorySection from "../HistorySection";
+import cssStyles from "./Sidebar.module.css";
 
 type PageOptions = 'dashboard' | 'allocations' | 'analytics' | 'history' | 'default';
 
@@ -28,106 +30,116 @@ export default function Sidebar({ onLinkClick }: SidebarProps) {
     })();
 
     return (
-        <div style={styles.container}>
-            <header style={styles.header}>
-                <Link
-                    to={'/home'}
-                    style={{ textDecoration: 'none' }}
-                >
-                    <Text
-                        variant="title"
-                        style={{
-                            margin: 5,
-                            color: colors.primary,
-                        }}
-                    >
-                        AgriRise
-                    </Text>
-                </Link>
-            </header>
+        <div className={cssStyles.container}>
+            <Link
+                to={'/home'}
+                className={cssStyles.brandHeader}
+                style={{ textDecoration: 'none' }}
+            >
+                <span className={cssStyles.brandIcon}>
+                    <Sprout size={20} color={colors.primary} />
+                </span>
+                <span className={cssStyles.brandText}>
+                    <span className={cssStyles.brandTitle}>AgriRise</span>
+                    <span className={cssStyles.brandSubtitle}>Water Allocation</span>
+                </span>
+            </Link>
             <main style={styles.main}>
-                <section style={styles.sections}>
-                    <DashboardSection
-                        style={{
-                            ...styles.sectionCategory,
-                            backgroundColor: isHovered === 'dashboard'
-                                ? colors.textSecondary
-                                : activePage === 'dashboard'
-                                ? colors.accentTwo
-                                : colors.mutedBackground,
-                        }}
-                        onMouseEnter={() => setIsHovered('dashboard')}
-                        onMouseLeave={() => setIsHovered(null)}
-                        onClick={onLinkClick}
-                    />
-                </section>
-                <section style={styles.sections}>
-                    <AllocationsSection
-                        style={{
-                            ...styles.sectionCategory,
-                            backgroundColor: isHovered === 'allocations'
-                                ? colors.textSecondary
-                                : activePage === 'allocations'
-                                ? colors.accentTwo
-                                : colors.mutedBackground,
-                        }}
-                        onMouseEnter={() => setIsHovered('allocations')}
-                        onMouseLeave={() => setIsHovered(null)}
-                        onClick={onLinkClick}
-                    />
-                </section>
-                <section style={styles.sections}>
-                    <AnalyticsSection
-                        style={{
-                            ...styles.sectionCategory,
-                            backgroundColor: isHovered === 'analytics'
-                                ? colors.textSecondary
-                                : colors.mutedBackground,
-                        }}
-                        onMouseEnter={() => setIsHovered('analytics')}
-                        onMouseLeave={() => setIsHovered(null)}
-                        onLinkClick={onLinkClick}
-                    />
-                </section>
-                <section style={styles.sections}>
-                    <HistorySection
-                        style={{
-                            ...styles.sectionCategory,
-                            backgroundColor: isHovered === 'history'
-                                ? colors.textSecondary
-                                : colors.mutedBackground,
-                        }}
-                        onMouseEnter={() => setIsHovered('history')}
-                        onMouseLeave={() => setIsHovered(null)}
-                        onLinkClick={onLinkClick}
-                    />
-                </section>
+                <div className={cssStyles.navGroup}>
+                    <div className={cssStyles.navLabel}>Core</div>
+                    <section style={styles.sections}>
+                        <DashboardSection
+                            style={{
+                                ...styles.sectionCategory,
+                                backgroundColor: isHovered === 'dashboard'
+                                    ? colors.waterLight
+                                    : activePage === 'dashboard'
+                                    ? colors.accentTwo
+                                    : 'transparent',
+                                borderLeftColor: isHovered === 'dashboard' || activePage === 'dashboard'
+                                    ? colors.primary
+                                    : 'transparent',
+                                borderRightColor: isHovered === 'dashboard' || activePage === 'dashboard'
+                                    ? colors.primary
+                                    : 'transparent',
+                            }}
+                            onMouseEnter={() => setIsHovered('dashboard')}
+                            onMouseLeave={() => setIsHovered(null)}
+                            onClick={onLinkClick}
+                        />
+                    </section>
+                    <section style={styles.sections}>
+                        <AllocationsSection
+                            style={{
+                                ...styles.sectionCategory,
+                                backgroundColor: isHovered === 'allocations'
+                                    ? colors.waterLight
+                                    : activePage === 'allocations'
+                                    ? colors.accentTwo
+                                    : 'transparent',
+                                borderLeftColor: isHovered === 'allocations' || activePage === 'allocations'
+                                    ? colors.primary
+                                    : 'transparent',
+                                borderRightColor: isHovered === 'allocations' || activePage === 'allocations'
+                                    ? colors.primary
+                                    : 'transparent',
+                            }}
+                            onMouseEnter={() => setIsHovered('allocations')}
+                            onMouseLeave={() => setIsHovered(null)}
+                            onClick={onLinkClick}
+                        />
+                    </section>
+                </div>
+                <div className={cssStyles.navGroup}>
+                    <div className={cssStyles.navLabel}>Insights</div>
+                    <section style={styles.sections}>
+                        <AnalyticsSection
+                            style={{
+                                ...styles.sectionCategory,
+                                backgroundColor: isHovered === 'analytics'
+                                    ? colors.waterLight
+                                    : 'transparent',
+                                borderLeftColor: isHovered === 'analytics'
+                                    ? colors.primary
+                                    : 'transparent',
+                                borderRightColor: isHovered === 'analytics'
+                                    ? colors.primary
+                                    : 'transparent',
+                            }}
+                            onMouseEnter={() => setIsHovered('analytics')}
+                            onMouseLeave={() => setIsHovered(null)}
+                            onLinkClick={onLinkClick}
+                        />
+                    </section>
+                    <section style={styles.sections}>
+                        <HistorySection
+                            style={{
+                                ...styles.sectionCategory,
+                                backgroundColor: isHovered === 'history'
+                                    ? colors.waterLight
+                                    : 'transparent',
+                                borderLeftColor: isHovered === 'history'
+                                    ? colors.primary
+                                    : 'transparent',
+                                borderRightColor: isHovered === 'history'
+                                    ? colors.primary
+                                    : 'transparent',
+                            }}
+                            onMouseEnter={() => setIsHovered('history')}
+                            onMouseLeave={() => setIsHovered(null)}
+                            onLinkClick={onLinkClick}
+                        />
+                    </section>
+                </div>
             </main>
         </div>
     )
 }
 
 const styles: {[key: string]: React.CSSProperties} = {
-    container: {
-        display: 'flex',
-        flexDirection: 'column',
-        flex: 1,
-        height: 'fit-content',
-        width: '100%',
-        minWidth: 0,
-    },
-    header: {
-        borderBottom: `1px solid ${colors.border}`,
-        display: 'flex',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '50px',
-        height: 'auto',
-        padding: 'clamp(0.5rem, 1.5vw, 0.75rem)',
-    },
     main: {
         width: '100%',
+        paddingBottom: '1rem',
     },
     sections: {
         display: 'flex',
@@ -141,5 +153,11 @@ const styles: {[key: string]: React.CSSProperties} = {
         minHeight: '44px',
         display: 'flex',
         alignItems: 'center',
+        gap: '0.65rem',
+        borderLeft: '3px solid transparent',
+        borderRight: '3px solid transparent',
+        borderRadius: '10px',
+        margin: '0.15rem 0.75rem',
+        transition: 'background-color 0.2s ease, border-color 0.2s ease',
     },
 }

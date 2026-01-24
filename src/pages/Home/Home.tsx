@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../providers/AuthProvider";
 import { latest, me } from "../../services/api";
-import colors from "../../constants/colors";
-
 import Text from "../../components/commons/Text";
 import Section from "../../components/commons/Section";
 import Dashboard from "../../components/home/Dashboard/Dashboard";
 import cssStyles from "./Home.module.css";
+import { timeAgo } from "../../utils/helpers";
 
 type IoTReadings = {
     damWaterLevel: {
@@ -40,6 +39,14 @@ export default function Home() {
     const [locality, setLocality] = useState<any>();
     const { setUser } = useAuth();
 
+    const lastUpdated = latestReadings
+        ? [latestReadings.damWaterLevel, latestReadings.humidity, latestReadings.rainfall, latestReadings.temperature]
+            .map((reading) => reading?.recordedAt)
+            .filter(Boolean)
+            .sort()
+            .slice(-1)[0]
+        : null;
+
     const init = async () => {
         try {
             const loggedUser = await me();
@@ -61,25 +68,35 @@ export default function Home() {
 
     return (
         <>
-            {/* Locality Info */}
-            <Text
-                variant="heading"
-                style={{ margin: 5 }}
-            >
-                Overview / <span style={{ color: colors.primary }}>{locality?.city}</span>
-            </Text>
+            {/* Overview header */}
+            <section className={cssStyles.overviewHeader}>
+                <div className={cssStyles.overviewTitle}>
+                    <Text variant="heading" style={{ margin: 0 }}>
+                        Overview:
+                    </Text>
+                    <span className={cssStyles.overviewLocation}>
+                        {locality?.city ?? "Location"}
+                    </span>
+                </div>
+                <span className={cssStyles.overviewMeta}>
+                    Real-time water and climate summary
+                </span>
+            </section>
 
             {/* Dashboard */}
             <Section style={styles.dashboard}>
-                <div
-                    style={{ padding: '0px clamp(0.75rem, 2vw, 1.25rem)' }}
-                >
-                    <Text
-                        variant="heading"
-                        style={{ margin: 0 }}
-                    >
-                        IoT Dashboard
-                    </Text>
+                <div className={cssStyles.dashboardHeader}>
+                    <div>
+                        <Text variant="heading" style={{ margin: 0 }}>
+                            IoT Dashboard
+                        </Text>
+                        <span className={cssStyles.dashboardSubtitle}>
+                            Live sensor snapshot
+                        </span>
+                    </div>
+                    <span className={cssStyles.dashboardMeta}>
+                        {lastUpdated ? `Last refresh ${timeAgo(lastUpdated)}` : 'Last refresh —'}
+                    </span>
                 </div>
                 <div>
                     <Dashboard data={latestReadings} />

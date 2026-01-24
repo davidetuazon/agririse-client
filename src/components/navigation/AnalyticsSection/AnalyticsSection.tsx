@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import colors from "../../../constants/colors";
+import { BarChart3, CloudRain, Droplets, Thermometer, Waves } from "lucide-react";
 
 import Text from "../../commons/Text";
 import { Link, useLocation } from "react-router-dom";
@@ -35,6 +36,21 @@ export default function AnalyticsSection(props: Props) {
         { label: 'Effective Rainfall', type: 'rainfall' },
         { label: 'Temperature', type: 'temperature' }
     ];
+
+    const getSensorIcon = (sensorType: SensorType) => {
+        switch (sensorType) {
+            case 'damWaterLevel':
+                return <Waves size={14} color={colors.primary} />;
+            case 'humidity':
+                return <Droplets size={14} color={colors.primary} />;
+            case 'rainfall':
+                return <CloudRain size={14} color={colors.primary} />;
+            case 'temperature':
+                return <Thermometer size={14} color={colors.primary} />;
+            default:
+                return null;
+        }
+    };
     
     const analyticsUrl = (sensorType: SensorType, defaultDays = 30) => {
         const end = new Date();
@@ -54,14 +70,15 @@ export default function AnalyticsSection(props: Props) {
             onMouseLeave={props.onMouseLeave}
             onClick={() => setIsVisible(prev => !prev)}
         >
-            <Text
-                variant="subtitle"
-                style={{
-                    color: colors.primary,
-                }}
-            >
-                Analytics
-            </Text>
+            <span style={styles.sectionHeader}>
+                <BarChart3 size={18} color={colors.primary} />
+                <Text
+                    variant="subtitle"
+                    style={styles.sectionLabel}
+                >
+                    Analytics
+                </Text>
+            </span>
         </div>
         <div
             style={{
@@ -90,13 +107,19 @@ export default function AnalyticsSection(props: Props) {
                         style={{
                             ...styles.category,
                             backgroundColor: hovered
-                                ? colors.textSecondary
+                                ? colors.waterLight
                                 : active
                                 ? colors.accentTwo
-                                : colors.mutedBackground,
+                                : 'transparent',
+                            borderColor: hovered || active
+                                ? colors.primary
+                                : 'transparent',
                         }}
                     >
-                        {label}
+                        <span style={styles.subItemContent}>
+                            {getSensorIcon(type)}
+                            {label}
+                        </span>
                     </Text>
                 </Link>
             );
@@ -107,6 +130,15 @@ export default function AnalyticsSection(props: Props) {
 }
 
 const styles: {[key: string]: React.CSSProperties} = {
+    sectionHeader: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.6rem',
+    },
+    sectionLabel: {
+        color: colors.primary,
+        margin: 0,
+    },
     subSection: {
         display: 'flex',
         flexDirection: 'column',
@@ -114,8 +146,16 @@ const styles: {[key: string]: React.CSSProperties} = {
     category: {
         fontFamily: 'Poppins-Light',
         cursor: 'pointer',
-        margin: 0,
-        padding: '10px 30px',
+        margin: '0.15rem 1rem',
+        padding: '8px 16px',
         color: colors.primaryBackground,
+        border: '1px solid transparent',
+        borderRadius: '8px',
+        transition: 'background-color 0.2s ease, border-color 0.2s ease',
+    },
+    subItemContent: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
     }
 }

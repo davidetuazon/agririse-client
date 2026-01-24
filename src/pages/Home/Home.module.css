@@ -1,5 +1,63 @@
 /* Mobile-first: stacked layout (default) */
 
+.overviewHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(0, 104, 74, 0.08), rgba(47, 111, 115, 0.08));
+  border: 1px solid rgba(0, 104, 74, 0.1);
+}
+
+.overviewTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.overviewLocation {
+  font-family: "Poppins-SemiBold";
+  font-size: 0.85rem;
+  color: #00684A;
+  background: rgba(0, 104, 74, 0.12);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.overviewMeta {
+  font-family: "Poppins-Light";
+  font-size: 0.75rem;
+  color: #2F6F73;
+}
+
+.dashboardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0px clamp(0.75rem, 2vw, 1.25rem);
+  flex-wrap: wrap;
+}
+
+.dashboardSubtitle {
+  display: block;
+  font-family: "Poppins-Light";
+  font-size: 0.8rem;
+  color: #2F6F73;
+  margin-top: 0.2rem;
+}
+
+.dashboardMeta {
+  font-family: "Poppins-SemiBold";
+  font-size: 0.75rem;
+  color: #00684A;
+  background: rgba(0, 104, 74, 0.12);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+
 /* Desktop: side by side layout */
 @media (min-width: 768px) {
   .homeCore {

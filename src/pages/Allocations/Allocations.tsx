@@ -1,13 +1,12 @@
 import React from "react";
-import Text from "../../components/commons/Text";
+import PageHeader from "../../components/commons/PageHeader";
 
 export default function Allocations() {
 
     return (
-        <Text
-            variant="heading"
-        >
-            Allocations page
-        </Text>
+        <PageHeader
+            title="Allocations"
+            subtitle="Water allocation overview"
+        />
     )
 }
