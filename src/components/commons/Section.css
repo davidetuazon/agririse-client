@@ -1,0 +1,121 @@
+/* ========================================
+   SECTION STYLES - MOBILE-FIRST
+   ======================================== */
+.section-enhanced {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 243, 242, 0.95) 100%);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08));
+  transition: box-shadow var(--transition-base, 0.3s ease), 
+              transform var(--transition-base, 0.3s ease);
+  border-radius: var(--radius-lg, clamp(0.75rem, 2vw, 1.25rem));
+  padding: var(--space-md, clamp(0.75rem, 2vw, 1.25rem));
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.section-enhanced:hover {
+  box-shadow: var(--shadow-lg, 0 6px 16px rgba(0, 0, 0, 0.12));
+  transform: translateY(-2px);
+}
+
+/* Section header */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm, clamp(0.5rem, 1vw, 0.75rem));
+  margin-bottom: var(--space-md, clamp(0.75rem, 2vw, 1.25rem));
+  flex-wrap: wrap;
+}
+
+.section-title {
+  font-family: 'Poppins-SemiBold';
+  font-size: var(--font-md, clamp(1rem, 1.5vw, 1.25rem));
+  color: var(--color-text-primary, #000000);
+  margin: 0;
+}
+
+/* Section content container */
+.section-content {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Grid layout for section content */
+.section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+  gap: var(--space-md, clamp(0.75rem, 2vw, 1.25rem));
+  width: 100%;
+}
+
+/* Flex layout for section content */
+.section-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md, clamp(0.75rem, 2vw, 1.25rem));
+  width: 100%;
+}
+
+/* Data refresh animation */
+@keyframes dataPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.data-refreshing {
+  animation: dataPulse 1.5s ease-in-out infinite;
+}
+
+/* ========================================
+   RESPONSIVE BREAKPOINTS
+   ======================================== */
+/* Mobile optimizations */
+@media (max-width: 639px) {
+  .section-enhanced {
+    padding: var(--space-sm, clamp(0.5rem, 2vw, 0.75rem));
+  }
+  
+  .section-enhanced:hover {
+    transform: none; /* Disable hover transform on mobile */
+  }
+  
+  .section-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tablet (640px+) */
+@media (min-width: 640px) {
+  .section-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  }
+}
+
+/* Desktop (1024px+) */
+@media (min-width: 1024px) {
+  .section-enhanced {
+    padding: var(--space-lg, clamp(1rem, 2.5vw, 1.5rem));
+  }
+}
+
+/* ========================================
+   REDUCED MOTION SUPPORT
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .section-enhanced {
+    transition: none;
+  }
+  
+  .data-refreshing {
+    animation: none;
+  }
+}

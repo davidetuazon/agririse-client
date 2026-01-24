@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../providers/AuthProvider";
-import { latest, me } from "../services/api";
-import colors from "../constants/colors";
+import { useAuth } from "../../providers/AuthProvider";
+import { latest, me } from "../../services/api";
+import colors from "../../constants/colors";
 
-import Text from "../components/commons/Text";
-import Section from "../components/commons/Section";
-import Dashboard from "../components/home/Dashboard";
-import "./Home.css";
+import Text from "../../components/commons/Text";
+import Section from "../../components/commons/Section";
+import Dashboard from "../../components/home/Dashboard/Dashboard";
+import cssStyles from "./Home.module.css";
 
 type IoTReadings = {
     damWaterLevel: {
@@ -91,7 +91,7 @@ export default function Home() {
                 > can separate this section into 2 components
                 > separate concerns for trends and optimization 
             */}
-            <div style={styles.core} className="home-core">
+            <div style={styles.core} className={cssStyles.homeCore}>
                 <Section style={styles.trends}>
                     <Text
                         variant="heading"

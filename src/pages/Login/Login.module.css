@@ -2,14 +2,14 @@
    LOGIN SECTION STYLES
    ======================================== */
 
-.login-section {
+.loginSection {
   position: relative;
   background: #FFFFFF;
   overflow: hidden;
 }
 
 /* Decorative background orbs */
-.login-section::before {
+.loginSection::before {
   content: '';
   position: absolute;
   top: -30%;
@@ -23,7 +23,7 @@
   animation: floatOrb 12s ease-in-out infinite;
 }
 
-.login-section::after {
+.loginSection::after {
   content: '';
   position: absolute;
   bottom: -25%;
@@ -43,7 +43,7 @@
 }
 
 /* Decorative shapes container */
-.login-decor {
+.loginDecor {
   position: absolute;
   top: 0;
   left: 0;
@@ -55,13 +55,13 @@
 }
 
 /* Light green floating circle shapes */
-.login-decor-shape {
+.loginDecorShape {
   position: absolute;
   border-radius: 50%;
   background: rgba(0, 237, 100, 0.18);
 }
 
-.login-decor-shape:nth-child(1) {
+.loginDecorShape:nth-child(1) {
   width: 140px;
   height: 140px;
   top: 8%;
@@ -70,7 +70,7 @@
   animation: float 8s ease-in-out infinite;
 }
 
-.login-decor-shape:nth-child(2) {
+.loginDecorShape:nth-child(2) {
   width: 100px;
   height: 100px;
   top: 55%;
@@ -79,7 +79,7 @@
   animation: float 10s ease-in-out infinite 1s;
 }
 
-.login-decor-shape:nth-child(3) {
+.loginDecorShape:nth-child(3) {
   width: 60px;
   height: 60px;
   bottom: 15%;
@@ -88,7 +88,7 @@
   animation: float 6s ease-in-out infinite 2s;
 }
 
-.login-decor-shape:nth-child(4) {
+.loginDecorShape:nth-child(4) {
   width: 80px;
   height: 80px;
   top: 25%;
@@ -97,7 +97,7 @@
   animation: float 9s ease-in-out infinite 0.5s;
 }
 
-.login-decor-shape:nth-child(5) {
+.loginDecorShape:nth-child(5) {
   width: 50px;
   height: 50px;
   top: 70%;
@@ -106,7 +106,7 @@
   animation: float 7s ease-in-out infinite 1.5s;
 }
 
-.login-decor-shape:nth-child(6) {
+.loginDecorShape:nth-child(6) {
   width: 70px;
   height: 70px;
   top: 40%;
@@ -115,7 +115,7 @@
   animation: float 11s ease-in-out infinite 0.8s;
 }
 
-.login-decor-shape:nth-child(7) {
+.loginDecorShape:nth-child(7) {
   width: 45px;
   height: 45px;
   bottom: 35%;
@@ -124,7 +124,7 @@
   animation: float 8s ease-in-out infinite 2.5s;
 }
 
-.login-decor-shape:nth-child(8) {
+.loginDecorShape:nth-child(8) {
   width: 90px;
   height: 90px;
   bottom: 5%;
@@ -139,14 +139,14 @@
 }
 
 /* Welcome text above card */
-.login-welcome {
+.loginWelcome {
   position: relative;
   z-index: 1;
   text-align: center;
   margin-bottom: clamp(1rem, 3vw, 1.5rem);
 }
 
-.login-welcome-text {
+.loginWelcomeText {
   font-family: 'Poppins-Light';
   font-size: clamp(0.875rem, 2vw, 1rem);
   color: #2F6F73;
@@ -155,7 +155,7 @@
   text-transform: uppercase;
 }
 
-.login-welcome-title {
+.loginWelcomeTitle {
   font-family: 'Poppins-SemiBold';
   font-size: clamp(1.25rem, 3vw, 1.5rem);
   color: #00684A;
@@ -163,7 +163,7 @@
 }
 
 /* Login form card */
-.login-form-card {
+.loginFormCard {
   position: relative;
   z-index: 1;
   background: #FFFFFF;
@@ -180,7 +180,7 @@
   animation: fadeSlideUp 0.5s ease-out 0.3s both;
 }
 
-.login-form-card:hover {
+.loginFormCard:hover {
   box-shadow: 
     0 6px 8px rgba(0, 0, 0, 0.03),
     0 14px 28px rgba(0, 0, 0, 0.05),
@@ -189,12 +189,12 @@
 }
 
 /* Login header styles */
-.login-header {
+.loginHeader {
   text-align: center;
   margin-bottom: clamp(1.5rem, 4vw, 2rem);
 }
 
-.login-brand {
+.loginBrand {
   font-family: 'Poppins-Bold';
   font-size: clamp(1.75rem, 4vw, 2.25rem);
   color: #00684A;
@@ -203,7 +203,7 @@
   line-height: 1.2;
 }
 
-.login-title {
+.loginTitle {
   font-family: 'Poppins-Light';
   font-size: clamp(0.9rem, 2.5vw, 1.1rem);
   color: #2F6F73;
@@ -212,14 +212,14 @@
 }
 
 /* Form styles */
-.login-form {
+.loginForm {
   display: flex;
   flex-direction: column;
   gap: clamp(0.5rem, 1.5vw, 0.75rem);
 }
 
 /* Submit button container */
-.login-submit-container {
+.loginSubmitContainer {
   display: flex;
   justify-content: center;
   margin-top: clamp(0.75rem, 2vw, 1.25rem);
@@ -229,7 +229,7 @@
    HERO SECTION STYLES
    ======================================== */
 
-.login-hero {
+.loginHero {
   background-image: url('/AgriRise.jpeg');
   background-size: cover;
   background-position: center;
@@ -237,7 +237,7 @@
 }
 
 /* Hero overlay */
-.hero-overlay {
+.heroOverlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -252,7 +252,7 @@
   z-index: 0;
 }
 
-.hero-overlay::before {
+.heroOverlay::before {
   content: '';
   position: absolute;
   top: 0;
@@ -271,7 +271,7 @@
 }
 
 /* Hero content */
-.hero-content {
+.heroContent {
   position: relative;
   z-index: 1;
   width: 100%;
@@ -283,7 +283,7 @@
   gap: clamp(1rem, 2vw, 1.5rem);
 }
 
-.hero-title {
+.heroTitle {
   font-family: 'Poppins-Bold';
   font-size: clamp(2rem, 5vw, 3.5rem);
   color: #FFFFFF;
@@ -294,7 +294,7 @@
   animation: fadeSlideUp 0.6s ease-out both;
 }
 
-.hero-subtitle {
+.heroSubtitle {
   font-family: 'Poppins-SemiBold';
   font-size: clamp(1rem, 2.5vw, 1.5rem);
   color: rgba(255, 255, 255, 0.95);
@@ -304,7 +304,7 @@
 }
 
 /* Hero cards */
-.hero-cards-container {
+.heroCardsContainer {
   display: flex;
   flex-direction: column;
   gap: clamp(1rem, 2vw, 1.5rem);
@@ -313,7 +313,7 @@
   margin-top: clamp(1rem, 2vw, 1.5rem);
 }
 
-.hero-card {
+.heroCard {
   position: relative;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.12);
@@ -333,11 +333,11 @@
   flex-direction: column;
 }
 
-.hero-card:nth-child(1) { animation-delay: 0.2s; }
-.hero-card:nth-child(2) { animation-delay: 0.35s; }
-.hero-card:nth-child(3) { animation-delay: 0.5s; }
+.heroCard:nth-child(1) { animation-delay: 0.2s; }
+.heroCard:nth-child(2) { animation-delay: 0.35s; }
+.heroCard:nth-child(3) { animation-delay: 0.5s; }
 
-.hero-card:hover {
+.heroCard:hover {
   transform: translateY(-8px) scale(1.02);
   background: rgba(255, 255, 255, 0.18);
   box-shadow: 
@@ -345,7 +345,7 @@
     0 16px 48px rgba(0, 0, 0, 0.15);
 }
 
-.hero-card-icon {
+.heroCardIcon {
   font-size: clamp(2.25rem, 4.5vw, 3.25rem);
   display: block;
   margin-bottom: clamp(0.625rem, 1.25vw, 0.875rem);
@@ -353,11 +353,11 @@
   transition: transform 0.3s ease;
 }
 
-.hero-card:hover .hero-card-icon {
+.heroCard:hover .heroCardIcon {
   transform: scale(1.1);
 }
 
-.hero-card-title {
+.heroCardTitle {
   font-family: 'Poppins-SemiBold';
   font-size: clamp(1.0625rem, 2.25vw, 1.3125rem);
   color: #FFFFFF;
@@ -370,11 +370,11 @@
 }
 
 /* Keep "Water Optimization" on one line */
-.hero-card:nth-child(3) .hero-card-title {
+.heroCard:nth-child(3) .heroCardTitle {
   white-space: nowrap;
 }
 
-.hero-card-description {
+.heroCardDescription {
   font-family: 'Poppins-Light';
   font-size: clamp(0.8125rem, 1.4vw, 0.9375rem);
   color: rgba(255, 255, 255, 0.92);
@@ -404,13 +404,13 @@
 
 /* Tablet: 2 cards per row */
 @media (min-width: 640px) {
-  .hero-cards-container {
+  .heroCardsContainer {
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
   }
 
-  .hero-card {
+  .heroCard {
     flex: 1 1 calc(50% - 1rem);
     min-width: min(280px, 100%);
   }
@@ -418,25 +418,25 @@
 
 /* Desktop: side by side layout */
 @media (min-width: 768px) {
-  .login-body {
+  .loginBody {
     flex-direction: row !important;
   }
 
-  .login-hero {
+  .loginHero {
     width: 70% !important;
     min-height: 100vh !important;
   }
 
-  .login-section {
+  .loginSection {
     width: 30% !important;
     min-height: 100vh !important;
   }
 
-  .hero-cards-container {
+  .heroCardsContainer {
     flex-direction: row;
   }
 
-  .hero-card {
+  .heroCard {
     flex: 1 1 calc(33.333% - 1rem);
     min-width: 0;
   }
@@ -444,54 +444,54 @@
 
 /* Mobile optimizations */
 @media (max-width: 767px) {
-  .login-hero {
+  .loginHero {
     min-height: 50vh;
   }
 
-  .hero-cards-container {
+  .heroCardsContainer {
     flex-direction: column;
   }
 
-  .hero-card {
+  .heroCard {
     width: 100%;
   }
 
-  .hero-card:hover {
+  .heroCard:hover {
     transform: translateY(-4px);
   }
 
-  .login-form-card:hover {
+  .loginFormCard:hover {
     transform: none;
   }
 
   /* Hide some decorative elements on mobile for performance */
-  .login-decor-shape:nth-child(5),
-  .login-decor-shape:nth-child(6),
-  .login-decor-shape:nth-child(7),
-  .login-decor-shape:nth-child(8) {
+  .loginDecorShape:nth-child(5),
+  .loginDecorShape:nth-child(6),
+  .loginDecorShape:nth-child(7),
+  .loginDecorShape:nth-child(8) {
     display: none;
   }
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .hero-title,
-  .hero-subtitle,
-  .hero-card,
-  .login-form-card {
+  .heroTitle,
+  .heroSubtitle,
+  .heroCard,
+  .loginFormCard {
     animation: none;
   }
 
-  .hero-overlay::before,
-  .login-section::before,
-  .login-section::after,
-  .login-decor-shape {
+  .heroOverlay::before,
+  .loginSection::before,
+  .loginSection::after,
+  .loginDecorShape {
     animation: none;
   }
 
-  .hero-card,
-  .hero-card-icon,
-  .login-form-card {
+  .heroCard,
+  .heroCardIcon,
+  .loginFormCard {
     transition: none;
   }
 }

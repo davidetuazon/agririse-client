@@ -1,17 +1,17 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import colors from "../constants/colors";
+import colors from "../../constants/colors";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
-import { mustBeValidEmail, mustNotBeEmptyOrSpace } from "../utils/validators";
+import { mustBeValidEmail, mustNotBeEmptyOrSpace } from "../../utils/validators";
 import { toast } from "react-hot-toast";
-import { login } from "../services/api";
+import { login } from "../../services/api";
 import Cookies from "js-cookie";
 
-import TextInput from "../components/commons/TextInputs";
-import Button from "../components/commons/Button";
-import { ACCESS_TOKEN } from "../utils/constants";
-import "./Login.css";
+import TextInput from "../../components/commons/TextInputs";
+import Button from "../../components/commons/Button";
+import { ACCESS_TOKEN } from "../../utils/constants";
+import cssStyles from "./Login.module.css";
 
 type Inputs = {
     email: string,
@@ -51,32 +51,32 @@ export default function Login() {
 
     return (
         <div style={styles.root}>
-            <div style={styles.body} className="login-body">
+            <div style={styles.body} className={cssStyles.loginBody}>
                 {/* Hero Section */}
-                <section style={styles.hero} className="login-hero">
-                    <div className="hero-overlay"></div>
-                    <div className="hero-content">
-                        <h1 className="hero-title">AgriRise</h1>
-                        <h2 className="hero-subtitle">Optimization of Water Allocation</h2>
-                        <div className="hero-cards-container">
-                            <div className="hero-card">
-                                <span className="hero-card-icon">🌾</span>
-                                <h3 className="hero-card-title">Smart Monitoring</h3>
-                                <p className="hero-card-description">
+                <section style={styles.hero} className={cssStyles.loginHero}>
+                    <div className={cssStyles.heroOverlay}></div>
+                    <div className={cssStyles.heroContent}>
+                        <h1 className={cssStyles.heroTitle}>AgriRise</h1>
+                        <h2 className={cssStyles.heroSubtitle}>Optimization of Water Allocation</h2>
+                        <div className={cssStyles.heroCardsContainer}>
+                            <div className={cssStyles.heroCard}>
+                                <span className={cssStyles.heroCardIcon}>🌾</span>
+                                <h3 className={cssStyles.heroCardTitle}>Smart Monitoring</h3>
+                                <p className={cssStyles.heroCardDescription}>
                                     Real-time IoT sensor data collection for water levels, temperature, humidity, and rainfall to track agricultural conditions.
                                 </p>
                             </div>
-                            <div className="hero-card">
-                                <span className="hero-card-icon">📊</span>
-                                <h3 className="hero-card-title">Data Analytics</h3>
-                                <p className="hero-card-description">
+                            <div className={cssStyles.heroCard}>
+                                <span className={cssStyles.heroCardIcon}>📊</span>
+                                <h3 className={cssStyles.heroCardTitle}>Data Analytics</h3>
+                                <p className={cssStyles.heroCardDescription}>
                                     Advanced algorithms analyze sensor trends and patterns to provide insights for optimal water allocation decisions.
                                 </p>
                             </div>
-                            <div className="hero-card">
-                                <span className="hero-card-icon">💧</span>
-                                <h3 className="hero-card-title">Water Optimization</h3>
-                                <p className="hero-card-description">
+                            <div className={cssStyles.heroCard}>
+                                <span className={cssStyles.heroCardIcon}>💧</span>
+                                <h3 className={cssStyles.heroCardTitle}>Water Optimization</h3>
+                                <p className={cssStyles.heroCardDescription}>
                                     Intelligent irrigation scheduling based on data-driven recommendations to maximize efficiency and crop yield.
                                 </p>
                             </div>
@@ -85,32 +85,32 @@ export default function Login() {
                 </section>
 
                 {/* Login Section */}
-                <section style={styles.login} className="login-section">
+                <section style={styles.login} className={cssStyles.loginSection}>
                     {/* Decorative floating circles */}
-                    <div className="login-decor">
-                        <div className="login-decor-shape"></div>
-                        <div className="login-decor-shape"></div>
-                        <div className="login-decor-shape"></div>
-                        <div className="login-decor-shape"></div>
-                        <div className="login-decor-shape"></div>
-                        <div className="login-decor-shape"></div>
-                        <div className="login-decor-shape"></div>
-                        <div className="login-decor-shape"></div>
+                    <div className={cssStyles.loginDecor}>
+                        <div className={cssStyles.loginDecorShape}></div>
+                        <div className={cssStyles.loginDecorShape}></div>
+                        <div className={cssStyles.loginDecorShape}></div>
+                        <div className={cssStyles.loginDecorShape}></div>
+                        <div className={cssStyles.loginDecorShape}></div>
+                        <div className={cssStyles.loginDecorShape}></div>
+                        <div className={cssStyles.loginDecorShape}></div>
+                        <div className={cssStyles.loginDecorShape}></div>
                     </div>
 
                     {/* Welcome text */}
-                    <div className="login-welcome">
-                        <p className="login-welcome-text">Welcome Back</p>
-                        <h2 className="login-welcome-title">Sign in to continue</h2>
+                    <div className={cssStyles.loginWelcome}>
+                        <p className={cssStyles.loginWelcomeText}>Welcome Back</p>
+                        <h2 className={cssStyles.loginWelcomeTitle}>Sign in to continue</h2>
                     </div>
 
                     {/* Login form card */}
-                    <div className="login-form-card">
-                        <div className="login-header">
-                            <h1 className="login-brand">Log In</h1>
-                            <p className="login-title">Enter your Credentials</p>
+                    <div className={cssStyles.loginFormCard}>
+                        <div className={cssStyles.loginHeader}>
+                            <h1 className={cssStyles.loginBrand}>Log In</h1>
+                            <p className={cssStyles.loginTitle}>Enter your Credentials</p>
                         </div>
-                        <form className="login-form">
+                        <form className={cssStyles.loginForm}>
                             {/* Email */}
                             <TextInput
                                 textProps={{
@@ -141,7 +141,7 @@ export default function Login() {
                             />
 
                             {/* Submit button */}
-                            <div className="login-submit-container">
+                            <div className={cssStyles.loginSubmitContainer}>
                                 <Button
                                     type="submit"
                                     title="Sign In"

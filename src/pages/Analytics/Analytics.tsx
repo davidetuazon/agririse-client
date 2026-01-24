@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getAnalytics } from "../services/api";
-import colors from "../constants/colors";
+import { getAnalytics } from "../../services/api";
+import colors from "../../constants/colors";
 
-import Text from "../components/commons/Text";
-import Section from "../components/commons/Section";
-import Cards from "../components/commons/Card";
-import "./Analytics.css";
+import Text from "../../components/commons/Text";
+import Section from "../../components/commons/Section";
+import Cards from "../../components/commons/Card";
+import cssStyles from "./Analytics.module.css";
 
 type AnalyticsData = {
     timestamp: string,
@@ -88,8 +88,8 @@ export default function Analytics() {
                         </div>
 
                         {/* cards display */}
-                        <div style={styles.cardsContainer} className="analytics-cards-container">
-                            <div className="analytics-card">
+                        <div style={styles.cardsContainer} className={cssStyles.analyticsCardsContainer}>
+                            <div className={cssStyles.analyticsCard}>
                                 <Cards
                                     label="Average Value"
                                     value={latest.avg}
@@ -97,7 +97,7 @@ export default function Analytics() {
                                     style={styles.cards}
                                 />
                             </div>
-                            <div className="analytics-card">
+                            <div className={cssStyles.analyticsCard}>
                                 <Cards
                                     label="Minimum Value"
                                     value={latest.min}
@@ -105,7 +105,7 @@ export default function Analytics() {
                                     style={styles.cards}
                                 />
                             </div>
-                            <div className="analytics-card">
+                            <div className={cssStyles.analyticsCard}>
                                 <Cards
                                     label="Maximum Value"
                                     value={latest.max}
@@ -113,7 +113,7 @@ export default function Analytics() {
                                     style={styles.cards}
                                 />
                             </div>
-                            <div className="analytics-card">
+                            <div className={cssStyles.analyticsCard}>
                                 <Cards
                                     label="Variability (σ)"
                                     value={latest.stdDev}
@@ -123,7 +123,7 @@ export default function Analytics() {
                         </div>
 
                         {/* meta data display */}
-                        <div style={styles.metaData} className="analytics-meta-data">
+                        <div style={styles.metaData} className={cssStyles.analyticsMetaData}>
                             <Text
                                 variant="subtitle"
                                 style={{ margin: 0 }}

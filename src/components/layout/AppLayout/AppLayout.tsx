@@ -1,10 +1,10 @@
 import React, { type ReactNode, useState, useEffect } from "react";
-import { useAuth } from "../../providers/AuthProvider";
-import colors from "../../constants/colors";
+import { useAuth } from "../../../providers/AuthProvider";
+import colors from "../../../constants/colors";
 
-import Text from "../commons/Text";
-import Sidebar from "../navigation/Sidebar";
-import "./AppLayout.css";
+import Text from "../../commons/Text";
+import Sidebar from "../../navigation/Sidebar";
+import cssStyles from "./AppLayout.module.css";
 
 interface Props {
     children: ReactNode
@@ -35,7 +35,7 @@ export default function AppLayout({ children}: Props) {
             {/* sidebar / navigation */}
             <aside 
                 style={styles.sidebar}
-                className={`sidebar ${isDesktop || sidebarOpen ? 'open' : ''}`}
+                className={`${cssStyles.sidebar} ${isDesktop || sidebarOpen ? cssStyles.open : ''}`}
             >
                 <Sidebar onLinkClick={() => !isDesktop && setSidebarOpen(false)} />
             </aside>
@@ -43,7 +43,7 @@ export default function AppLayout({ children}: Props) {
             {/* overlay for mobile when sidebar is open */}
             {sidebarOpen && !isDesktop && (
                 <div 
-                    className="overlay"
+                    className={cssStyles.overlay}
                     style={styles.overlay}
                     onClick={() => setSidebarOpen(false)}
                     aria-hidden="true"
@@ -55,7 +55,7 @@ export default function AppLayout({ children}: Props) {
                 <header style={styles.header}>
                     {/* Mobile menu button */}
                     <button
-                        className="menu-button"
+                        className={cssStyles.menuButton}
                         style={styles.menuButton}
                         onClick={() => setSidebarOpen(!sidebarOpen)}
                         aria-label="Toggle sidebar"

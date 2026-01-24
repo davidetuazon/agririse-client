@@ -2,19 +2,19 @@
 
 /* Tablet: 2 cards per row */
 @media (min-width: 640px) {
-  .analytics-cards-container .analytics-card {
+  .analyticsCardsContainer .analyticsCard {
     flex: 1 1 calc(50% - 1rem);
     min-width: min(200px, 100%);
   }
 
-  .analytics-meta-data {
+  .analyticsMetaData {
     flex-direction: row !important;
   }
 }
 
 /* Desktop: 4 cards per row */
 @media (min-width: 1024px) {
-  .analytics-cards-container .analytics-card {
+  .analyticsCardsContainer .analyticsCard {
     flex: 1 1 calc(25% - 1rem);
     min-width: min(150px, 100%);
   }

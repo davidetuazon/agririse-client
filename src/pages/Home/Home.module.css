@@ -2,7 +2,7 @@
 
 /* Desktop: side by side layout */
 @media (min-width: 768px) {
-  .home-core {
+  .homeCore {
     flex-direction: row !important;
   }
 }

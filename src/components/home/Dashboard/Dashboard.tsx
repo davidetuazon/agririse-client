@@ -1,6 +1,6 @@
 import React from "react";
-import Cards from "../commons/Card";
-import "./Dashboard.css";
+import Cards from "../../commons/Card";
+import cssStyles from "./Dashboard.module.css";
 
 type IoTReadings = {
     damWaterLevel: {
@@ -38,8 +38,8 @@ export default function Dashboard(props: Props) {
     const { damWaterLevel, humidity, rainfall, temperature } = props.data || {};
 
     return (
-        <div style={styles.container} className="dashboard-container">
-            <div className="dashboard-card">
+        <div style={styles.container} className={cssStyles.dashboardContainer}>
+            <div className={cssStyles.dashboardCard}>
                 <Cards
                     label={damWaterLevel?.sensorType}
                     value={damWaterLevel?.value}
@@ -47,7 +47,7 @@ export default function Dashboard(props: Props) {
                     recordedAt={damWaterLevel?.recordedAt}
                 />
             </div>
-            <div className="dashboard-card">
+            <div className={cssStyles.dashboardCard}>
                 <Cards
                     label={humidity?.sensorType}
                     value={humidity?.value}
@@ -55,7 +55,7 @@ export default function Dashboard(props: Props) {
                     recordedAt={humidity?.recordedAt}
                 />
             </div>
-            <div className="dashboard-card">
+            <div className={cssStyles.dashboardCard}>
                 <Cards
                     label={rainfall?.sensorType}
                     value={rainfall?.value}
@@ -63,7 +63,7 @@ export default function Dashboard(props: Props) {
                     recordedAt={rainfall?.recordedAt}
                 />
             </div>
-            <div className="dashboard-card">
+            <div className={cssStyles.dashboardCard}>
                 <Cards
                     label={temperature?.sensorType}
                     value={temperature?.value}

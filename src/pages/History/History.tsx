@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getHistory } from "../services/api";
-import colors from "../constants/colors";
+import { getHistory } from "../../services/api";
+import colors from "../../constants/colors";
 
-import Text from "../components/commons/Text";
-import Section from "../components/commons/Section";
-import { timeAgo } from "../utils/helpers";
-import "./History.css";
+import Text from "../../components/commons/Text";
+import Section from "../../components/commons/Section";
+import { timeAgo } from "../../utils/helpers";
+import cssStyles from "./History.module.css";
 
 export default function History() {
     const [searchParams] = useSearchParams();
@@ -112,7 +112,7 @@ export default function History() {
             <Section style={styles.section}>
                 <div style={styles.header}>
                     {/* meta data */}
-                    <div style={styles.metaData} className="history-meta-data">
+                    <div style={styles.metaData} className={cssStyles.historyMetaData}>
                         <Text variant="subtitle" style={{ margin: 0 }}>
                             <span style={{ color: colors.primary }}>
                                 Sensor Type:&nbsp;
@@ -149,14 +149,14 @@ export default function History() {
                 {/* data table */}
                 { data && data.length > 0 ? (
                     
-                    <div style={styles.table} className="history-table">
+                    <div style={styles.table} className={cssStyles.historyTable}>
 
                         {/* category */}
                         {/* 
                             TODO:
                              > add time and unit conversion option
                         */}
-                        <div style={styles.gridContainer} className="history-grid-container">
+                        <div style={styles.gridContainer} className={cssStyles.historyGridContainer}>
                             <div style={styles.categoryWrapper}>
                                 <Text variant="title" style={styles.category}>
                                     Timestamp (UTC)

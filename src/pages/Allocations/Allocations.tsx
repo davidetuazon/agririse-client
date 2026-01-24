@@ -1,5 +1,5 @@
 import React from "react";
-import Text from "../components/commons/Text";
+import Text from "../../components/commons/Text";
 
 export default function Allocations() {
 

@@ -28,7 +28,7 @@
 
 /* Hide menu button on desktop */
 @media (min-width: 768px) {
-  .menu-button {
+  .menuButton {
     display: none !important;
   }
   
@@ -38,10 +38,10 @@
 }
 
 /* Menu button hover effect */
-.menu-button:hover {
+.menuButton:hover {
   background-color: rgba(0, 104, 74, 0.1);
 }
 
-.menu-button:active {
+.menuButton:active {
   transform: scale(0.95);
 }
