@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import colors from "../../constants/colors";
+import colors from "../../../constants/colors";
 import { Link, useLocation } from "react-router-dom";
 
-import Text from "../commons/Text";
-import DashboardSection from "./DashboardSection";
-import AllocationsSection from "./AllocationsSection";
-import AnalyticsSection from "./AnalyticsSection";
-import HistorySection from "./HistorySection";
+import Text from "../../commons/Text";
+import DashboardSection from "../DashboardSection";
+import AllocationsSection from "../AllocationsSection";
+import AnalyticsSection from "../AnalyticsSection";
+import HistorySection from "../HistorySection";
 
 type PageOptions = 'dashboard' | 'allocations' | 'analytics' | 'history' | 'default';
 

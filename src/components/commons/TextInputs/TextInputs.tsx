@@ -1,7 +1,7 @@
 import React from "react";
-import Text from "./Text";
-import colors from "../../constants/colors";
-import typography from "../../constants/typography";
+import Text from "../Text";
+import colors from "../../../constants/colors";
+import typography from "../../../constants/typography";
 
 type Props = {
     style?: React.CSSProperties,
@@ -41,7 +41,7 @@ const styles: {[key: string]: React.CSSProperties} = {
         borderRadius: 'clamp(0.5rem, 1vw, 0.75rem)',
         paddingLeft: 'clamp(0.75rem, 2vw, 0.9375rem)',
         paddingRight: 'clamp(0.75rem, 2vw, 0.9375rem)',
-        minHeight: '44px', // Ensure touch target is at least 44px
+        minHeight: '44px',
         height: 'auto',
         marginBottom: 'clamp(0.5rem, 1.5vw, 0.625rem)',
         marginTop: 'clamp(0.5rem, 1.5vw, 0.625rem)',
@@ -60,7 +60,7 @@ const styles: {[key: string]: React.CSSProperties} = {
         height: 'inherit',
         fontFamily: 'Poppins-Light',
         fontSize: typography.subtitle,
-        color: colors.textBlack,
+        color: colors.textPrimary,
         padding: 'clamp(0.5rem, 1.5vw, 0.75rem) 0',
         boxSizing: 'border-box',
     },

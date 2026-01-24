@@ -1,8 +1,8 @@
 import React from "react";
-import colors from "../../constants/colors";
+import colors from "../../../constants/colors";
 import { Link } from "react-router-dom";
 
-import Text from "../commons/Text";
+import Text from "../../commons/Text";
 
 type Props = {
     style?: React.CSSProperties,

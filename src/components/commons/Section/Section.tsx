@@ -1,5 +1,5 @@
 import React from "react";
-import colors from "../../constants/colors";
+import colors from "../../../constants/colors";
 
 type Props = {
     style?: React.CSSProperties,
@@ -25,6 +25,6 @@ const styles: {[key: string]: React.CSSProperties} = {
         boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
         width: '100%',
         boxSizing: 'border-box',
-        minWidth: 0, // Prevent flex item overflow
+        minWidth: 0,
     }
 }

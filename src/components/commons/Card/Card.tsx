@@ -1,7 +1,7 @@
 import React from "react";
-import colors from "../../constants/colors";
+import colors from "../../../constants/colors";
 
-import Text from "./Text";
+import Text from "../Text";
 
 type Props = {
     style?: React.CSSProperties,
@@ -61,7 +61,7 @@ const styles: {[key: string]: React.CSSProperties} = {
         padding: 'clamp(1rem, 2.5vw, 1.25rem)',
         borderRadius: 'clamp(0.75rem, 2vw, 1.125rem)',
         width: '100%',
-        minWidth: 0, // Prevent flex item overflow
+        minWidth: 0,
         boxSizing: 'border-box',
     }
 }

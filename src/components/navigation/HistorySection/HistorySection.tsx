@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import colors from "../../constants/colors";
-
-import Text from "../commons/Text";
+import colors from "../../../constants/colors";
 import { Link, useLocation } from "react-router-dom";
+
+import Text from "../../commons/Text";
 
 type Props = {
     style?: React.CSSProperties,
@@ -13,21 +13,21 @@ type Props = {
 
 type SensorType = 'damWaterLevel' | 'humidity' | 'rainfall' | 'temperature' | 'default';
 
-export default function AnalyticsSection(props: Props) {
+export default function HistorySection(props: Props) {
     const [isVisible, setIsVisible] = useState<boolean>(true);
     const [isHovered, setIsHovered] = useState<SensorType>('default');
 
     const location = useLocation();
-    const isActive = (
-            routePrefix: string,
-            sensorType: SensorType
-    ) => {
-        if (!location.pathname.startsWith(routePrefix)) return false;
-
-        return (
-            new URLSearchParams(location.search).get('sensorType') === sensorType
-        );
-    };
+        const isActive = (
+                routePrefix: string,
+                sensorType: SensorType
+        ) => {
+            if (!location.pathname.startsWith(routePrefix)) return false;
+    
+            return (
+                new URLSearchParams(location.search).get('sensorType') === sensorType
+            );
+        };
 
     const sensors: { label: string, type: SensorType }[] = [
         { label: 'Dam Water Level', type: 'damWaterLevel' },
@@ -35,15 +35,15 @@ export default function AnalyticsSection(props: Props) {
         { label: 'Effective Rainfall', type: 'rainfall' },
         { label: 'Temperature', type: 'temperature' }
     ];
-    
-    const analyticsUrl = (sensorType: SensorType, defaultDays = 30) => {
+
+    const historyUrl = (sensorType: SensorType, defaultDays = 30, limit: number = 20) => {
         const end = new Date();
         const start = new Date(end.getTime() - defaultDays * 24 * 60 * 60 * 1000);
 
         const startDate = start.toISOString().split('T')[0];
         const endDate = end.toISOString().split('T')[0];
 
-        return `/iot/analytics?sensorType=${sensorType}&startDate=${startDate}&endDate=${endDate}`;
+        return `/iot/history?sensorType=${sensorType}&startDate=${startDate}&endDate=${endDate}&limit=${limit}`;
     }
 
     return (
@@ -60,7 +60,7 @@ export default function AnalyticsSection(props: Props) {
                     color: colors.primary,
                 }}
             >
-                Analytics
+                History
             </Text>
         </div>
         <div
@@ -72,35 +72,35 @@ export default function AnalyticsSection(props: Props) {
                 willChange: 'max-height',
             }}
         >
-        { sensors.map(({ label, type }) => {
-            const active = isActive('/iot/analytics', type);
-            const hovered = isHovered === type;
+            { sensors.map(({ label, type }) => {
+                const active = isActive('/iot/history', type);
+                const hovered = isHovered === type;
 
-            return (
-                <Link
-                    key={type}
-                    to={analyticsUrl(type)}
-                    style={{ textDecoration: 'none' }}
-                    onMouseEnter={() => setIsHovered(type)}
-                    onMouseLeave={() => setIsHovered('default')}
-                    onClick={props.onLinkClick}
-                >
-                    <Text
-                        variant="caption"
-                        style={{
-                            ...styles.category,
-                            backgroundColor: hovered
-                                ? colors.textSecondary
-                                : active
-                                ? colors.accentTwo
-                                : colors.mutedBackground,
-                        }}
+                return (
+                    <Link
+                        key={type}
+                        to={historyUrl(type)}
+                        style={{ textDecoration: 'none' }}
+                        onMouseEnter={() => setIsHovered(type)}
+                        onMouseLeave={() => setIsHovered('default')}
+                        onClick={props.onLinkClick}
                     >
-                        {label}
-                    </Text>
-                </Link>
-            );
-        }) }
+                        <Text
+                            variant="caption"
+                            style={{
+                                ...styles.category,
+                                backgroundColor: hovered
+                                    ? colors.textSecondary
+                                    : active
+                                    ? colors.accentTwo
+                                    : colors.mutedBackground,
+                            }}
+                        >
+                            {label}
+                        </Text>
+                    </Link>
+                );
+            }) }
         </div>
         </>
     )

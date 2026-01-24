@@ -1,5 +1,5 @@
 import React from "react";
-import typography from "../../constants/typography";
+import typography from "../../../constants/typography";
 
 
 type Props = {

@@ -1,6 +1,6 @@
 import React from "react";
-import colors from "../../constants/colors";
-import typography from "../../constants/typography";
+import colors from "../../../constants/colors";
+import typography from "../../../constants/typography";
 
 type Props = {
     style?: React.CSSProperties,
@@ -21,7 +21,6 @@ export default function Button(props: Props & { type?: 'button' | 'submit' }) {
         onMouseEnter,
         onMouseLeave,
         type = 'button',
-        disabled = false,
     } = props;
 
     return (
@@ -50,8 +49,8 @@ const styles: {[key: string]: React.CSSProperties} = {
         margin: 'clamp(0.375rem, 1vw, 0.625rem)',
         cursor: 'pointer',
         width: 'auto',
-        minWidth: 'max(70px, 44px)', // Ensure touch target is at least 44px
-        minHeight: '44px', // Ensure touch target is at least 44px
+        minWidth: 'max(70px, 44px)',
+        minHeight: '44px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
