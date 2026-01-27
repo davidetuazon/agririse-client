@@ -1,8 +1,0 @@
-/* Mobile-first: stacked layout (default) */
-
-/* Desktop: side by side layout */
-@media (min-width: 768px) {
-  .home-core {
-    flex-direction: row !important;
-  }
-}

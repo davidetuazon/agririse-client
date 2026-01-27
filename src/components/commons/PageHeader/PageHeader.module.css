@@ -1,0 +1,42 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(0, 104, 74, 0.08), rgba(47, 111, 115, 0.08));
+  border: 1px solid rgba(0, 104, 74, 0.1);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(0, 104, 74, 0.12);
+  color: #00684A;
+  font-family: "Poppins-SemiBold";
+  font-size: 0.8rem;
+}
+
+.chipLabel {
+  color: #023430;
+}
+
+.chipValue {
+  color: #00684A;
+}
+
+.subtitle {
+  font-family: "Poppins-Light";
+  font-size: 0.75rem;
+  color: #2F6F73;
+}

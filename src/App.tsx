@@ -12,12 +12,12 @@ import { Toaster } from 'react-hot-toast';
 import AuthProvider from './providers/AuthProvider';
 import './App.css';
 
-import AppLayout from './components/layout/AppLayout';
-import Login from './pages/Login';
-import Home from './pages/Home';
-import Allocations from './pages/Allocations';
-import Analytics from './pages/Analytics';
-import History from './pages/History';
+import AppLayout from './components/layout/AppLayout/AppLayout';
+import Login from './pages/Login/Login';
+import Home from './pages/Home/Home';
+import Allocations from './pages/Allocations/Allocations';
+import Analytics from './pages/Analytics/Analytics';
+import History from './pages/History/History';
 
 function App() {
   return (
