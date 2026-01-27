@@ -6,6 +6,7 @@ import Section from "../../components/commons/Section";
 import { timeAgo } from "../../utils/helpers";
 import PageHeader from "../../components/commons/PageHeader";
 import cssStyles from "./History.module.css";
+import colors from "../../constants/colors";
 
 export default function History() {
     const [searchParams] = useSearchParams();
