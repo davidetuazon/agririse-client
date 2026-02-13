@@ -1,3 +1,44 @@
+/* Date range inline with metric/granularity */
+.dateRangeInline {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.metaLabel {
+  font-family: "Poppins-Light";
+  font-size: 0.85rem;
+  color: #00684A;
+}
+
+.dateInput {
+  font-family: "Poppins-Light";
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid rgba(0, 104, 74, 0.25);
+  border-radius: 8px;
+  color: #023430;
+  min-width: 140px;
+}
+
+.dateInput:focus {
+  outline: none;
+  border-color: #00684A;
+  box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.15);
+}
+
+/* Meta row: date range + metric + granularity */
+.analyticsMetaData {
+  padding: clamp(0.5rem, 1.5vw, 0.625rem) clamp(0.75rem, 2vw, 1.25rem);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* Mobile-first: cards and metadata stack */
 
 /* Tablet: 2 cards per row */
@@ -5,10 +46,6 @@
   .analyticsCardsContainer .analyticsCard {
     flex: 1 1 calc(50% - 1rem);
     min-width: min(200px, 100%);
-  }
-
-  .analyticsMetaData {
-    flex-direction: row !important;
   }
 }
 
@@ -18,4 +55,214 @@
     flex: 1 1 calc(25% - 1rem);
     min-width: min(150px, 100%);
   }
+}
+
+/* Loading / error / empty */
+.loadingState,
+.errorState,
+.emptyState {
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+.errorState {
+  color: #B91C1C;
+}
+
+.chartSectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-bottom: 0.75rem;
+}
+
+.chartLoading,
+.chartEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #6B7280;
+}
+
+.chartControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0 0 0.5rem;
+}
+
+.chartPreviewWrapper {
+  position: relative;
+  cursor: pointer;
+  border: 2px solid #E8EDEB;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chartPreviewWrapper:hover {
+  border-color: #00684A;
+  box-shadow: 0 4px 12px rgba(0, 104, 74, 0.12);
+}
+
+.chartPreviewWrapper:focus {
+  outline: 2px solid #00684A;
+  outline-offset: 2px;
+}
+
+.chartPreview {
+  pointer-events: none;
+}
+
+.chartClickHint {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.75rem;
+  font-family: "Poppins-Light";
+  font-size: 0.7rem;
+  color: #2F6F73;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+  padding: 1rem;
+}
+
+.modalCard {
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 1.25rem;
+  width: min(92vw, 960px);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.modalTitle {
+  font-family: "Poppins-SemiBold";
+  font-size: 1rem;
+  color: #023430;
+}
+
+.modalHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.zoomButton {
+  border: 1px solid rgba(0, 104, 74, 0.35);
+  background: transparent;
+  color: #00684A;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoomButton:hover {
+  background: #E3FCF7;
+}
+
+.modalClose {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #2F6F73;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalClose:hover {
+  color: #023430;
+}
+
+.modalMetricToggle {
+  flex-shrink: 0;
+  padding: 0.75rem 0;
+}
+
+.modalChartWrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* PageHeader export action */
+.exportButton {
+  border: 1px solid rgba(0, 104, 74, 0.35);
+  background: rgba(255, 255, 255, 0.85);
+  color: #00684A;
+  padding: 0.45rem 0.85rem;
+  border-radius: 10px;
+  font-family: "Poppins-SemiBold";
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.exportButton:hover {
+  background: #E3FCF7;
+}
+
+.exportButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Export modal preview */
+.exportPreviewMeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+  font-family: "Poppins-Light";
+  font-size: 0.85rem;
+  color: #023430;
+  margin-bottom: 1rem;
+}
+
+.exportPreviewCards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 900px) {
+  .exportPreviewCards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.exportPreviewChart {
+  border: 1px solid #E8EDEB;
+  border-radius: 12px;
+  padding: 0.5rem;
+  background: #FFFFFF;
 }

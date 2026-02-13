@@ -1,0 +1,46 @@
+.scrollWrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+  min-height: 200px;
+}
+
+.scrollWrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scrollWrapper::-webkit-scrollbar-track {
+  background: #F0F3F2;
+  border-radius: 4px;
+}
+
+.scrollWrapper::-webkit-scrollbar-thumb {
+  background: #00684A;
+  border-radius: 4px;
+}
+
+.tooltip {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-family: "Poppins-Light";
+  font-size: 0.75rem;
+  color: #374151;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.tooltipTime {
+  font-family: "Poppins-SemiBold";
+  margin-bottom: 0.25rem;
+  color: #064E3B;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2F6F73;
+  font-family: "Poppins-Light";
+  font-size: 0.9rem;
+}

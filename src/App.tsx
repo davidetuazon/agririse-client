@@ -18,6 +18,7 @@ import Home from './pages/Home/Home';
 import Allocations from './pages/Allocations/Allocations';
 import Analytics from './pages/Analytics/Analytics';
 import History from './pages/History/History';
+import Settings from './pages/Settings/Settings';
 
 function App() {
   return (
@@ -76,6 +77,16 @@ function App() {
               <AppLayout>
                 <RequireAuth>
                   <History/>
+                </RequireAuth>
+              </AppLayout>
+            }
+          />
+          <Route
+            path='/settings'
+            element={
+              <AppLayout>
+                <RequireAuth>
+                  <Settings/>
                 </RequireAuth>
               </AppLayout>
             }

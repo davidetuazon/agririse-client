@@ -1,4 +1,3 @@
-import React from "react";
 import {
     CloudRain,
     Droplets,
@@ -6,7 +5,6 @@ import {
     Waves
 } from "lucide-react";
 import colors from "../../../constants/colors";
-import { timeAgo } from "../../../utils/helpers";
 import Text from "../../commons/Text";
 import cssStyles from "./SensorMetricCard.module.css";
 

@@ -5,12 +5,57 @@
   -webkit-overflow-scrolling: touch;
 }
 
-/* Desktop: metadata in row */
-@media (min-width: 640px) {
-  .historyMetaData {
-    flex-direction: row !important;
-  }
+/* Date range inputs (inline with metadata) */
+.dateRangeInline {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
+
+.metaLabel {
+  font-family: "Poppins-Light";
+  font-size: 0.85rem;
+  color: #00684A;
+}
+
+.dateInput {
+  font-family: "Poppins-Light";
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid rgba(0, 104, 74, 0.25);
+  border-radius: 8px;
+  color: #023430;
+  min-width: 140px;
+}
+
+.dateInput:focus {
+  outline: none;
+  border-color: #00684A;
+  box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.15);
+}
+
+/* PageHeader export action */
+.exportButton {
+  border: 1px solid rgba(0, 104, 74, 0.35);
+  background: rgba(255, 255, 255, 0.85);
+  color: #00684A;
+  padding: 0.45rem 0.85rem;
+  border-radius: 10px;
+  font-family: "Poppins-SemiBold";
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.exportButton:hover {
+  background: #E3FCF7;
+}
+
+.exportButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Metadata layout is now handled inline like Analytics. */
 
 /* Desktop: table columns can be wider */
 @media (min-width: 1024px) {
