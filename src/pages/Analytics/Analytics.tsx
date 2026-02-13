@@ -142,6 +142,7 @@ export default function Analytics() {
       const chartPng = await getExportChartPng();
       const doc = buildAnalyticsPdf({
         title: exportTitle,
+        sensorLabel: metaData?.sensorType,
         startDate,
         endDate,
         metric: metaData?.metric,
