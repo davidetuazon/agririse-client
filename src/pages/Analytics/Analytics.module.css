@@ -54,6 +54,22 @@
   width: 100%;
 }
 
+.setDatesButton {
+  border: 1px solid rgba(0, 104, 74, 0.35);
+  background: rgba(255, 255, 255, 0.9);
+  color: #00684A;
+  padding: 0.45rem 0.85rem;
+  border-radius: 10px;
+  font-family: "Poppins-SemiBold";
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.setDatesButton:hover {
+  background: #E3FCF7;
+}
+
 /* Meta row: date range + metric + granularity */
 .analyticsMetaData {
   padding: clamp(0.5rem, 1.5vw, 0.625rem) clamp(0.75rem, 2vw, 1.25rem);

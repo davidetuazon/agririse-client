@@ -5,6 +5,7 @@ import {
   CartesianGrid,
   Legend,
   Line,
+  ReferenceArea,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -105,11 +106,15 @@ export default function AnalyticsChart({
       const maxVal = row.max != null && Number.isFinite(row.max) ? row.max : null;
       const mid =
         minVal != null && maxVal != null ? (minVal + maxVal) / 2 : null;
+      /* Per-point lower edge of the band so the white mask always draws (avoids green extending below min when min is null). */
+      const _bandBottom =
+        minVal != null ? minVal : (maxVal != null ? maxVal : baseline);
       return {
         ...row,
         timestamp: row.timestamp,
         tsMs: new Date(row.timestamp).getTime(),
         _baseline: baseline,
+        _bandBottom,
         _mid: mid,
       };
     });
@@ -262,10 +267,13 @@ export default function AnalyticsChart({
       <Legend
         content={(props) => {
           const { payload } = props as { payload?: Array<{ value: string; color?: string }> };
-          if (!payload?.length) return null;
+          const withBand = [
+            { value: "Range (min–max)", color: CHART_COLORS.rangeFill },
+            ...(payload ?? []),
+          ];
           return (
             <ul className={cssStyles.colorLegend} aria-label="Chart legend">
-              {payload.map((entry, i) => {
+              {withBand.map((entry, i) => {
                 const color = entry.color ?? CHART_COLORS.axis;
                 return (
                   <li key={i} className={cssStyles.colorLegendItem}>
@@ -278,27 +286,26 @@ export default function AnalyticsChart({
           );
         }}
       />
-      {/* Band: filled area between min and max – drawn first so lines appear on top */}
-      <Area
-        type="monotone"
-        dataKey="max"
-        baseValue={chartData[0]?._baseline ?? 0}
-        connectNulls={false}
-        stroke="transparent"
-        fill={CHART_COLORS.rangeFill}
-        name="Range (min–max)"
-        isAnimationActive={false}
-      />
-      <Area
-        type="monotone"
-        dataKey="min"
-        baseValue={chartData[0]?._baseline ?? 0}
-        connectNulls={false}
-        stroke="transparent"
-        fill={CHART_COLORS.rangeFillBottom}
-        isAnimationActive={false}
-        hide
-      />
+      {/* Band: one ReferenceArea per bucket so fill is strictly between min and max (never below min) */}
+      {chartData.map((row, i) => {
+        const minY = row.min != null && Number.isFinite(row.min) ? row.min : null;
+        const maxY = row.max != null && Number.isFinite(row.max) ? row.max : null;
+        if (minY == null || maxY == null || minY >= maxY) return null;
+        const x1 = row.tsMs;
+        const next = chartData[i + 1];
+        const x2 = next ? next.tsMs : x1 + (i > 0 ? row.tsMs - chartData[i - 1].tsMs : 1);
+        return (
+          <ReferenceArea
+            key={`band-${i}-${row.tsMs}`}
+            x1={x1}
+            x2={x2}
+            y1={minY}
+            y2={maxY}
+            fill={CHART_COLORS.rangeFill}
+            isAnimationActive={false}
+          />
+        );
+      })}
       {/* Lines drawn after Areas so they render on top of the band */}
       <Line
         type="monotone"

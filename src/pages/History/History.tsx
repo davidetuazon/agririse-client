@@ -82,17 +82,37 @@ export default function History() {
 
     const sensorType = searchParams.get('sensorType') ?? 'damWaterLevel';
     const endDate = searchParams.get('endDate') ?? new Date().toISOString().split('T')[0];
-    const startDate = searchParams.get('startDate') 
-    ?? new Date(new Date(endDate).getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const startDate = searchParams.get('startDate')
+        ?? new Date(new Date(endDate).getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const limit = Number(searchParams.get('limit')) || 10;
 
-    const setDateRange = (from: string, to: string) => {
+    const [pendingStartDate, setPendingStartDate] = useState(startDate);
+    const [pendingEndDate, setPendingEndDate] = useState(endDate);
+
+    useEffect(() => {
+        setPendingStartDate(startDate);
+        setPendingEndDate(endDate);
+    }, [startDate, endDate]);
+
+    const applyDateRange = () => {
+        const from = pendingStartDate;
+        const to = pendingEndDate;
+        if (from > to) return;
         setSearchParams((prev) => {
             const next = new URLSearchParams(prev);
             next.set('startDate', from);
             next.set('endDate', to);
             return next;
         });
+    };
+
+    const onPendingFromChange = (v: string) => {
+        setPendingStartDate(v);
+        if (v > pendingEndDate) setPendingEndDate(v);
+    };
+    const onPendingToChange = (v: string) => {
+        setPendingEndDate(v);
+        if (v < pendingStartDate) setPendingStartDate(v);
     };
 
     const fetchAllForExport = async () => {
@@ -296,19 +316,26 @@ export default function History() {
                         <div className={cssStyles.dateRangeInline}>
                             <span className={cssStyles.metaLabel}>From</span>
                             <DateRangeInput
-                                value={startDate}
-                                max={endDate}
-                                onChange={(v) => setDateRange(v, endDate)}
+                                value={pendingStartDate}
+                                max={pendingEndDate}
+                                onChange={onPendingFromChange}
                             />
                         </div>
                         <div className={cssStyles.dateRangeInline}>
                             <span className={cssStyles.metaLabel}>To</span>
                             <DateRangeInput
-                                value={endDate}
-                                min={startDate}
-                                onChange={(v) => setDateRange(startDate, v)}
+                                value={pendingEndDate}
+                                min={pendingStartDate}
+                                onChange={onPendingToChange}
                             />
                         </div>
+                        <button
+                            type="button"
+                            className={cssStyles.setDatesButton}
+                            onClick={applyDateRange}
+                        >
+                            Set dates
+                        </button>
                         <Text variant="subtitle" style={{ margin: 0 }}>
                             <span style={{ color: "#00684A" }}>
                                 Sensor Type:&nbsp;

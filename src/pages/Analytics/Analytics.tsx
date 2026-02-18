@@ -117,13 +117,33 @@ export default function Analytics() {
   const startDate =
     searchParams.get("startDate") ?? addDays(endDate, -30);
 
-  const setDateRange = (from: string, to: string) => {
+  const [pendingStartDate, setPendingStartDate] = useState(startDate);
+  const [pendingEndDate, setPendingEndDate] = useState(endDate);
+
+  useEffect(() => {
+    setPendingStartDate(startDate);
+    setPendingEndDate(endDate);
+  }, [startDate, endDate]);
+
+  const applyDateRange = () => {
+    const from = pendingStartDate;
+    const to = pendingEndDate;
+    if (from > to) return;
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set("startDate", from);
       next.set("endDate", to);
       return next;
     });
+  };
+
+  const onPendingFromChange = (v: string) => {
+    setPendingStartDate(v);
+    if (v > pendingEndDate) setPendingEndDate(v);
+  };
+  const onPendingToChange = (v: string) => {
+    setPendingEndDate(v);
+    if (v < pendingStartDate) setPendingStartDate(v);
   };
 
   const fetchAllPages = useCallback(async () => {
@@ -341,21 +361,28 @@ export default function Analytics() {
                 <div className={cssStyles.dateRangeInline}>
                   <span className={cssStyles.metaLabel}>From</span>
                   <DateRangeInput
-                    value={startDate}
-                    max={endDate}
-                    onChange={(v) => setDateRange(v, endDate)}
+                    value={pendingStartDate}
+                    max={pendingEndDate}
+                    onChange={onPendingFromChange}
                     ariaLabel="Start date"
                   />
                 </div>
                 <div className={cssStyles.dateRangeInline}>
                   <span className={cssStyles.metaLabel}>To</span>
                   <DateRangeInput
-                    value={endDate}
-                    min={startDate}
-                    onChange={(v) => setDateRange(startDate, v)}
+                    value={pendingEndDate}
+                    min={pendingStartDate}
+                    onChange={onPendingToChange}
                     ariaLabel="End date"
                   />
                 </div>
+                <button
+                  type="button"
+                  className={cssStyles.setDatesButton}
+                  onClick={applyDateRange}
+                >
+                  Set dates
+                </button>
               </div>
             </div>
           </div>
@@ -374,21 +401,28 @@ export default function Analytics() {
                 <div className={cssStyles.dateRangeInline}>
                   <span className={cssStyles.metaLabel}>From</span>
                   <DateRangeInput
-                    value={startDate}
-                    max={endDate}
-                    onChange={(v) => setDateRange(v, endDate)}
+                    value={pendingStartDate}
+                    max={pendingEndDate}
+                    onChange={onPendingFromChange}
                     ariaLabel="Start date"
                   />
                 </div>
                 <div className={cssStyles.dateRangeInline}>
                   <span className={cssStyles.metaLabel}>To</span>
                   <DateRangeInput
-                    value={endDate}
-                    min={startDate}
-                    onChange={(v) => setDateRange(startDate, v)}
+                    value={pendingEndDate}
+                    min={pendingStartDate}
+                    onChange={onPendingToChange}
                     ariaLabel="End date"
                   />
                 </div>
+                <button
+                  type="button"
+                  className={cssStyles.setDatesButton}
+                  onClick={applyDateRange}
+                >
+                  Set dates
+                </button>
               </div>
             </div>
           </div>
@@ -445,21 +479,28 @@ export default function Analytics() {
                 <div className={cssStyles.dateRangeInline}>
                   <span className={cssStyles.metaLabel}>From</span>
                   <DateRangeInput
-                    value={startDate}
-                    max={endDate}
-                    onChange={(v) => setDateRange(v, endDate)}
+                    value={pendingStartDate}
+                    max={pendingEndDate}
+                    onChange={onPendingFromChange}
                     ariaLabel="Start date"
                   />
                 </div>
                 <div className={cssStyles.dateRangeInline}>
                   <span className={cssStyles.metaLabel}>To</span>
                   <DateRangeInput
-                    value={endDate}
-                    min={startDate}
-                    onChange={(v) => setDateRange(startDate, v)}
+                    value={pendingEndDate}
+                    min={pendingStartDate}
+                    onChange={onPendingToChange}
                     ariaLabel="End date"
                   />
                 </div>
+                <button
+                  type="button"
+                  className={cssStyles.setDatesButton}
+                  onClick={applyDateRange}
+                >
+                  Set dates
+                </button>
                 <Text variant="subtitle" style={{ margin: 0 }}>
                   <span style={{ color: "#00684A" }}>Metric:&nbsp;</span>
                   {metaData?.metric}
@@ -482,21 +523,28 @@ export default function Analytics() {
                 <div className={cssStyles.dateRangeInline}>
                   <span className={cssStyles.metaLabel}>From</span>
                   <DateRangeInput
-                    value={startDate}
-                    max={endDate}
-                    onChange={(v) => setDateRange(v, endDate)}
+                    value={pendingStartDate}
+                    max={pendingEndDate}
+                    onChange={onPendingFromChange}
                     ariaLabel="Start date"
                   />
                 </div>
                 <div className={cssStyles.dateRangeInline}>
                   <span className={cssStyles.metaLabel}>To</span>
                   <DateRangeInput
-                    value={endDate}
-                    min={startDate}
-                    onChange={(v) => setDateRange(startDate, v)}
+                    value={pendingEndDate}
+                    min={pendingStartDate}
+                    onChange={onPendingToChange}
                     ariaLabel="End date"
                   />
                 </div>
+                <button
+                  type="button"
+                  className={cssStyles.setDatesButton}
+                  onClick={applyDateRange}
+                >
+                  Set dates
+                </button>
               </div>
             </div>
           </div>
@@ -624,7 +672,7 @@ export default function Analytics() {
                 selectedMetric={selectedMetric}
                 startDate={startDate}
                 endDate={endDate}
-                domainMode="range"
+                domainMode="data"
                 mode={chartFitMode}
                 height={MODAL_CHART_HEIGHT}
               />
