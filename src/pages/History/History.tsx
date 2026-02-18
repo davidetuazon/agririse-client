@@ -1,23 +1,83 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getHistory } from "../../services/api";
+import colors from "../../constants/colors";
 import Text from "../../components/commons/Text";
 import Section from "../../components/commons/Section";
 import { timeAgo } from "../../utils/helpers";
 import PageHeader from "../../components/commons/PageHeader";
+import ExportPreviewModal from "../../components/export/ExportPreviewModal";
+import { toCsv, downloadTextFile } from "../../utils/exportCsv";
+import { buildHistoryPdf } from "../../utils/exportPdf";
+import { SENSOR_TYPES } from "../../utils/constants";
+import ImportModal from "../../components/import/ImportModal";
 import cssStyles from "./History.module.css";
-import colors from "../../constants/colors";
+import { useGenerateImage } from "recharts-to-png";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import {
+    CartesianGrid,
+    Line,
+    LineChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from "recharts";
+
+function DateRangeInput({
+    value,
+    min,
+    max,
+    onChange,
+}: {
+    value: string;
+    min?: string;
+    max?: string;
+    onChange: (value: string) => void;
+    ariaLabel?: string;
+}) {
+    const date = value ? new Date(value + "T12:00:00.000Z") : null;
+    const minDate = min ? new Date(min + "T00:00:00.000Z") : undefined;
+    const maxDate = max ? new Date(max + "T23:59:59.999Z") : undefined;
+    return (
+        <DatePicker
+            selected={date}
+            onChange={(d: Date | null) => onChange(d ? d.toISOString().slice(0, 10) : value)}
+            minDate={minDate}
+            maxDate={maxDate}
+            dateFormat="yyyy-MM-dd"
+            className={cssStyles.dateInput}
+            wrapperClassName={cssStyles.datePickerWrapper}
+            showMonthDropdown
+            showYearDropdown
+            dropdownMode="select"
+            placeholderText="Select date"
+        />
+    );
+}
 
 export default function History() {
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     // data
     const [data, setData] = useState<any>(null);
     const [metaData, setMetaData] = useState<any>(null);
-    const [error, setError] = useState<any>(null);
+    const [, setError] = useState<any>(null);
+    const [exportOpen, setExportOpen] = useState(false);
+    const [importOpen, setImportOpen] = useState(false);
+    const [exportBusy, setExportBusy] = useState(false);
+    const [exportRows, setExportRows] = useState<any[] | null>(null);
+    const [exportErr, setExportErr] = useState<string | null>(null);
+    const [exportProgress, setExportProgress] = useState<{ pages: number; rows: number } | null>(null);
     // pagination
     const [pageInfo, setPageInfo] = useState<any>(null);
     const [cursor, setCursor] = useState<any>(null);
     const sentinelRef = useRef<HTMLDivElement>(null);
+    const [getExportChartPng, { ref: exportChartRef, isLoading: exportPngLoading }] =
+        useGenerateImage<HTMLDivElement>({
+            options: { backgroundColor: "#FFFFFF", scale: 2 } as any,
+            type: "image/png",
+        });
     
 
     const sensorType = searchParams.get('sensorType') ?? 'damWaterLevel';
@@ -25,6 +85,112 @@ export default function History() {
     const startDate = searchParams.get('startDate') 
     ?? new Date(new Date(endDate).getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const limit = Number(searchParams.get('limit')) || 10;
+
+    const setDateRange = (from: string, to: string) => {
+        setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.set('startDate', from);
+            next.set('endDate', to);
+            return next;
+        });
+    };
+
+    const fetchAllForExport = async () => {
+        setExportBusy(true);
+        setExportErr(null);
+        setExportProgress({ pages: 0, rows: 0 });
+        try {
+            let all: any[] = [];
+            let nextCursor: string = '';
+            const pageLimit = 200;
+            // safety cap
+            const MAX_EXPORT_ROWS = 20000;
+
+            while (true) {
+                const res = await getHistory({
+                    sensorType,
+                    startDate,
+                    endDate,
+                    limit: pageLimit,
+                    cursor: nextCursor,
+                });
+
+                if (res.error) {
+                    throw new Error(typeof res.error === 'string' ? res.error : JSON.stringify(res.error));
+                }
+
+                const page = res.data ?? [];
+                all = [...all, ...page];
+                setExportProgress((prev) => ({
+                    pages: (prev?.pages ?? 0) + 1,
+                    rows: all.length,
+                }));
+
+                if (!res.pageInfo?.hasNext || !res.pageInfo?.nextCursor) break;
+                if (all.length >= MAX_EXPORT_ROWS) break;
+
+                nextCursor = res.pageInfo.nextCursor;
+            }
+
+            setExportRows(all);
+            return all;
+        } catch (e: any) {
+            setExportErr(e?.message || 'Failed to prepare export');
+            setExportRows(null);
+            return null;
+        } finally {
+            setExportBusy(false);
+        }
+    };
+
+    const exportDisabled = !data || data.length === 0;
+    const exportTitle = `History: ${metaData?.sensorType ?? sensorType}`;
+    const exportFilenameBase = `history_${sensorType}_${startDate}_${endDate}`;
+
+    const handleOpenExport = () => {
+        setExportOpen(true);
+        setExportRows(null);
+        setExportErr(null);
+        setExportProgress(null);
+        void fetchAllForExport();
+    };
+
+    const handleDownloadHistoryCsv = async () => {
+        const rows = exportRows ?? (await fetchAllForExport());
+        if (!rows || !rows.length) return;
+        const csv = toCsv(rows as any, ['recordedAt', 'value', '_id']);
+        downloadTextFile(`${exportFilenameBase}.csv`, 'text/csv', csv);
+    };
+
+    const handleDownloadHistoryJson = async () => {
+        const rows = exportRows ?? (await fetchAllForExport());
+        if (!rows || !rows.length) return;
+        const payload = rows.map((r: any) => ({
+            recordedAt: typeof r.recordedAt === 'string' ? r.recordedAt : new Date(r.recordedAt).toISOString(),
+            value: r.value,
+            _id: r._id,
+        }));
+        downloadTextFile(`${exportFilenameBase}.json`, 'application/json', JSON.stringify(payload, null, 2));
+    };
+
+    const handleDownloadHistoryPdf = async () => {
+        const rows = exportRows ?? (await fetchAllForExport());
+        if (!rows || !rows.length) return;
+        const chartPng = await getExportChartPng();
+        const doc = buildHistoryPdf({
+            title: exportTitle,
+            startDate,
+            endDate,
+            unit: metaData?.unit,
+            chartPngDataUrl: chartPng,
+            rows: rows.map((r: any) => ({
+                recordedAt: r.recordedAt,
+                value: r.value,
+                _id: r._id,
+            })),
+        });
+        doc.save(`${exportFilenameBase}.pdf`);
+    };
 
     const init = async () => {
         if (!startDate || !endDate) return;
@@ -94,24 +260,55 @@ export default function History() {
     //     console.log({ pageInfo, data })
     // }, [pageInfo, data])
 
-    // meta data timestamp display
-    // UTC/GMT format
-    // can add option to convert to locale time if needed, make function
-    const from = metaData?.dateRange?.startDate ? `${metaData?.dateRange?.startDate.replace('T', ' ').slice(0,19)} UTC` : '';
-    const to = metaData?.dateRange?.endDate ? `${metaData?.dateRange?.endDate.replace('T', ' ').slice(0,19)} UTC` : '';
-
     return (
         <>
             <PageHeader
                 title="History:"
                 chipValue={metaData?.sensorType}
                 subtitle={metaData?.sensorType ? `Historical readings for ${metaData?.sensorType}` : undefined}
+                actions={
+                    <div className={cssStyles.headerActions}>
+                        <button
+                            type="button"
+                            onClick={() => setImportOpen(true)}
+                            className={cssStyles.exportButton}
+                            title="Import data for this sensor"
+                        >
+                            Import
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleOpenExport}
+                            disabled={exportDisabled}
+                            className={cssStyles.exportButton}
+                            title={exportDisabled ? "Load history data first" : "Export"}
+                        >
+                            Export
+                        </button>
+                    </div>
+                }
             />
 
             <Section style={styles.section}>
                 <div style={styles.header}>
                     {/* meta data */}
                     <div style={styles.metaData} className={cssStyles.historyMetaData}>
+                        <div className={cssStyles.dateRangeInline}>
+                            <span className={cssStyles.metaLabel}>From</span>
+                            <DateRangeInput
+                                value={startDate}
+                                max={endDate}
+                                onChange={(v) => setDateRange(v, endDate)}
+                            />
+                        </div>
+                        <div className={cssStyles.dateRangeInline}>
+                            <span className={cssStyles.metaLabel}>To</span>
+                            <DateRangeInput
+                                value={endDate}
+                                min={startDate}
+                                onChange={(v) => setDateRange(startDate, v)}
+                            />
+                        </div>
                         <Text variant="subtitle" style={{ margin: 0 }}>
                             <span style={{ color: "#00684A" }}>
                                 Sensor Type:&nbsp;
@@ -123,18 +320,6 @@ export default function History() {
                                 Unit Measurement:&nbsp;
                             </span>
                                 {metaData?.unit}
-                        </Text>
-                        <Text variant="subtitle" style={{ margin: 0 }}>
-                            <span style={{ color: "#00684A" }}>
-                                From:&nbsp;
-                            </span>
-                                {from}
-                        </Text>
-                        <Text variant="subtitle" style={{ margin: 0 }}>
-                            <span style={{ color: "#00684A" }}>
-                                To:&nbsp;
-                            </span>
-                                {to}
                         </Text>
                     </div>
                 </div>
@@ -245,8 +430,171 @@ export default function History() {
                     </div>
                 )}
             </Section>
+
+            <ExportPreviewModal
+                open={exportOpen}
+                title={`Export – ${exportTitle}`}
+                subtitle={
+                    exportBusy
+                        ? `${startDate} → ${endDate} · fetching pages: ${exportProgress?.pages ?? 0} · rows: ${exportProgress?.rows ?? 0}`
+                        : `${startDate} → ${endDate} · rows: ${exportRows?.length ?? '—'}`
+                }
+                onClose={() => setExportOpen(false)}
+                onDownloadCsv={handleDownloadHistoryCsv}
+                onDownloadJson={handleDownloadHistoryJson}
+                onDownloadPdf={handleDownloadHistoryPdf}
+                busy={exportBusy || exportPngLoading}
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1.25rem', fontFamily: 'Poppins-Light', fontSize: '0.85rem', color: '#023430' }}>
+                        <div><strong>Sensor</strong>: {metaData?.sensorType ?? '—'}</div>
+                        <div><strong>Unit</strong>: {metaData?.unit ?? '—'}</div>
+                        <div><strong>From</strong>: {startDate}</div>
+                        <div><strong>To</strong>: {endDate}</div>
+                    </div>
+
+                    {exportErr && (
+                        <Text variant="caption" style={{ margin: 0, color: '#B91C1C' }}>
+                            {exportErr}
+                        </Text>
+                    )}
+
+                    {exportBusy && (
+                        <Text variant="caption" style={{ margin: 0, color: '#6B7280' }}>
+                            Preparing export… fetched {exportProgress?.rows ?? 0} rows across {exportProgress?.pages ?? 0} pages.
+                        </Text>
+                    )}
+
+                    <div style={{ border: '1px solid #E8EDEB', borderRadius: 12, background: '#FFFFFF', padding: '8px 10px' }}>
+                        <Text variant="subtitle" style={{ margin: '0 0 6px 0' }}>
+                            Overall trend for selected date range
+                        </Text>
+                        <div ref={exportChartRef} style={{ width: '100%', height: 260 }}>
+                            <HistoryTrendChart rows={exportRows ?? data ?? []} unit={metaData?.unit ?? ''} />
+                        </div>
+                    </div>
+
+                    <div style={{ border: '1px solid #E8EDEB', borderRadius: 12, overflow: 'auto', maxHeight: 360 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'Poppins-Light', fontSize: '0.8rem' }}>
+                            <thead>
+                                <tr style={{ background: '#E3FCF7', color: '#023430' }}>
+                                    <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #E8EDEB' }}>Timestamp (UTC)</th>
+                                    <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #E8EDEB' }}>Value</th>
+                                    <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #E8EDEB' }}>Δ (from previous)</th>
+                                    <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #E8EDEB' }}>Elapsed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(exportRows ?? data ?? []).slice(0, 25).map((r: any, idx: number, arr: any[]) => {
+                                    const delta: number | '-' = idx === arr.length - 1 ? '-' : r.value - arr[idx + 1].value;
+                                    const deltaLabel = delta === '-' ? '-' : `${delta >= 0 ? '+': ''}${delta.toFixed(2)}${metaData?.unit ?? ''}`;
+                                    return (
+                                    <tr key={r._id}>
+                                        <td style={{ padding: '8px 10px', borderBottom: '1px solid #F0F3F2' }}>
+                                            {new Date(r.recordedAt).toISOString().replace('T', ' ').slice(0, 19)}
+                                        </td>
+                                        <td style={{ padding: '8px 10px', borderBottom: '1px solid #F0F3F2' }}>
+                                            {typeof r.value === 'number' ? r.value.toFixed(2) : r.value}{metaData?.unit ?? ''}
+                                        </td>
+                                        <td style={{ padding: '8px 10px', borderBottom: '1px solid #F0F3F2' }}>
+                                            {deltaLabel}
+                                        </td>
+                                        <td style={{ padding: '8px 10px', borderBottom: '1px solid #F0F3F2' }}>
+                                            {timeAgo(r.recordedAt)}
+                                        </td>
+                                    </tr>
+                                )})}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <Text variant="caption" style={{ margin: 0, color: '#6B7280' }}>
+                        Preview shows the first 25 rows. Export includes the full date range (auto-fetches all pages).
+                    </Text>
+                </div>
+            </ExportPreviewModal>
+
+            <ImportModal
+                open={importOpen}
+                onClose={() => setImportOpen(false)}
+                sensorType={sensorType}
+                sensorLabel={(SENSOR_TYPES as Record<string, { label: string }>)[sensorType]?.label ?? metaData?.sensorType ?? sensorType}
+            />
         </>
     )
+}
+
+function HistoryTrendChart({ rows, unit }: { rows: any[]; unit: string }) {
+    const sorted = [...(rows ?? [])]
+        .filter((r) => r?.recordedAt != null && typeof r?.value === 'number')
+        .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
+
+    const chartData = sorted.map((r) => ({
+        tsMs: new Date(r.recordedAt).getTime(),
+        timestamp: new Date(r.recordedAt).toISOString(),
+        value: Number(r.value),
+    }));
+
+    if (!chartData.length) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <Text variant="caption">No trend data available.</Text>
+            </div>
+        );
+    }
+
+    const pad2 = (v: number) => String(v).padStart(2, '0');
+    const formatTick = (ms: number) => {
+        const d = new Date(ms);
+        return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+    };
+    const formatTooltipTs = (iso: string) => {
+        const d = new Date(iso);
+        return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())} UTC`;
+    };
+
+    return (
+        <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 8, right: 14, left: 8, bottom: 18 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#CBD5E1" />
+                <XAxis
+                    dataKey="tsMs"
+                    type="number"
+                    scale="time"
+                    domain={['dataMin', 'dataMax']}
+                    tickFormatter={(v) => formatTick(Number(v))}
+                    tick={{ fontSize: 11, fill: '#334155' }}
+                    stroke="#334155"
+                    axisLine={{ stroke: '#CBD5E1' }}
+                    minTickGap={24}
+                />
+                <YAxis
+                    tick={{ fontSize: 11, fill: '#334155' }}
+                    stroke="#334155"
+                    axisLine={{ stroke: '#CBD5E1' }}
+                    tickFormatter={(v) => (typeof v === 'number' ? `${v.toFixed(2)}${unit}` : String(v))}
+                />
+                <Tooltip
+                    labelFormatter={(_, payload) => {
+                        const p = payload?.[0]?.payload as { timestamp?: string } | undefined;
+                        return p?.timestamp ? formatTooltipTs(p.timestamp) : '';
+                    }}
+                    formatter={(value: unknown) =>
+                        typeof value === 'number' ? `${value.toFixed(2)}${unit}` : '—'
+                    }
+                />
+                <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#00684A"
+                    strokeWidth={2.5}
+                    dot={false}
+                    connectNulls={false}
+                    name="Value"
+                />
+            </LineChart>
+        </ResponsiveContainer>
+    );
 }
 
 const styles: {[key: string]: React.CSSProperties} = {
@@ -267,9 +615,10 @@ const styles: {[key: string]: React.CSSProperties} = {
     metaData: {
         padding: 'clamp(0.5rem, 1.5vw, 0.625rem) clamp(1rem, 3vw, 2.5rem)',
         display:'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 'clamp(0.5rem, 1.5vw, 1rem)',
+        alignItems: 'center',
+        gap: 'clamp(0.75rem, 2vw, 1.25rem)',
         width: '100%',
         boxSizing: 'border-box',
     },

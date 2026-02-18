@@ -93,3 +93,45 @@ export const getHistory = async (
         return { data: null, error: e.message || 'Unkown error occured' };
     }
 }
+
+export type ImportRow = {
+    recordedAt: string;
+    value: number | string;
+    [key: string]: unknown;
+};
+
+export const processImportData = async (
+    {
+        data,
+        sensorType,
+    }: {
+        data: ImportRow[];
+        sensorType: string;
+    }
+) => {
+    try {
+        const res = await api.post('/iot/data/import', { data, sensorType });
+        return res.data;
+    } catch (e: any) {
+        if (e.response?.data?.error) return { data: null, error: e.response.data.error };
+        return { data: null, error: e.message || 'Unknown error occurred' };
+    }
+}
+
+export const saveImportData = async (
+    {
+        importId,
+        sensorType,
+    }: {
+        importId: string;
+        sensorType: string;
+    }
+) => {
+    try {
+        const res = await api.post('/iot/data/import/save', { importId, sensorType });
+        return res.data;
+    } catch (e: any) {
+        if (e.response?.data?.error) return { data: null, error: e.response.data.error };
+        return { data: null, error: e.message || 'Unknown error occurred' };
+    }
+}

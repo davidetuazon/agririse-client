@@ -1,6 +1,5 @@
-import React, { 
-    createContext, useContext, useState, ReactNode, useEffect
- } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import Cookies from 'js-cookie';
 import { ACCESS_TOKEN } from '../utils/constants';
 import { me } from '../services/api';

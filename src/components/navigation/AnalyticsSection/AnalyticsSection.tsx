@@ -55,10 +55,8 @@ export default function AnalyticsSection(props: Props) {
     const analyticsUrl = (sensorType: SensorType, defaultDays = 30) => {
         const end = new Date();
         const start = new Date(end.getTime() - defaultDays * 24 * 60 * 60 * 1000);
-
         const startDate = start.toISOString().split('T')[0];
         const endDate = end.toISOString().split('T')[0];
-
         return `/iot/analytics?sensorType=${sensorType}&startDate=${startDate}&endDate=${endDate}`;
     }
 

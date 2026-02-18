@@ -1,0 +1,122 @@
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 140;
+  padding: 1rem;
+}
+
+.modalCard {
+  background: #FFFFFF;
+  border-radius: 16px;
+  width: min(980px, 95vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #E8EDEB;
+  background: linear-gradient(135deg, rgba(0, 104, 74, 0.06), rgba(47, 111, 115, 0.06));
+}
+
+.modalHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.modalTitle {
+  font-family: "Poppins-Bold";
+  font-size: 1rem;
+  color: #023430;
+}
+
+.modalSubtitle {
+  font-family: "Poppins-Light";
+  font-size: 0.8rem;
+  color: #2F6F73;
+}
+
+.modalClose {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #2F6F73;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.modalClose:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #023430;
+}
+
+.modalBody {
+  padding: 1rem 1.25rem;
+  overflow: auto;
+}
+
+.modalFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid #E8EDEB;
+  background: #FFFFFF;
+  flex-wrap: wrap;
+}
+
+.primaryButton,
+.secondaryButton {
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  font-family: "Poppins-SemiBold";
+  cursor: pointer;
+  min-height: 44px;
+  transition: transform 0.1s ease, background-color 0.2s ease;
+}
+
+.primaryButton {
+  border: none;
+  background: #00684A;
+  color: #FFFFFF;
+}
+
+.primaryButton:hover {
+  background: #045E44;
+}
+
+.secondaryButton {
+  border: 1px solid rgba(0, 104, 74, 0.35);
+  background: transparent;
+  color: #00684A;
+}
+
+.secondaryButton:hover {
+  background: #E3FCF7;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

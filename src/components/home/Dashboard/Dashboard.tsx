@@ -131,13 +131,13 @@ export default function Dashboard(props: Props) {
                 {sensors.map(({ type, data, fallback }) => (
                     <SensorMetricCard
                         key={type}
-                        sensorType={type}
+                        sensorType={type as SensorType}
                         label={fallback.label}
                         value={data?.value}
                         unit={data?.unit ?? fallback.unit}
                         recordedAt={data?.recordedAt}
-                        delta={deltas[type]}
-                        onClick={() => setSelectedSensor(type)}
+                        delta={deltas[type as SensorType]}
+                        onClick={() => setSelectedSensor(type as SensorType)}
                     />
                 ))}
             </div>

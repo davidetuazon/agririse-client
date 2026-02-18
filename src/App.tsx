@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -12,12 +12,22 @@ import { Toaster } from 'react-hot-toast';
 import AuthProvider from './providers/AuthProvider';
 import './App.css';
 
-import AppLayout from './components/layout/AppLayout/AppLayout';
-import Login from './pages/Login/Login';
-import Home from './pages/Home/Home';
-import Allocations from './pages/Allocations/Allocations';
-import Analytics from './pages/Analytics/Analytics';
-import History from './pages/History/History';
+const AppLayout = lazy(() => import('./components/layout/AppLayout/AppLayout'));
+const Login = lazy(() => import('./pages/Login/Login'));
+const Home = lazy(() => import('./pages/Home/Home'));
+const Allocations = lazy(() => import('./pages/Allocations/Allocations'));
+const Analytics = lazy(() => import('./pages/Analytics/Analytics'));
+const History = lazy(() => import('./pages/History/History'));
+const Settings = lazy(() => import('./pages/Settings/Settings'));
+
+function FullPageLoader() {
+  return (
+    <div className='pageLoader' role='status' aria-live='polite' aria-label='Loading page'>
+      <div className='pageLoaderSpinner' />
+      <span className='pageLoaderText'>Loading...</span>
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -37,50 +47,62 @@ function App() {
         }}
       />
       <AuthProvider>
-        <Routes>
-          <Route path='/login' element={<Login />} />
-          <Route path='/' element={ <Navigate to='/home' /> } />
-          <Route 
-            path='/home'
-            element={
-              <AppLayout>
-                <RequireAuth>
-                  <Home/>
-                </RequireAuth>
-              </AppLayout>
-            }
-          />
-          <Route
-            path='/allocations'
-            element={
-              <AppLayout>
-                <RequireAuth>
-                  <Allocations/>
-                </RequireAuth>
-              </AppLayout>
-            }
-          />
-          <Route
-            path='/iot/analytics'
-            element={
-              <AppLayout>
-                <RequireAuth>
-                  <Analytics/>
-                </RequireAuth>
-              </AppLayout>
-            }
-          />
-          <Route
-            path='/iot/history'
-            element={
-              <AppLayout>
-                <RequireAuth>
-                  <History/>
-                </RequireAuth>
-              </AppLayout>
-            }
-          />
-        </Routes>
+        <Suspense fallback={<FullPageLoader />}>
+          <Routes>
+            <Route path='/login' element={<Login />} />
+            <Route path='/' element={ <Navigate to='/home' /> } />
+            <Route 
+              path='/home'
+              element={
+                <AppLayout>
+                  <RequireAuth>
+                    <Home/>
+                  </RequireAuth>
+                </AppLayout>
+              }
+            />
+            <Route
+              path='/allocations'
+              element={
+                <AppLayout>
+                  <RequireAuth>
+                    <Allocations/>
+                  </RequireAuth>
+                </AppLayout>
+              }
+            />
+            <Route
+              path='/iot/analytics'
+              element={
+                <AppLayout>
+                  <RequireAuth>
+                    <Analytics/>
+                  </RequireAuth>
+                </AppLayout>
+              }
+            />
+            <Route
+              path='/iot/history'
+              element={
+                <AppLayout>
+                  <RequireAuth>
+                    <History/>
+                  </RequireAuth>
+                </AppLayout>
+              }
+            />
+            <Route
+              path='/settings'
+              element={
+                <AppLayout>
+                  <RequireAuth>
+                    <Settings/>
+                  </RequireAuth>
+                </AppLayout>
+              }
+            />
+          </Routes>
+        </Suspense>
       </AuthProvider>
     </BrowserRouter>
   )

@@ -4,6 +4,7 @@ import { latest, me } from "../../services/api";
 import Text from "../../components/commons/Text";
 import Section from "../../components/commons/Section";
 import Dashboard from "../../components/home/Dashboard/Dashboard";
+import DashboardTrends from "../../components/home/Trends/DashboardTrends";
 import cssStyles from "./Home.module.css";
 import { timeAgo } from "../../utils/helpers";
 
@@ -13,24 +14,44 @@ type IoTReadings = {
         unit: string,
         recordedAt: string,
         sensorType: string,
+        delta?: number | null,
+        percentChange?: number | null,
+        previousValue?: number | null,
+        previousRecordedAt?: string | null,
+        timeDifferenceMinutes?: number | null,
     },
     humidity: {
         value: number,
         unit: string,
         recordedAt: string,
         sensorType: string,
+        delta?: number | null,
+        percentChange?: number | null,
+        previousValue?: number | null,
+        previousRecordedAt?: string | null,
+        timeDifferenceMinutes?: number | null,
     },
     rainfall: {
         value: number,
         unit: string,
         recordedAt: string,
         sensorType: string,
+        delta?: number | null,
+        percentChange?: number | null,
+        previousValue?: number | null,
+        previousRecordedAt?: string | null,
+        timeDifferenceMinutes?: number | null,
     },
     temperature: {
         value: number,
         unit: string,
         recordedAt: string,
         sensorType: string,
+        delta?: number | null,
+        percentChange?: number | null,
+        previousValue?: number | null,
+        previousRecordedAt?: string | null,
+        timeDifferenceMinutes?: number | null,
     }
 }
 
@@ -53,8 +74,8 @@ export default function Home() {
             setUser(loggedUser);
 
             const res = await latest();
-            setLatestReadings(res.data.readings);
-            setLocality(res.data.locality);
+            setLatestReadings(res.readings);
+            setLocality(res.locality);
         } catch (e) {
             setLatestReadings(null);
             console.error(e);
@@ -110,12 +131,7 @@ export default function Home() {
             */}
             <div style={styles.core} className={cssStyles.homeCore}>
                 <Section style={styles.trends}>
-                    <Text
-                        variant="heading"
-                        style={{ margin: 0 }}
-                    >
-                        Trends
-                    </Text>
+                    <DashboardTrends data={latestReadings} />
                 </Section>
                 <Section style={styles.optimization}>
                     <Text

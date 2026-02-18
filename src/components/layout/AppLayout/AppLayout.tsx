@@ -34,6 +34,7 @@ export default function AppLayout({ children}: Props) {
         if (location.pathname.startsWith('/allocations')) return 'Allocations';
         if (location.pathname.startsWith('/iot/analytics')) return 'Analytics';
         if (location.pathname.startsWith('/iot/history')) return 'History';
+        if (location.pathname.startsWith('/settings')) return 'Settings';
         return 'Overview';
     })();
 
@@ -81,7 +82,6 @@ export default function AppLayout({ children}: Props) {
                             </svg>
                         </button>
                         <div className={cssStyles.headerTitleGroup}>
-                            <span className={cssStyles.headerBrand}>AgriRise</span>
                             <span className={cssStyles.headerPage}>{pageName}</span>
                         </div>
                     </div>

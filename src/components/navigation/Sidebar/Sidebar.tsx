@@ -3,7 +3,6 @@ import colors from "../../../constants/colors";
 import { Link, useLocation } from "react-router-dom";
 import { Sprout } from "lucide-react";
 
-import Text from "../../commons/Text";
 import DashboardSection from "../DashboardSection";
 import AllocationsSection from "../AllocationsSection";
 import AnalyticsSection from "../AnalyticsSection";
@@ -25,7 +24,6 @@ export default function Sidebar({ onLinkClick }: SidebarProps) {
         if (location.pathname.startsWith('/allocations')) return 'allocations';
         if (location.pathname.startsWith('/iot/analytics')) return 'analytics';
         if (location.pathname.startsWith('/iot/history')) return 'history';
-        
         return 'default';
     })();
 
@@ -40,7 +38,6 @@ export default function Sidebar({ onLinkClick }: SidebarProps) {
                     <Sprout size={20} color={colors.primary} />
                 </span>
                 <span className={cssStyles.brandText}>
-                    <span className={cssStyles.brandTitle}>AgriRise</span>
                     <span className={cssStyles.brandSubtitle}>Water Allocation</span>
                 </span>
             </Link>
