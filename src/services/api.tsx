@@ -135,3 +135,13 @@ export const saveImportData = async (
         return { data: null, error: e.message || 'Unknown error occurred' };
     }
 }
+
+export const changePassword = async (oldPassword: string, newPassword: string) => {
+    // eslint-disable-next-line no-useless-catch
+    try {
+        const res = await api.patch('/user/settings/password', { oldPassword, newPassword });
+        return res.data;
+    } catch (e) {
+        throw e;
+    }
+}
