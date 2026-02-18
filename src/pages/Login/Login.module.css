@@ -61,11 +61,27 @@
     opacity 420ms ease;
 }
 
+.logoRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 2vw, 1.25rem);
+  width: 100%;
+}
+
 .logo {
   width: clamp(150px, 25vw, 260px);
   height: auto;
   object-fit: contain;
   filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.2));
+}
+
+.sideLogo {
+  width: clamp(74px, 13vw, 130px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.18));
+  margin-top: 24px;
 }
 
 .title {

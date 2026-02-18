@@ -1,0 +1,163 @@
+.previewCard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  cursor: pointer;
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.previewHint {
+  font-family: "Poppins-SemiBold";
+  font-size: 0.75rem;
+  color: #00684A;
+  background: rgba(0, 104, 74, 0.12);
+  border: 1px solid rgba(0, 104, 74, 0.28);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+
+.previewMeta {
+  color: #475569;
+}
+
+.previewChart {
+  height: 150px;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.25rem 0.5rem;
+  background: #ffffff;
+}
+
+.previewLegend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-family: "Poppins-Light";
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 130;
+  padding: 1rem;
+}
+
+.modalCard {
+  background: #ffffff;
+  border-radius: 16px;
+  width: min(900px, 95vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: auto;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.modalClose {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #2f6f73;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+.modalClose:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #023430;
+}
+
+.modalControls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.sensorLabel {
+  font-family: "Poppins-SemiBold";
+  font-size: 0.85rem;
+  color: #1f2937;
+}
+
+.sensorSelect {
+  min-height: 40px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0 10px;
+  background: #ffffff;
+  font-family: "Poppins-Light";
+}
+
+.modalChart {
+  height: 320px;
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.35rem 0.5rem;
+  background: #ffffff;
+}
+
+.modalDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.8rem;
+}
+
+.detailRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.detailKey {
+  font-family: "Poppins-SemiBold";
+  font-size: 0.85rem;
+}
+
+.detailValue {
+  font-family: "Poppins-Light";
+  font-size: 0.85rem;
+  color: #334155;
+}

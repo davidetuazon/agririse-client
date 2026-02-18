@@ -7,7 +7,8 @@ type Props = {
   subtitle?: string;
   children: React.ReactNode;
   onClose: () => void;
-  onDownloadCsv: () => Promise<void> | void;
+  onDownloadCsv?: () => Promise<void> | void;
+  onDownloadJson?: () => Promise<void> | void;
   onDownloadPdf: () => Promise<void> | void;
   busy?: boolean;
 };
@@ -19,6 +20,7 @@ export default function ExportPreviewModal({
   children,
   onClose,
   onDownloadCsv,
+  onDownloadJson,
   onDownloadPdf,
   busy,
 }: Props) {
@@ -60,14 +62,26 @@ export default function ExportPreviewModal({
         <div className={cssStyles.modalBody}>{children}</div>
 
         <div className={cssStyles.modalFooter}>
-          <button
-            type="button"
-            className={cssStyles.secondaryButton}
-            onClick={() => void onDownloadCsv()}
-            disabled={Boolean(busy)}
-          >
-            Download CSV
-          </button>
+          {onDownloadCsv != null && (
+            <button
+              type="button"
+              className={cssStyles.secondaryButton}
+              onClick={() => void onDownloadCsv()}
+              disabled={Boolean(busy)}
+            >
+              Download CSV
+            </button>
+          )}
+          {onDownloadJson != null && (
+            <button
+              type="button"
+              className={cssStyles.secondaryButton}
+              onClick={() => void onDownloadJson()}
+              disabled={Boolean(busy)}
+            >
+              Download JSON
+            </button>
+          )}
           <button
             type="button"
             className={cssStyles.primaryButton}

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getAnalytics } from "../../services/api";
 import Text from "../../components/commons/Text";
@@ -11,14 +11,85 @@ import MetricToggle, { type MetricKey } from "../../components/analytics/MetricT
 import ExportPreviewModal from "../../components/export/ExportPreviewModal";
 import cssStyles from "./Analytics.module.css";
 import { useGenerateImage } from "recharts-to-png";
-import { toCsv, downloadTextFile } from "../../utils/exportCsv";
+import { downloadTextFile } from "../../utils/exportCsv";
 import { buildAnalyticsPdf } from "../../utils/exportPdf";
+import { normalizeAnalyticsSeries } from "../../utils/analyticsBuckets";
+import { SENSOR_TYPES } from "../../utils/constants";
+import ImportModal from "../../components/import/ImportModal";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const MAX_BUCKETS = 2000;
 const PREVIEW_CHART_HEIGHT = 280;
 const MODAL_CHART_HEIGHT = 420;
 
 type AnalyticsData = AnalyticsBucket & { timestamp: string };
+
+/** YYYY-MM-DD -> "M/D/YYYY" for display */
+function formatDateLabel(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return `${Number(m)}/${Number(d)}/${y}`;
+}
+
+function addDays(iso: string, delta: number): string {
+  const d = new Date(iso + "T12:00:00.000Z");
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Returns human-readable "no data" range(s) when selected range extends beyond actual data. */
+function getDataRangeGapMessages(
+  data: { timestamp: string }[] | null,
+  startDate: string,
+  endDate: string
+): string[] {
+  if (!data || data.length === 0) return [];
+  const dates = data.map((r) => new Date(r.timestamp).toISOString().slice(0, 10));
+  const first = dates.reduce((a, b) => (a < b ? a : b));
+  const last = dates.reduce((a, b) => (a > b ? a : b));
+  const messages: string[] = [];
+  if (first > startDate) {
+    const to = addDays(first, -1);
+    messages.push(`No available data from ${formatDateLabel(startDate)} to ${formatDateLabel(to)}`);
+  }
+  if (last < endDate) {
+    const from = addDays(last, 1);
+    messages.push(`No available data from ${formatDateLabel(from)} to ${formatDateLabel(endDate)}`);
+  }
+  return messages;
+}
+
+function DateRangeInput({
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  value: string;
+  min?: string;
+  max?: string;
+  onChange: (value: string) => void;
+  ariaLabel?: string;
+}) {
+  const date = value ? new Date(value + "T12:00:00.000Z") : null;
+  const minDate = min ? new Date(min + "T00:00:00.000Z") : undefined;
+  const maxDate = max ? new Date(max + "T23:59:59.999Z") : undefined;
+  return (
+    <DatePicker
+      selected={date}
+      onChange={(d: Date | null) => onChange(d ? d.toISOString().slice(0, 10) : value)}
+      minDate={minDate}
+      maxDate={maxDate}
+      dateFormat="yyyy-MM-dd"
+      className={cssStyles.dateInput}
+      wrapperClassName={cssStyles.datePickerWrapper}
+      showMonthDropdown
+      showYearDropdown
+      dropdownMode="select"
+      placeholderText="Select date"
+    />
+  );
+}
 
 export default function Analytics() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -30,6 +101,7 @@ export default function Analytics() {
   const [chartFitMode, setChartFitMode] = useState<"fit" | "wide">("fit");
   const [selectedMetric, setSelectedMetric] = useState<MetricKey>("avg");
   const [exportOpen, setExportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
   const [getExportChartPng, { ref: exportChartRef, isLoading: exportPngLoading }] =
     useGenerateImage<HTMLDivElement>({
@@ -39,13 +111,11 @@ export default function Analytics() {
     });
 
   const sensorType = searchParams.get("sensorType") ?? "damWaterLevel";
-  const endDate =
-    searchParams.get("endDate") ?? new Date().toISOString().split("T")[0];
+  const todayIso = new Date().toISOString().split("T")[0];
+  const endDate = searchParams.get("endDate") ?? todayIso;
+  // includes the server’s earliest data (e.g. 1/14); we then set From = first date in data, To = that + 1 month.
   const startDate =
-    searchParams.get("startDate") ??
-    new Date(new Date(endDate).getTime() - 30 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split("T")[0];
+    searchParams.get("startDate") ?? addDays(endDate, -30);
 
   const setDateRange = (from: string, to: string) => {
     setSearchParams((prev) => {
@@ -60,6 +130,8 @@ export default function Analytics() {
     if (!startDate || !endDate) return;
     setLoading(true);
     setError(null);
+    setData(null);
+    setMetaData(null);
     let allSeries: AnalyticsData[] = [];
     let meta: any = null;
     let cursor = "";
@@ -95,6 +167,7 @@ export default function Analytics() {
       (a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
+
     setData(allSeries);
     setMetaData(meta);
     setLoading(false);
@@ -114,25 +187,80 @@ export default function Analytics() {
 
   const hasData = data && data.length > 0;
   const latest = hasData ? data[data.length - 1] : null;
+  const chartSeries = useMemo(
+    () =>
+      metaData?.granularity
+        ? normalizeAnalyticsSeries(data ?? [], startDate, endDate, metaData.granularity)
+        : data ?? [],
+    [data, startDate, endDate, metaData?.granularity]
+  );
 
   const unit = metaData?.unit ?? "";
 
   const exportDisabled = loading || Boolean(error) || !hasData || !latest;
   const exportTitle = `Analytics: ${metaData?.sensorType ?? sensorType}`;
   const exportFilenameBase = `analytics_${sensorType}_${startDate}_${endDate}`;
+  const totalBucketCount = chartSeries.length;
+  const dataPointCount = data?.length ?? 0;
 
-  const handleDownloadAnalyticsCsv = async () => {
-    if (!data || !data.length) return;
-    const csv = toCsv(data as any, [
-      "timestamp",
-      "total",
-      "avg",
-      "min",
-      "max",
-      "stdDev",
-      "count",
-    ]);
-    downloadTextFile(`${exportFilenameBase}.csv`, "text/csv", csv);
+  const dataRangeGapMessages = useMemo(
+    () => getDataRangeGapMessages(data ?? [], startDate, endDate),
+    [data, startDate, endDate]
+  );
+  const showDataRangeGapPrompt = dataRangeGapMessages.length > 0;
+
+  const handleDownloadAnalyticsJson = () => {
+    if (!data || !metaData) return;
+    const series = data.map((b) => ({
+      timestamp: new Date(b.timestamp).toISOString(),
+      total: b.total ?? null,
+      avg: b.avg ?? null,
+      min: b.min ?? null,
+      max: b.max ?? null,
+      stdDev: b.stdDev ?? null,
+      variance: (b as any).variance ?? null,
+      median: (b as any).median ?? null,
+      percentile25: (b as any).percentile25 ?? null,
+      percentile75: (b as any).percentile75 ?? null,
+      count: b.count ?? null,
+      anomalies: (b as any).anomalies ?? [],
+    }));
+    const payload = {
+      series,
+      trend: (metaData as any).trend ?? {
+        direction: null,
+        slope: null,
+        percentChange: null,
+        projection: null,
+        rSquared: null,
+        confidence: null,
+        dataPoints: data.length,
+        dataCompleteness: null,
+        timeSpanDays: null,
+      },
+      anomalies: (metaData as any).anomalies ?? {
+        total: 0,
+        critical: 0,
+        warning: 0,
+        info: 0,
+        types: {},
+      },
+      meta: {
+        dateRange: {
+          startDate: new Date(startDate + "T00:00:00.000Z").toISOString(),
+          endDate: new Date(endDate + "T23:59:59.999Z").toISOString(),
+        },
+        granularity: metaData.granularity ?? null,
+        unit: metaData.unit ?? null,
+        sensorType: metaData.sensorType ?? null,
+        metric: metaData.metric ?? null,
+      },
+    };
+    downloadTextFile(
+      `${exportFilenameBase}.json`,
+      "application/json",
+      JSON.stringify(payload, null, 2)
+    );
   };
 
   const handleDownloadAnalyticsPdf = async () => {
@@ -149,10 +277,10 @@ export default function Analytics() {
         granularity: metaData?.granularity,
         unit,
         summary: {
-          avg: latest.avg,
-          min: latest.min,
-          max: latest.max,
-          stdDev: latest.stdDev,
+          avg: latest.avg ?? 0,
+          min: latest.min ?? 0,
+          max: latest.max ?? 0,
+          stdDev: latest.stdDev ?? 0,
         },
         chartPngDataUrl: chartPng,
       });
@@ -173,15 +301,25 @@ export default function Analytics() {
             : undefined
         }
         actions={
-          <button
-            type="button"
-            onClick={() => setExportOpen(true)}
-            disabled={exportDisabled}
-            className={cssStyles.exportButton}
-            title={exportDisabled ? "Load analytics data first" : "Export"}
-          >
-            Export
-          </button>
+          <div className={cssStyles.headerActions}>
+            <button
+              type="button"
+              onClick={() => setImportOpen(true)}
+              className={cssStyles.exportButton}
+              title="Import data for this sensor"
+            >
+              Import
+            </button>
+            <button
+              type="button"
+              onClick={() => setExportOpen(true)}
+              disabled={exportDisabled}
+              className={cssStyles.exportButton}
+              title={exportDisabled ? "Load analytics data first" : "Export"}
+            >
+              Export
+            </button>
+          </div>
         }
       />
 
@@ -195,6 +333,64 @@ export default function Analytics() {
             <Text variant="subtitle" style={{ color: "#B91C1C" }}>
               {typeof error === "string" ? error : JSON.stringify(error)}
             </Text>
+            <div className={cssStyles.dateRangeBlock}>
+              <span className={cssStyles.currentRangeLabel}>
+                <Text variant="caption">Date range: {startDate} to {endDate}</Text>
+              </span>
+              <div className={cssStyles.analyticsMetaData}>
+                <div className={cssStyles.dateRangeInline}>
+                  <span className={cssStyles.metaLabel}>From</span>
+                  <DateRangeInput
+                    value={startDate}
+                    max={endDate}
+                    onChange={(v) => setDateRange(v, endDate)}
+                    ariaLabel="Start date"
+                  />
+                </div>
+                <div className={cssStyles.dateRangeInline}>
+                  <span className={cssStyles.metaLabel}>To</span>
+                  <DateRangeInput
+                    value={endDate}
+                    min={startDate}
+                    onChange={(v) => setDateRange(startDate, v)}
+                    ariaLabel="End date"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : showDataRangeGapPrompt ? (
+          <div className={cssStyles.gapOnlyView}>
+            <div className={cssStyles.dataRangeGapBanner} role="alert">
+              <p className={cssStyles.dataRangeGapText}>
+                {dataRangeGapMessages.join(". ")}. Adjust the date range to see only dates with data.
+              </p>
+            </div>
+            <div className={cssStyles.dateRangeBlock}>
+              <span className={cssStyles.currentRangeLabel}>
+                <Text variant="caption">Date range: {startDate} to {endDate}</Text>
+              </span>
+              <div className={cssStyles.analyticsMetaData}>
+                <div className={cssStyles.dateRangeInline}>
+                  <span className={cssStyles.metaLabel}>From</span>
+                  <DateRangeInput
+                    value={startDate}
+                    max={endDate}
+                    onChange={(v) => setDateRange(v, endDate)}
+                    ariaLabel="Start date"
+                  />
+                </div>
+                <div className={cssStyles.dateRangeInline}>
+                  <span className={cssStyles.metaLabel}>To</span>
+                  <DateRangeInput
+                    value={endDate}
+                    min={startDate}
+                    onChange={(v) => setDateRange(startDate, v)}
+                    ariaLabel="End date"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         ) : latest ? (
           <div key={latest.timestamp} style={styles.summary}>
@@ -212,7 +408,7 @@ export default function Analytics() {
                 <AnalyticsMetricCard
                   type="avg"
                   label="Average Value"
-                  value={latest.avg}
+                  value={latest.avg ?? undefined}
                   unit={unit}
                 />
               </div>
@@ -220,7 +416,7 @@ export default function Analytics() {
                 <AnalyticsMetricCard
                   type="min"
                   label="Minimum Value"
-                  value={latest.min}
+                  value={latest.min ?? undefined}
                   unit={unit}
                 />
               </div>
@@ -228,7 +424,7 @@ export default function Analytics() {
                 <AnalyticsMetricCard
                   type="max"
                   label="Maximum Value"
-                  value={latest.max}
+                  value={latest.max ?? undefined}
                   unit={unit}
                 />
               </div>
@@ -236,71 +432,78 @@ export default function Analytics() {
                 <AnalyticsMetricCard
                   type="stdDev"
                   label="Variability (σ)"
-                  value={latest.stdDev}
+                  value={latest.stdDev ?? undefined}
                 />
               </div>
             </div>
 
-            <div className={cssStyles.analyticsMetaData}>
-              <div className={cssStyles.dateRangeInline}>
-                <span className={cssStyles.metaLabel}>From</span>
-                <input
-                  type="date"
-                  className={cssStyles.dateInput}
-                  value={startDate}
-                  onChange={(e) => setDateRange(e.target.value, endDate)}
-                  max={endDate}
-                />
+            <div className={cssStyles.dateRangeBlock}>
+              <span className={cssStyles.currentRangeLabel}>
+                <Text variant="caption">Date range: {startDate} to {endDate}</Text>
+              </span>
+              <div className={cssStyles.analyticsMetaData}>
+                <div className={cssStyles.dateRangeInline}>
+                  <span className={cssStyles.metaLabel}>From</span>
+                  <DateRangeInput
+                    value={startDate}
+                    max={endDate}
+                    onChange={(v) => setDateRange(v, endDate)}
+                    ariaLabel="Start date"
+                  />
+                </div>
+                <div className={cssStyles.dateRangeInline}>
+                  <span className={cssStyles.metaLabel}>To</span>
+                  <DateRangeInput
+                    value={endDate}
+                    min={startDate}
+                    onChange={(v) => setDateRange(startDate, v)}
+                    ariaLabel="End date"
+                  />
+                </div>
+                <Text variant="subtitle" style={{ margin: 0 }}>
+                  <span style={{ color: "#00684A" }}>Metric:&nbsp;</span>
+                  {metaData?.metric}
+                </Text>
+                <Text variant="subtitle" style={{ margin: 0 }}>
+                  <span style={{ color: "#00684A" }}>Granularity:&nbsp;</span>
+                  {metaData?.granularity}
+                </Text>
               </div>
-              <div className={cssStyles.dateRangeInline}>
-                <span className={cssStyles.metaLabel}>To</span>
-                <input
-                  type="date"
-                  className={cssStyles.dateInput}
-                  value={endDate}
-                  onChange={(e) => setDateRange(startDate, e.target.value)}
-                  min={startDate}
-                />
-              </div>
-              <Text variant="subtitle" style={{ margin: 0 }}>
-                <span style={{ color: "#00684A" }}>Metric:&nbsp;</span>
-                {metaData?.metric}
-              </Text>
-              <Text variant="subtitle" style={{ margin: 0 }}>
-                <span style={{ color: "#00684A" }}>Granularity:&nbsp;</span>
-                {metaData?.granularity}
-              </Text>
             </div>
           </div>
         ) : (
           <div className={cssStyles.emptyState}>
-            <Text variant="title">No data available.</Text>
-            <div className={cssStyles.analyticsMetaData}>
-              <div className={cssStyles.dateRangeInline}>
-                <span className={cssStyles.metaLabel}>From</span>
-                <input
-                  type="date"
-                  className={cssStyles.dateInput}
-                  value={startDate}
-                  onChange={(e) => setDateRange(e.target.value, endDate)}
-                  max={endDate}
-                />
-              </div>
-              <div className={cssStyles.dateRangeInline}>
-                <span className={cssStyles.metaLabel}>To</span>
-                <input
-                  type="date"
-                  className={cssStyles.dateInput}
-                  value={endDate}
-                  onChange={(e) => setDateRange(startDate, e.target.value)}
-                  min={startDate}
-                />
+            <Text variant="title">No data available for this date range.</Text>
+            <div className={cssStyles.dateRangeBlock}>
+              <span className={cssStyles.currentRangeLabel}>
+                <Text variant="caption">Date range: {startDate} to {endDate}</Text>
+              </span>
+              <div className={cssStyles.analyticsMetaData}>
+                <div className={cssStyles.dateRangeInline}>
+                  <span className={cssStyles.metaLabel}>From</span>
+                  <DateRangeInput
+                    value={startDate}
+                    max={endDate}
+                    onChange={(v) => setDateRange(v, endDate)}
+                    ariaLabel="Start date"
+                  />
+                </div>
+                <div className={cssStyles.dateRangeInline}>
+                  <span className={cssStyles.metaLabel}>To</span>
+                  <DateRangeInput
+                    value={endDate}
+                    min={startDate}
+                    onChange={(v) => setDateRange(startDate, v)}
+                    ariaLabel="End date"
+                  />
+                </div>
               </div>
             </div>
           </div>
         )}
       </Section>
 
+      {!showDataRangeGapPrompt && (
       <Section style={styles.chartsSection}>
         <div className={cssStyles.chartSectionHeader}>
           <Text variant="title" style={{ margin: 0 }}>
@@ -309,6 +512,14 @@ export default function Analytics() {
           <Text variant="caption" style={{ color: "#6B7280", margin: 0 }}>
             Scroll horizontally if needed · click chart to open full screen
           </Text>
+          {metaData?.granularity && (
+            <span className={cssStyles.rangeCoverage}>
+              <Text variant="caption">
+                Selected: {startDate} to {endDate} · Granularity: {metaData.granularity} · Buckets:{" "}
+                {totalBucketCount} · Data points: {dataPointCount}
+              </Text>
+            </span>
+          )}
         </div>
         {loading ? (
           <div className={cssStyles.chartLoading}>
@@ -323,6 +534,7 @@ export default function Analytics() {
               </Text>
             </div>
             <div
+              key={`chart-${startDate}-${endDate}`}
               className={cssStyles.chartPreviewWrapper}
               onClick={() => setModalOpen(true)}
               role="button"
@@ -336,10 +548,13 @@ export default function Analytics() {
               aria-label="Open chart in full screen"
             >
               <AnalyticsChart
-                series={data}
+                series={data ?? []}
                 unit={unit}
                 granularity={metaData.granularity}
                 selectedMetric={selectedMetric}
+                startDate={startDate}
+                endDate={endDate}
+                domainMode="data"
                 mode="wide"
                 height={PREVIEW_CHART_HEIGHT}
                 className={cssStyles.chartPreview}
@@ -353,6 +568,7 @@ export default function Analytics() {
           </div>
         ) : null}
       </Section>
+      )}
 
       {modalOpen && hasData && metaData && (
         <div
@@ -367,9 +583,14 @@ export default function Analytics() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className={cssStyles.modalHeader}>
-              <span className={cssStyles.modalTitle}>
-                {metaData.sensorType} – Chart
-              </span>
+              <div className={cssStyles.modalHeaderText}>
+                <span className={cssStyles.modalTitle}>
+                  {metaData.sensorType} - Chart
+                </span>
+                <span className={cssStyles.modalSubtitle}>
+                  Date range: {startDate} to {endDate} | Granularity: {metaData.granularity}
+                </span>
+              </div>
               <div className={cssStyles.modalHeaderActions}>
                 <button
                   type="button"
@@ -395,12 +616,15 @@ export default function Analytics() {
             <div className={cssStyles.modalMetricToggle}>
               <MetricToggle value={selectedMetric} onChange={setSelectedMetric} />
             </div>
-            <div className={cssStyles.modalChartWrapper}>
+            <div key={`modal-chart-${startDate}-${endDate}`} className={cssStyles.modalChartWrapper}>
               <AnalyticsChart
-                series={data}
+                series={chartSeries}
                 unit={unit}
                 granularity={metaData.granularity}
                 selectedMetric={selectedMetric}
+                startDate={startDate}
+                endDate={endDate}
+                domainMode="range"
                 mode={chartFitMode}
                 height={MODAL_CHART_HEIGHT}
               />
@@ -414,7 +638,7 @@ export default function Analytics() {
         title={`Export – ${exportTitle}`}
         subtitle={`${startDate} → ${endDate} · ${metaData?.granularity ?? "—"}`}
         onClose={() => setExportOpen(false)}
-        onDownloadCsv={handleDownloadAnalyticsCsv}
+        onDownloadJson={handleDownloadAnalyticsJson}
         onDownloadPdf={handleDownloadAnalyticsPdf}
         busy={exportBusy || exportPngLoading}
       >
@@ -428,20 +652,24 @@ export default function Analytics() {
 
         {latest && (
           <div className={cssStyles.exportPreviewCards}>
-            <AnalyticsMetricCard type="avg" label="Average Value" value={latest.avg} unit={unit} />
-            <AnalyticsMetricCard type="min" label="Minimum Value" value={latest.min} unit={unit} />
-            <AnalyticsMetricCard type="max" label="Maximum Value" value={latest.max} unit={unit} />
-            <AnalyticsMetricCard type="stdDev" label="Variability (σ)" value={latest.stdDev} />
+            <AnalyticsMetricCard type="avg" label="Average Value" value={latest.avg ?? undefined} unit={unit} />
+            <AnalyticsMetricCard type="min" label="Minimum Value" value={latest.min ?? undefined} unit={unit} />
+            <AnalyticsMetricCard type="max" label="Maximum Value" value={latest.max ?? undefined} unit={unit} />
+            <AnalyticsMetricCard type="stdDev" label="Variability (σ)" value={latest.stdDev ?? undefined} />
           </div>
         )}
 
         <div ref={exportChartRef} className={cssStyles.exportPreviewChart}>
           {hasData && metaData ? (
             <AnalyticsChart
-              series={data}
+              key={`export-chart-${startDate}-${endDate}`}
+              series={chartSeries}
               unit={unit}
               granularity={metaData.granularity}
               selectedMetric={selectedMetric}
+              startDate={startDate}
+              endDate={endDate}
+              domainMode="range"
               mode="fit"
               height={320}
             />
@@ -450,6 +678,13 @@ export default function Analytics() {
           )}
         </div>
       </ExportPreviewModal>
+
+      <ImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        sensorType={sensorType}
+        sensorLabel={(SENSOR_TYPES as Record<string, { label: string }>)[sensorType]?.label ?? sensorType}
+      />
     </>
   );
 }

@@ -1,3 +1,17 @@
+/* Date range block: label + inputs, same position for empty vs with-data */
+.dateRangeBlock {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.currentRangeLabel {
+  display: block;
+  color: #6B7280;
+  font-size: 0.85rem;
+}
+
 /* Date range inline with metric/granularity */
 .dateRangeInline {
   display: flex;
@@ -27,6 +41,19 @@
   box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.15);
 }
 
+.datePickerWrapper {
+  display: inline-block;
+  min-width: 140px;
+}
+
+.datePickerWrapper .react-datepicker-wrapper {
+  display: block;
+}
+
+.datePickerWrapper .react-datepicker__input-container input {
+  width: 100%;
+}
+
 /* Meta row: date range + metric + granularity */
 .analyticsMetaData {
   padding: clamp(0.5rem, 1.5vw, 0.625rem) clamp(0.75rem, 2vw, 1.25rem);
@@ -36,6 +63,36 @@
   align-items: center;
   gap: clamp(0.75rem, 2vw, 1.25rem);
   width: 100%;
+  box-sizing: border-box;
+}
+
+/* Prompt when selected range has no data for part of the range */
+.dataRangeGapBanner {
+  width: 100%;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+.dataRangeGapText {
+  margin: 0;
+  font-family: "Poppins-Light";
+  font-size: 0.9rem;
+  color: #92400e;
+  line-height: 1.45;
+}
+
+/* Gap-only view: only prompt + date range filter */
+.gapOnlyView {
+  width: 100%;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   box-sizing: border-box;
 }
 
@@ -68,11 +125,28 @@
   color: #B91C1C;
 }
 
+.emptyState .dateRangeBlock {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #E5E7EB;
+}
+
+.errorState .dateRangeBlock {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #FECACA;
+}
+
 .chartSectionHeader {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   padding-bottom: 0.75rem;
+}
+
+.rangeCoverage {
+  color: #4b5563;
+  font-family: "Poppins-Light";
 }
 
 .chartLoading,
@@ -158,10 +232,22 @@
   flex-shrink: 0;
 }
 
+.modalHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 .modalTitle {
   font-family: "Poppins-SemiBold";
   font-size: 1rem;
   color: #023430;
+}
+
+.modalSubtitle {
+  font-family: "Poppins-Light";
+  font-size: 0.78rem;
+  color: #4B5563;
 }
 
 .modalHeaderActions {
@@ -215,7 +301,13 @@
   overflow: hidden;
 }
 
-/* PageHeader export action */
+/* PageHeader actions: Import + Export */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .exportButton {
   border: 1px solid rgba(0, 104, 74, 0.35);
   background: rgba(255, 255, 255, 0.85);

@@ -34,7 +34,26 @@
   box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.15);
 }
 
-/* PageHeader export action */
+.datePickerWrapper {
+  display: inline-block;
+  min-width: 140px;
+}
+
+.datePickerWrapper .react-datepicker-wrapper {
+  display: block;
+}
+
+.datePickerWrapper .react-datepicker__input-container input {
+  width: 100%;
+}
+
+/* PageHeader actions: Import + Export */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .exportButton {
   border: 1px solid rgba(0, 104, 74, 0.35);
   background: rgba(255, 255, 255, 0.85);

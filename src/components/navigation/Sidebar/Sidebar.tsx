@@ -24,7 +24,6 @@ export default function Sidebar({ onLinkClick }: SidebarProps) {
         if (location.pathname.startsWith('/allocations')) return 'allocations';
         if (location.pathname.startsWith('/iot/analytics')) return 'analytics';
         if (location.pathname.startsWith('/iot/history')) return 'history';
-        
         return 'default';
     })();
 

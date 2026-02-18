@@ -142,6 +142,7 @@ type HistoryPdfArgs = {
   startDate: string;
   endDate: string;
   unit?: string;
+  chartPngDataUrl?: string;
   // NOTE: rows should be in the same order as the UI table (newest -> oldest).
   rows: Array<{ recordedAt: string; value: number; _id?: string }>;
 };
@@ -212,6 +213,17 @@ export function buildHistoryPdf(args: HistoryPdfArgs) {
     },
   });
   y = (doc as any).lastAutoTable.finalY + 8;
+
+  if (args.chartPngDataUrl) {
+    drawSectionTitle("Trend chart");
+    ensureSpace(78);
+    const imgX = margin;
+    const imgY = y;
+    const imgW = usableWidth;
+    const imgH = 70;
+    doc.addImage(args.chartPngDataUrl, "PNG", imgX, imgY, imgW, imgH);
+    y += imgH + 8;
+  }
 
   drawSectionTitle("History table");
 
