@@ -92,6 +92,35 @@
 
 /* Metadata layout is now handled inline like Analytics. */
 
+/* Set Dates button */
+.setDatesButton {
+  border: none;
+  background: #00684A;
+  color: #FFFFFF;
+  padding: 0.45rem 1.1rem;
+  border-radius: 10px;
+  font-family: "Poppins-SemiBold";
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-height: 36px;
+  margin-left: auto;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.setDatesButton:hover {
+  background: #005538;
+}
+
+.setDatesButtonDirty {
+  box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.45);
+  animation: pulseBorder 1.6s ease-in-out infinite;
+}
+
+@keyframes pulseBorder {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.45); }
+  50%       { box-shadow: 0 0 0 4px rgba(0, 104, 74, 0.2); }
+}
+
 /* Desktop: table columns can be wider */
 @media (min-width: 1024px) {
   .historyGridContainer {

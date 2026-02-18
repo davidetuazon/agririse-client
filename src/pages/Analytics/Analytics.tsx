@@ -111,39 +111,24 @@ export default function Analytics() {
     });
 
   const sensorType = searchParams.get("sensorType") ?? "damWaterLevel";
+  const sensorLabel = (SENSOR_TYPES as Record<string, { label: string }>)[sensorType]?.label ?? sensorType;
   const todayIso = new Date().toISOString().split("T")[0];
   const endDate = searchParams.get("endDate") ?? todayIso;
   // includes the server’s earliest data (e.g. 1/14); we then set From = first date in data, To = that + 1 month.
   const startDate =
     searchParams.get("startDate") ?? addDays(endDate, -30);
 
-  const [pendingStartDate, setPendingStartDate] = useState(startDate);
-  const [pendingEndDate, setPendingEndDate] = useState(endDate);
+  // Draft date state — only committed to URL (and triggers fetch) when "Set Dates" is clicked
+  const [localStartDate, setLocalStartDate] = useState(startDate);
+  const [localEndDate, setLocalEndDate] = useState(endDate);
 
-  useEffect(() => {
-    setPendingStartDate(startDate);
-    setPendingEndDate(endDate);
-  }, [startDate, endDate]);
-
-  const applyDateRange = () => {
-    const from = pendingStartDate;
-    const to = pendingEndDate;
-    if (from > to) return;
+  const setDateRange = (from: string, to: string) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set("startDate", from);
       next.set("endDate", to);
       return next;
     });
-  };
-
-  const onPendingFromChange = (v: string) => {
-    setPendingStartDate(v);
-    if (v > pendingEndDate) setPendingEndDate(v);
-  };
-  const onPendingToChange = (v: string) => {
-    setPendingEndDate(v);
-    if (v < pendingStartDate) setPendingStartDate(v);
   };
 
   const fetchAllPages = useCallback(async () => {
@@ -204,6 +189,13 @@ export default function Analytics() {
     if (modalOpen) window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [modalOpen]);
+
+  // Reset draft dates to committed URL dates when sensor type changes
+  useEffect(() => {
+    setLocalStartDate(startDate);
+    setLocalEndDate(endDate);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sensorType]);
 
   const hasData = data && data.length > 0;
   const latest = hasData ? data[data.length - 1] : null;
@@ -310,16 +302,46 @@ export default function Analytics() {
     }
   };
 
+  const isDateDirty = localStartDate !== startDate || localEndDate !== endDate;
+
+  const DateRangeControls = ({ extra }: { extra?: React.ReactNode }) => (
+    <div className={cssStyles.analyticsMetaData}>
+      <div className={cssStyles.dateRangeInline}>
+        <span className={cssStyles.metaLabel}>From</span>
+        <DateRangeInput
+          value={localStartDate}
+          max={localEndDate}
+          onChange={setLocalStartDate}
+          ariaLabel="Start date"
+        />
+      </div>
+      <div className={cssStyles.dateRangeInline}>
+        <span className={cssStyles.metaLabel}>To</span>
+        <DateRangeInput
+          value={localEndDate}
+          min={localStartDate}
+          onChange={setLocalEndDate}
+          ariaLabel="End date"
+        />
+      </div>
+      {extra}
+      <button
+        type="button"
+        onClick={() => setDateRange(localStartDate, localEndDate)}
+        className={`${cssStyles.setDatesButton}${isDateDirty ? ` ${cssStyles.setDatesButtonDirty}` : ""}`}
+        title={isDateDirty ? "You have unsaved date changes — click to apply" : "Apply current date range"}
+      >
+        Set Dates
+      </button>
+    </div>
+  );
+
   return (
     <>
       <PageHeader
         title="Analytics:"
-        chipValue={metaData?.sensorType}
-        subtitle={
-          metaData?.sensorType
-            ? `Aggregated metrics for ${metaData?.sensorType}`
-            : undefined
-        }
+        chipValue={sensorLabel}
+        subtitle={`Aggregated metrics for ${sensorLabel}`}
         actions={
           <div className={cssStyles.headerActions}>
             <button
@@ -354,36 +376,7 @@ export default function Analytics() {
               {typeof error === "string" ? error : JSON.stringify(error)}
             </Text>
             <div className={cssStyles.dateRangeBlock}>
-              <span className={cssStyles.currentRangeLabel}>
-                <Text variant="caption">Date range: {startDate} to {endDate}</Text>
-              </span>
-              <div className={cssStyles.analyticsMetaData}>
-                <div className={cssStyles.dateRangeInline}>
-                  <span className={cssStyles.metaLabel}>From</span>
-                  <DateRangeInput
-                    value={pendingStartDate}
-                    max={pendingEndDate}
-                    onChange={onPendingFromChange}
-                    ariaLabel="Start date"
-                  />
-                </div>
-                <div className={cssStyles.dateRangeInline}>
-                  <span className={cssStyles.metaLabel}>To</span>
-                  <DateRangeInput
-                    value={pendingEndDate}
-                    min={pendingStartDate}
-                    onChange={onPendingToChange}
-                    ariaLabel="End date"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className={cssStyles.setDatesButton}
-                  onClick={applyDateRange}
-                >
-                  Set dates
-                </button>
-              </div>
+              <DateRangeControls />
             </div>
           </div>
         ) : showDataRangeGapPrompt ? (
@@ -394,36 +387,7 @@ export default function Analytics() {
               </p>
             </div>
             <div className={cssStyles.dateRangeBlock}>
-              <span className={cssStyles.currentRangeLabel}>
-                <Text variant="caption">Date range: {startDate} to {endDate}</Text>
-              </span>
-              <div className={cssStyles.analyticsMetaData}>
-                <div className={cssStyles.dateRangeInline}>
-                  <span className={cssStyles.metaLabel}>From</span>
-                  <DateRangeInput
-                    value={pendingStartDate}
-                    max={pendingEndDate}
-                    onChange={onPendingFromChange}
-                    ariaLabel="Start date"
-                  />
-                </div>
-                <div className={cssStyles.dateRangeInline}>
-                  <span className={cssStyles.metaLabel}>To</span>
-                  <DateRangeInput
-                    value={pendingEndDate}
-                    min={pendingStartDate}
-                    onChange={onPendingToChange}
-                    ariaLabel="End date"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className={cssStyles.setDatesButton}
-                  onClick={applyDateRange}
-                >
-                  Set dates
-                </button>
-              </div>
+              <DateRangeControls />
             </div>
           </div>
         ) : latest ? (
@@ -472,80 +436,25 @@ export default function Analytics() {
             </div>
 
             <div className={cssStyles.dateRangeBlock}>
-              <span className={cssStyles.currentRangeLabel}>
-                <Text variant="caption">Date range: {startDate} to {endDate}</Text>
-              </span>
-              <div className={cssStyles.analyticsMetaData}>
-                <div className={cssStyles.dateRangeInline}>
-                  <span className={cssStyles.metaLabel}>From</span>
-                  <DateRangeInput
-                    value={pendingStartDate}
-                    max={pendingEndDate}
-                    onChange={onPendingFromChange}
-                    ariaLabel="Start date"
-                  />
-                </div>
-                <div className={cssStyles.dateRangeInline}>
-                  <span className={cssStyles.metaLabel}>To</span>
-                  <DateRangeInput
-                    value={pendingEndDate}
-                    min={pendingStartDate}
-                    onChange={onPendingToChange}
-                    ariaLabel="End date"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className={cssStyles.setDatesButton}
-                  onClick={applyDateRange}
-                >
-                  Set dates
-                </button>
-                <Text variant="subtitle" style={{ margin: 0 }}>
-                  <span style={{ color: "#00684A" }}>Metric:&nbsp;</span>
-                  {metaData?.metric}
-                </Text>
-                <Text variant="subtitle" style={{ margin: 0 }}>
-                  <span style={{ color: "#00684A" }}>Granularity:&nbsp;</span>
-                  {metaData?.granularity}
-                </Text>
-              </div>
+              <DateRangeControls extra={
+                <>
+                  <Text variant="subtitle" style={{ margin: 0 }}>
+                    <span style={{ color: "#00684A" }}>Metric:&nbsp;</span>
+                    {metaData?.metric}
+                  </Text>
+                  <Text variant="subtitle" style={{ margin: 0 }}>
+                    <span style={{ color: "#00684A" }}>Granularity:&nbsp;</span>
+                    {metaData?.granularity}
+                  </Text>
+                </>
+              } />
             </div>
           </div>
         ) : (
           <div className={cssStyles.emptyState}>
             <Text variant="title">No data available for this date range.</Text>
             <div className={cssStyles.dateRangeBlock}>
-              <span className={cssStyles.currentRangeLabel}>
-                <Text variant="caption">Date range: {startDate} to {endDate}</Text>
-              </span>
-              <div className={cssStyles.analyticsMetaData}>
-                <div className={cssStyles.dateRangeInline}>
-                  <span className={cssStyles.metaLabel}>From</span>
-                  <DateRangeInput
-                    value={pendingStartDate}
-                    max={pendingEndDate}
-                    onChange={onPendingFromChange}
-                    ariaLabel="Start date"
-                  />
-                </div>
-                <div className={cssStyles.dateRangeInline}>
-                  <span className={cssStyles.metaLabel}>To</span>
-                  <DateRangeInput
-                    value={pendingEndDate}
-                    min={pendingStartDate}
-                    onChange={onPendingToChange}
-                    ariaLabel="End date"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className={cssStyles.setDatesButton}
-                  onClick={applyDateRange}
-                >
-                  Set dates
-                </button>
-              </div>
+              <DateRangeControls />
             </div>
           </div>
         )}
@@ -666,7 +575,7 @@ export default function Analytics() {
             </div>
             <div key={`modal-chart-${startDate}-${endDate}`} className={cssStyles.modalChartWrapper}>
               <AnalyticsChart
-                series={chartSeries}
+                series={data ?? []}
                 unit={unit}
                 granularity={metaData.granularity}
                 selectedMetric={selectedMetric}
@@ -711,13 +620,13 @@ export default function Analytics() {
           {hasData && metaData ? (
             <AnalyticsChart
               key={`export-chart-${startDate}-${endDate}`}
-              series={chartSeries}
+              series={data ?? []}
               unit={unit}
               granularity={metaData.granularity}
               selectedMetric={selectedMetric}
               startDate={startDate}
               endDate={endDate}
-              domainMode="range"
+              domainMode="data"
               mode="fit"
               height={320}
             />
