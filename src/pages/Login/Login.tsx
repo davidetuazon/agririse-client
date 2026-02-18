@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import colors from "../../constants/colors";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
@@ -20,6 +21,7 @@ type Inputs = {
 
 export default function Login() {
     const navigate = useNavigate();
+    const [showPassword, setShowPassword] = useState(false);
     const { register, handleSubmit, setFocus, formState: { errors, isSubmitting }} = useForm<Inputs>();
 
     useEffect(() => {
@@ -146,18 +148,29 @@ export default function Login() {
                                     error={errors.email?.message}
                                 />
 
-                                <TextInput
-                                    textProps={{
-                                        type: "password",
-                                        placeholder: "Password",
-                                        ...register("password", {
+                                <div className={`${cssStyles.passwordFieldContainer} ${errors.password ? cssStyles.passwordFieldError : ""}`}>
+                                    <input
+                                        className={cssStyles.passwordFieldInput}
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Password"
+                                        {...register("password", {
                                             validate: {
                                                 mustNotBeEmptyOrSpace,
                                             },
-                                        }),
-                                    }}
-                                    error={errors.password?.message}
-                                />
+                                        })}
+                                    />
+                                    <button
+                                        type="button"
+                                        className={cssStyles.passwordToggle}
+                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                        onClick={() => setShowPassword((prev) => !prev)}
+                                    >
+                                        {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                                    </button>
+                                </div>
+                                {errors.password?.message && (
+                                    <p className={cssStyles.passwordErrorText}>*{errors.password.message}</p>
+                                )}
 
                                 <div className={cssStyles.loginSubmitContainer}>
                                     <Button
