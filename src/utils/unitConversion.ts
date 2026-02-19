@@ -57,7 +57,7 @@ export function getUnitOptions(sensorType: SensorType, sourceUnit: string): Unit
       ];
       
       // Add other rainfall units if they're not already the source
-      if (sourceUnit !== 'cm') rainfallOptions.push({ value: 'cm', label: 'cm' });
+      if (sourceUnit !== 'm') rainfallOptions.push({ value: 'm', label: 'm' });
       if (sourceUnit !== 'in') rainfallOptions.push({ value: 'in', label: 'in' });
       
       return rainfallOptions;
@@ -190,8 +190,8 @@ function convertRainfall(value: number, from: string, to: string): number {
     case 'mm':
       mm = value;
       break;
-    case 'cm':
-      mm = value * 10;
+    case 'm':
+      mm = value * 1000;
       break;
     case 'in':
       mm = value * 25.4;
@@ -204,8 +204,8 @@ function convertRainfall(value: number, from: string, to: string): number {
   switch (to) {
     case 'mm':
       return mm;
-    case 'cm':
-      return mm / 10;
+    case 'm':
+      return mm / 1000;
     case 'in':
       return mm / 25.4;
     default:
