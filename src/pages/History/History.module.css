@@ -34,6 +34,11 @@
   box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.15);
 }
 
+.dateInput option:disabled {
+  color: #9CA3AF;
+  font-style: italic;
+}
+
 .datePickerWrapper {
   display: inline-block;
   min-width: 140px;

@@ -11,6 +11,7 @@ import { toCsv, downloadTextFile } from "../../utils/exportCsv";
 import { buildHistoryPdf } from "../../utils/exportPdf";
 import { SENSOR_TYPES } from "../../utils/constants";
 import ImportModal from "../../components/import/ImportModal";
+import { getUnitOptions, convertValue, getCalibrationStatus, type SensorType as UnitSensorType } from "../../utils/unitConversion";
 import cssStyles from "./History.module.css";
 import { useGenerateImage } from "recharts-to-png";
 import DatePicker from "react-datepicker";
@@ -86,6 +87,12 @@ export default function History() {
     const startDate = searchParams.get('startDate')
         ?? new Date(new Date(endDate).getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const limit = Number(searchParams.get('limit')) || 10;
+
+    // Unit conversion state
+    const sourceUnit = metaData?.unit ?? (SENSOR_TYPES as Record<string, { unit: string }>)[sensorType]?.unit ?? '';
+    const [selectedUnit, setSelectedUnit] = useState<string>(sourceUnit);
+    const unitOptions = getUnitOptions(sensorType as UnitSensorType, sourceUnit);
+    const calibrationStatus = getCalibrationStatus();
 
     // Draft date state — only committed to URL (and triggers fetch) when "Set Dates" is clicked
     const [localStartDate, setLocalStartDate] = useState(startDate);
@@ -163,7 +170,15 @@ export default function History() {
     const handleDownloadHistoryCsv = async () => {
         const rows = exportRows ?? (await fetchAllForExport());
         if (!rows || !rows.length) return;
-        const csv = toCsv(rows as any, ['recordedAt', 'value', '_id']);
+        
+        // Convert values to selected unit for export
+        const convertedRows = rows.map((r: any) => ({
+            ...r,
+            value: typeof r.value === 'number' ? convertDisplayValue(r.value) : r.value,
+            unit: selectedUnit,
+        }));
+        
+        const csv = toCsv(convertedRows as any, ['recordedAt', 'value', 'unit', '_id']);
         downloadTextFile(`${exportFilenameBase}.csv`, 'text/csv', csv);
     };
 
@@ -172,7 +187,8 @@ export default function History() {
         if (!rows || !rows.length) return;
         const payload = rows.map((r: any) => ({
             recordedAt: typeof r.recordedAt === 'string' ? r.recordedAt : new Date(r.recordedAt).toISOString(),
-            value: r.value,
+            value: typeof r.value === 'number' ? convertDisplayValue(r.value) : r.value,
+            unit: selectedUnit,
             _id: r._id,
         }));
         downloadTextFile(`${exportFilenameBase}.json`, 'application/json', JSON.stringify(payload, null, 2));
@@ -182,17 +198,21 @@ export default function History() {
         const rows = exportRows ?? (await fetchAllForExport());
         if (!rows || !rows.length) return;
         const chartPng = await getExportChartPng();
+        
+        // Convert values to selected unit for PDF export
+        const convertedRows = rows.map((r: any) => ({
+            recordedAt: r.recordedAt,
+            value: typeof r.value === 'number' ? convertDisplayValue(r.value) : r.value,
+            _id: r._id,
+        }));
+        
         const doc = buildHistoryPdf({
             title: exportTitle,
             startDate,
             endDate,
-            unit: metaData?.unit,
+            unit: selectedUnit,
             chartPngDataUrl: chartPng,
-            rows: rows.map((r: any) => ({
-                recordedAt: r.recordedAt,
-                value: r.value,
-                _id: r._id,
-            })),
+            rows: convertedRows,
         });
         doc.save(`${exportFilenameBase}.pdf`);
     };
@@ -204,6 +224,22 @@ export default function History() {
         setLocalEndDate(endDate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sensorType]);
+
+    // Reset selected unit when source unit changes (e.g., when switching sensors)
+    useEffect(() => {
+        setSelectedUnit(sourceUnit);
+    }, [sourceUnit]);
+
+    // Helper function to convert a value from source unit to selected unit
+    const convertDisplayValue = (value: number): number => {
+        if (!sourceUnit || !selectedUnit) return value;
+        return convertValue({
+            sensorType: sensorType as UnitSensorType,
+            value,
+            sourceUnit,
+            targetUnit: selectedUnit,
+        });
+    };
 
     const init = async () => {
         if (!startDate || !endDate) return;
@@ -328,12 +364,33 @@ export default function History() {
                             </span>
                                 {sensorLabel}
                         </Text>
-                        <Text variant="subtitle" style={{ margin: 0 }}>
-                            <span style={{ color: "#00684A" }}>
-                                Unit Measurement:&nbsp;
-                            </span>
-                                {metaData?.unit}
-                        </Text>
+                        <div className={cssStyles.dateRangeInline}>
+                            <span className={cssStyles.metaLabel}>Unit:</span>
+                            <select
+                                value={selectedUnit}
+                                onChange={(e) => setSelectedUnit(e.target.value)}
+                                className={cssStyles.dateInput}
+                                title="Select display unit"
+                            >
+                                {unitOptions.map((option) => (
+                                    <option
+                                        key={option.value}
+                                        value={option.value}
+                                        disabled={option.disabled}
+                                        title={option.disabledReason}
+                                    >
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                            {sensorType === 'damWaterLevel' && (!calibrationStatus.damDepthAvailable || !calibrationStatus.damVolumeAvailable) && (
+                                <Text variant="caption" style={{ margin: 0, color: '#6B7280', fontSize: '0.75rem' }}>
+                                    {!calibrationStatus.damDepthAvailable && 'm/ft disabled'}
+                                    {!calibrationStatus.damDepthAvailable && !calibrationStatus.damVolumeAvailable && ', '}
+                                    {!calibrationStatus.damVolumeAvailable && 'MCM disabled'}
+                                </Text>
+                            )}
+                        </div>
                         <button
                             type="button"
                             onClick={() => setDateRange(localStartDate, localEndDate)}
@@ -401,7 +458,10 @@ export default function History() {
 
                         {/* data */}
                         {data.map((d:any, idx: number) => {
-                            const delta: number | '-' = idx === data.length - 1 ? '-' : d.value - data[idx + 1].value;
+                            const convertedValue = convertDisplayValue(d.value);
+                            const nextValue = idx === data.length - 1 ? null : data[idx + 1].value;
+                            const convertedNextValue = nextValue !== null ? convertDisplayValue(nextValue) : null;
+                            const delta: number | '-' = convertedNextValue !== null ? convertedValue - convertedNextValue : '-';
 
                             return (
                             <div key={d._id} style={styles.gridContainer}>
@@ -419,7 +479,7 @@ export default function History() {
                                     borderRight: `2px solid #001E2B`,
                                 }}>
                                     <Text variant="subtitle">
-                                        {d.value.toFixed(2)}{metaData?.unit}
+                                        {convertedValue.toFixed(2)}{selectedUnit}
                                     </Text>
                                 </div>
                                 <div style={{
@@ -427,7 +487,7 @@ export default function History() {
                                     borderRight: `2px solid #001E2B`,
                                 }}>
                                     <Text variant="subtitle">
-                                        {delta === '-' ? '-' : `${delta >= 0 ? '+': ''}${delta.toFixed(2)}${metaData?.unit}`}
+                                        {delta === '-' ? '-' : `${delta >= 0 ? '+': ''}${delta.toFixed(2)}${selectedUnit}`}
                                     </Text>
                                 </div>
                                 <div style={{
@@ -469,7 +529,7 @@ export default function History() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1.25rem', fontFamily: 'Poppins-Light', fontSize: '0.85rem', color: '#023430' }}>
                         <div><strong>Sensor</strong>: {metaData?.sensorType ?? '—'}</div>
-                        <div><strong>Unit</strong>: {metaData?.unit ?? '—'}</div>
+                        <div><strong>Unit</strong>: {selectedUnit || '—'}</div>
                         <div><strong>From</strong>: {startDate}</div>
                         <div><strong>To</strong>: {endDate}</div>
                     </div>
@@ -491,7 +551,11 @@ export default function History() {
                             Overall trend for selected date range
                         </Text>
                         <div ref={exportChartRef} style={{ width: '100%', height: 260 }}>
-                            <HistoryTrendChart rows={exportRows ?? data ?? []} unit={metaData?.unit ?? ''} />
+                            <HistoryTrendChart 
+                                rows={exportRows ?? data ?? []} 
+                                unit={selectedUnit} 
+                                convertValue={convertDisplayValue}
+                            />
                         </div>
                     </div>
 
@@ -507,15 +571,20 @@ export default function History() {
                             </thead>
                             <tbody>
                                 {(exportRows ?? data ?? []).slice(0, 25).map((r: any, idx: number, arr: any[]) => {
-                                    const delta: number | '-' = idx === arr.length - 1 ? '-' : r.value - arr[idx + 1].value;
-                                    const deltaLabel = delta === '-' ? '-' : `${delta >= 0 ? '+': ''}${delta.toFixed(2)}${metaData?.unit ?? ''}`;
+                                    const convertedValue = typeof r.value === 'number' ? convertDisplayValue(r.value) : r.value;
+                                    const nextValue = idx === arr.length - 1 ? null : arr[idx + 1]?.value;
+                                    const convertedNextValue = nextValue !== null && typeof nextValue === 'number' ? convertDisplayValue(nextValue) : null;
+                                    const delta: number | '-' = convertedNextValue !== null && typeof convertedValue === 'number' 
+                                        ? convertedValue - convertedNextValue 
+                                        : '-';
+                                    const deltaLabel = delta === '-' ? '-' : `${delta >= 0 ? '+': ''}${delta.toFixed(2)}${selectedUnit}`;
                                     return (
                                     <tr key={r._id}>
                                         <td style={{ padding: '8px 10px', borderBottom: '1px solid #F0F3F2' }}>
                                             {new Date(r.recordedAt).toISOString().replace('T', ' ').slice(0, 19)}
                                         </td>
                                         <td style={{ padding: '8px 10px', borderBottom: '1px solid #F0F3F2' }}>
-                                            {typeof r.value === 'number' ? r.value.toFixed(2) : r.value}{metaData?.unit ?? ''}
+                                            {typeof convertedValue === 'number' ? convertedValue.toFixed(2) : convertedValue}{selectedUnit}
                                         </td>
                                         <td style={{ padding: '8px 10px', borderBottom: '1px solid #F0F3F2' }}>
                                             {deltaLabel}
@@ -545,7 +614,15 @@ export default function History() {
     )
 }
 
-function HistoryTrendChart({ rows, unit }: { rows: any[]; unit: string }) {
+function HistoryTrendChart({ 
+    rows, 
+    unit, 
+    convertValue 
+}: { 
+    rows: any[]; 
+    unit: string; 
+    convertValue?: (value: number) => number;
+}) {
     const sorted = [...(rows ?? [])]
         .filter((r) => r?.recordedAt != null && typeof r?.value === 'number')
         .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
@@ -553,7 +630,7 @@ function HistoryTrendChart({ rows, unit }: { rows: any[]; unit: string }) {
     const chartData = sorted.map((r) => ({
         tsMs: new Date(r.recordedAt).getTime(),
         timestamp: new Date(r.recordedAt).toISOString(),
-        value: Number(r.value),
+        value: convertValue ? convertValue(Number(r.value)) : Number(r.value),
     }));
 
     if (!chartData.length) {
