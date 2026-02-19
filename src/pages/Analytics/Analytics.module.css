@@ -403,3 +403,127 @@
   padding: 0.5rem;
   background: #FFFFFF;
 }
+
+/* Anomalies section */
+.anomaliesSection {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #E5E7EB;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.anomalySummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  font-family: "Poppins-Light";
+  font-size: 0.85rem;
+}
+
+.anomalySummaryTotal {
+  font-family: "Poppins-SemiBold";
+  color: #023430;
+}
+
+.anomalyBadgeCritical {
+  background: rgba(185, 28, 28, 0.12);
+  color: #B91C1C;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.anomalyBadgeWarning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #B45309;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.anomalyBadgeInfo {
+  background: rgba(59, 130, 246, 0.15);
+  color: #1D4ED8;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.anomalyTypes {
+  color: #6B7280;
+  font-size: 0.8rem;
+}
+
+.anomaliesByPeriod {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #E8EDEB;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  background: #FAFAFA;
+}
+
+.anomalyList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.anomalyListItem {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #E5E7EB;
+  font-family: "Poppins-Light";
+  font-size: 0.85rem;
+}
+
+.anomalyListItem:last-child {
+  border-bottom: none;
+}
+
+.anomalyListTime {
+  display: block;
+  color: #00684A;
+  font-family: "Poppins-SemiBold";
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.anomalyListMessages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.anomalyMessage {
+  color: #374151;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.anomalySeverityCritical {
+  color: #B91C1C;
+  font-weight: 600;
+}
+
+.anomalySeverityWarning {
+  color: #B45309;
+  font-weight: 600;
+}
+
+.anomalySeverityInfo {
+  color: #1D4ED8;
+  font-weight: 600;
+}

@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import {
-  Area,
   ComposedChart,
   CartesianGrid,
   Legend,
   Line,
   ReferenceArea,
+  ReferenceDot,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -30,6 +30,22 @@ const CHART_COLORS = {
 const PX_PER_BUCKET = 24;
 const MIN_WIDE_WIDTH = 400;
 
+export type AnomalyItem = {
+  type: string;
+  severity: string;
+  value?: number;
+  threshold?: number;
+  message?: string;
+};
+
+export type AnomalySummary = {
+  total: number;
+  critical: number;
+  warning: number;
+  info: number;
+  types: Record<string, number>;
+};
+
 export type AnalyticsBucket = {
   timestamp: string;
   avg: number | null;
@@ -38,6 +54,7 @@ export type AnalyticsBucket = {
   stdDev: number | null;
   count: number | null;
   total?: number | null;
+  anomalies?: AnomalyItem[];
 };
 
 type Props = {
@@ -202,6 +219,16 @@ export default function AnalyticsChart({
             {unit}
           </div>
         )}
+        {(p as AnalyticsBucket).anomalies && (p as AnalyticsBucket).anomalies!.length > 0 && (
+          <div className={cssStyles.tooltipAnomalies}>
+            <div className={cssStyles.tooltipAnomaliesTitle}>Anomalies</div>
+            {(p as AnalyticsBucket).anomalies!.map((a, i) => (
+              <div key={i} className={cssStyles.tooltipAnomalyItem}>
+                [{a.severity}] {a.message ?? a.type}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -356,6 +383,24 @@ export default function AnalyticsChart({
           isAnimationActive={false}
         />
       )}
+      {/* Anomaly markers: small dots on buckets that have anomalies */}
+      {chartData.map((row, i) => {
+        const bucket = row as AnalyticsBucket;
+        const hasAnomalies = bucket.anomalies && bucket.anomalies.length > 0;
+        const yVal = row.avg ?? row.max ?? row.min;
+        if (!hasAnomalies || yVal == null || !Number.isFinite(yVal)) return null;
+        return (
+          <ReferenceDot
+            key={`anomaly-${i}-${row.tsMs}`}
+            x={row.tsMs}
+            y={yVal}
+            r={5}
+            fill="#B45309"
+            stroke="#fff"
+            strokeWidth={1.5}
+          />
+        );
+      })}
     </ComposedChart>
   );
 

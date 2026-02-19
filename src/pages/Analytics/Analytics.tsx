@@ -159,7 +159,20 @@ export default function Analytics() {
       }
 
       const nextSeries = res.series ?? [];
-      meta = res.meta;
+      const rawAnomalies = (res as { anomalies?: { total?: number; critical?: number; warning?: number; info?: number; types?: Record<string, number> } }).anomalies;
+      const anomaliesSummary = rawAnomalies
+        ? {
+            total: Number(rawAnomalies.total) || 0,
+            critical: Number(rawAnomalies.critical) || 0,
+            warning: Number(rawAnomalies.warning) || 0,
+            info: Number(rawAnomalies.info) || 0,
+            types: typeof rawAnomalies.types === "object" && rawAnomalies.types != null ? rawAnomalies.types : {},
+          }
+        : { total: 0, critical: 0, warning: 0, info: 0, types: {} };
+      meta = {
+        ...res.meta,
+        anomalies: anomaliesSummary,
+      };
       allSeries = [...allSeries, ...nextSeries];
 
       if (!res.pageInfo?.hasNext || !res.pageInfo?.nextCursor) break;
@@ -449,6 +462,78 @@ export default function Analytics() {
                 </>
               } />
             </div>
+
+            {metaData?.anomalies && (
+              <div className={cssStyles.anomaliesSection}>
+                <Text variant="title" style={{ margin: 0 }}>
+                  Anomalies
+                </Text>
+                {(metaData.anomalies as { total?: number }).total ? (
+                  <>
+                    <div className={cssStyles.anomalySummary}>
+                      <span className={cssStyles.anomalySummaryTotal}>
+                        Total: {(metaData.anomalies as { total?: number }).total}
+                      </span>
+                      {(metaData.anomalies as { critical?: number }).critical > 0 && (
+                        <span className={cssStyles.anomalyBadgeCritical}>
+                          Critical: {(metaData.anomalies as { critical?: number }).critical}
+                        </span>
+                      )}
+                      {(metaData.anomalies as { warning?: number }).warning > 0 && (
+                        <span className={cssStyles.anomalyBadgeWarning}>
+                          Warning: {(metaData.anomalies as { warning?: number }).warning}
+                        </span>
+                      )}
+                      {(metaData.anomalies as { info?: number }).info > 0 && (
+                        <span className={cssStyles.anomalyBadgeInfo}>
+                          Info: {(metaData.anomalies as { info?: number }).info}
+                        </span>
+                      )}
+                      {(metaData.anomalies as { types?: Record<string, number> }).types &&
+                        Object.keys((metaData.anomalies as { types?: Record<string, number> }).types ?? {}).length > 0 && (
+                          <span className={cssStyles.anomalyTypes}>
+                            {Object.entries((metaData.anomalies as { types?: Record<string, number> }).types ?? {})
+                              .map(([t, c]) => `${t}: ${c}`)
+                              .join(", ")}
+                          </span>
+                        )}
+                    </div>
+                    <div className={cssStyles.anomaliesByPeriod}>
+                      <Text variant="subtitle" style={{ margin: "0 0 0.5rem 0" }}>
+                        Anomalies by period
+                      </Text>
+                      <ul className={cssStyles.anomalyList}>
+                        {(data ?? [])
+                          .filter((b) => (b as AnalyticsBucket & { anomalies?: unknown[] }).anomalies?.length)
+                          .map((b) => {
+                            const bucket = b as AnalyticsBucket & { anomalies?: { message?: string; type?: string; severity?: string }[] };
+                            const ts = new Date(bucket.timestamp).toISOString().replace("T", " ").slice(0, 19);
+                            return (
+                              <li key={bucket.timestamp} className={cssStyles.anomalyListItem}>
+                                <span className={cssStyles.anomalyListTime}>{ts} UTC</span>
+                                <ul className={cssStyles.anomalyListMessages}>
+                                  {(bucket.anomalies ?? []).map((a, i) => (
+                                    <li key={i} className={cssStyles.anomalyMessage}>
+                                      <span className={a.severity === "critical" ? cssStyles.anomalySeverityCritical : a.severity === "warning" ? cssStyles.anomalySeverityWarning : cssStyles.anomalySeverityInfo}>
+                                        [{a.severity}]
+                                      </span>{" "}
+                                      {a.message ?? a.type}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </li>
+                            );
+                          })}
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  <Text variant="caption" style={{ margin: 0, color: "#6B7280" }}>
+                    No anomalies detected for this date range.
+                  </Text>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className={cssStyles.emptyState}>
