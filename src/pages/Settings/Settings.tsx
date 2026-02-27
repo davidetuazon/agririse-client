@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Lock, Map } from "lucide-react";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import { toast } from "react-hot-toast";
@@ -10,6 +11,7 @@ import Text from "../../components/commons/Text/Text";
 import PageHeader from "../../components/commons/PageHeader";
 import { changePassword } from "../../services/api";
 import { mustNotBeEmptyOrSpace, mustBeStrongPassword } from "../../utils/validators";
+import { clearTourCompleted } from "../../utils/tourStorage";
 import cssStyles from "./Settings.module.css";
 
 type PasswordFormInputs = {
@@ -19,6 +21,7 @@ type PasswordFormInputs = {
 };
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [shakeForm, setShakeForm] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -176,6 +179,31 @@ export default function Settings() {
                 />
               </div>
             </form>
+          </div>
+
+          <div className={cssStyles.card}>
+            <div className={cssStyles.cardTitleRow}>
+              <Map size={16} />
+              <Text variant="subtitle" style={{ margin: 0 }}>
+                Product tour
+              </Text>
+            </div>
+            <Text variant="caption" style={{ margin: 0 }} textStyle={{ opacity: 0.75 }}>
+              Run the guided tour again to revisit the dashboard and features.
+            </Text>
+            <div className={cssStyles.actionRow} style={{ marginTop: "0.75rem" }}>
+              <button
+                type="button"
+                className={cssStyles.tourButton}
+                onClick={() => {
+                  clearTourCompleted();
+                  navigate("/home");
+                  toast.success("Opening dashboard tour");
+                }}
+              >
+                Restart tour
+              </button>
+            </div>
           </div>
         </div>
       </Section>

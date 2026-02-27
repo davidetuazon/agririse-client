@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import {
+  Area,
   ComposedChart,
   CartesianGrid,
   Legend,
   Line,
-  ReferenceArea,
   ReferenceDot,
   ResponsiveContainer,
   Tooltip,
@@ -15,16 +15,16 @@ import {
 import type { MetricKey } from "./MetricToggle";
 import cssStyles from "./AnalyticsChart.module.css";
 
-/* Red min/max edges, green band, distinct average line */
+/* Range = solid green; min/max lines, average, grid */
 const CHART_COLORS = {
-  avgLine: "#1E40AF",         /* blue – main line (average) */
-  rangeFill: "rgba(22, 163, 74, 0.35)",  /* green – band between min and max */
-  rangeFillBottom: "#FFFFFF",
-  minLine: "#DC2626",         /* red – bottom of band */
-  maxLine: "#B91C1C",         /* darker red – top of band */
-  grid: "#94A3B8",
-  axis: "#1E293B",
-  metricLine: "#6B21A8",      /* purple – emphasized metric (min/max/σ) */
+  avgLine: "#1D4ED8",
+  minLine: "#DC2626",
+  maxLine: "#B91C1C",
+  grid: "#E2E8F0",
+  axis: "#334155",
+  metricLine: "#7C3AED",
+  /** Single green for min–max range band */
+  rangeFill: "rgba(34, 197, 94, 0.35)",
 };
 
 const PX_PER_BUCKET = 24;
@@ -62,6 +62,10 @@ type Props = {
   unit: string;
   granularity: string;
   selectedMetric: MetricKey;
+  /** When user hovers a metric in the toggle, highlight that line and dim others. */
+  hoveredMetric?: MetricKey | null;
+  /** Optional bucket timestamp to emphasize (used by "View on chart" from anomalies list). */
+  focusedTimestamp?: string | null;
   mode: "fit" | "wide";
   height: number;
   className?: string;
@@ -102,6 +106,8 @@ export default function AnalyticsChart({
   unit,
   granularity,
   selectedMetric,
+  hoveredMetric = null,
+  focusedTimestamp = null,
   mode,
   height,
   className,
@@ -114,25 +120,17 @@ export default function AnalyticsChart({
       (a, b) =>
         new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
-    const numericMins = sorted
-      .map((r) => r.min)
-      .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
-    const baseline = numericMins.length ? Math.min(...numericMins) : 0;
     return sorted.map((row) => {
       const minVal = row.min != null && Number.isFinite(row.min) ? row.min : null;
       const maxVal = row.max != null && Number.isFinite(row.max) ? row.max : null;
-      const mid =
-        minVal != null && maxVal != null ? (minVal + maxVal) / 2 : null;
-      /* Per-point lower edge of the band so the white mask always draws (avoids green extending below min when min is null). */
-      const _bandBottom =
-        minVal != null ? minVal : (maxVal != null ? maxVal : baseline);
+      const hasValidRange =
+        minVal != null && maxVal != null && Number.isFinite(minVal) && Number.isFinite(maxVal) && maxVal > minVal;
       return {
         ...row,
         timestamp: row.timestamp,
         tsMs: new Date(row.timestamp).getTime(),
-        _baseline: baseline,
-        _bandBottom,
-        _mid: mid,
+        _rangeBase: hasValidRange ? minVal : null,
+        _rangeSpan: hasValidRange ? maxVal - minVal : null,
       };
     });
   }, [series, granularity]);
@@ -162,6 +160,29 @@ export default function AnalyticsChart({
     }
     return ["dataMin", "dataMax"];
   }, [domainMode, rangeStartMs, rangeEndMs]);
+
+  /** Y domain from data so the range band stays within chart bounds (no overflow) */
+  const yDomain = useMemo(() => {
+    let minVal = Infinity;
+    let maxVal = -Infinity;
+    for (const row of chartData) {
+      for (const key of ["min", "max", "avg"] as const) {
+        const v = row[key];
+        if (typeof v === "number" && Number.isFinite(v)) {
+          if (v < minVal) minVal = v;
+          if (v > maxVal) maxVal = v;
+        }
+      }
+    }
+    if (minVal === Infinity) minVal = 0;
+    if (maxVal === -Infinity) maxVal = 1;
+    if (minVal === maxVal) {
+      minVal = minVal - 1;
+      maxVal = maxVal + 1;
+    }
+    const padding = Math.max((maxVal - minVal) * 0.05, 0.5);
+    return [minVal - padding, maxVal + padding] as [number, number];
+  }, [chartData]);
 
   const wideWidth = useMemo(() => {
     const count = chartData.length;
@@ -247,10 +268,10 @@ export default function AnalyticsChart({
   const chart = (
     <ComposedChart
       data={chartData}
-      margin={{ top: 16, right: 16, left: 8, bottom: 24 }}
+      margin={{ top: 20, right: 20, left: 12, bottom: 28 }}
     >
       <CartesianGrid
-        strokeDasharray="3 3"
+        strokeDasharray="4 4"
         stroke={CHART_COLORS.grid}
         vertical
         horizontal
@@ -275,6 +296,7 @@ export default function AnalyticsChart({
         }}
       />
       <YAxis
+        domain={yDomain}
         tick={{ fontSize: 11, fill: CHART_COLORS.axis }}
         stroke={CHART_COLORS.axis}
         axisLine={{ stroke: CHART_COLORS.grid }}
@@ -294,13 +316,13 @@ export default function AnalyticsChart({
       <Legend
         content={(props) => {
           const { payload } = props as { payload?: Array<{ value: string; color?: string }> };
-          const withBand = [
-            { value: "Range (min–max)", color: CHART_COLORS.rangeFill },
-            ...(payload ?? []),
-          ];
+          const entries = (payload ?? []).map((entry) => ({
+            ...entry,
+            color: entry.value === "Range (min–max)" ? "#22c55e" : entry.color,
+          }));
           return (
             <ul className={cssStyles.colorLegend} aria-label="Chart legend">
-              {withBand.map((entry, i) => {
+              {entries.map((entry, i) => {
                 const color = entry.color ?? CHART_COLORS.axis;
                 return (
                   <li key={i} className={cssStyles.colorLegendItem}>
@@ -313,62 +335,51 @@ export default function AnalyticsChart({
           );
         }}
       />
-      {/* Band: one ReferenceArea per bucket so fill is strictly between min and max (never below min) */}
-      {chartData.map((row, i) => {
-        const minY = row.min != null && Number.isFinite(row.min) ? row.min : null;
-        const maxY = row.max != null && Number.isFinite(row.max) ? row.max : null;
-        if (minY == null || maxY == null || minY >= maxY) return null;
-        const x1 = row.tsMs;
-        const next = chartData[i + 1];
-        const x2 = next ? next.tsMs : x1 + (i > 0 ? row.tsMs - chartData[i - 1].tsMs : 1);
+      {/* Continuous min-max range band using stacked areas (single green color). */}
+      <Area
+        type="monotone"
+        dataKey="_rangeBase"
+        stackId="range"
+        fill="transparent"
+        stroke="none"
+        connectNulls={false}
+        isAnimationActive={false}
+      />
+      <Area
+        type="monotone"
+        dataKey="_rangeSpan"
+        stackId="range"
+        fill={CHART_COLORS.rangeFill}
+        stroke="none"
+        connectNulls={false}
+        isAnimationActive={false}
+        name="Range (min–max)"
+      />
+      {/* Lines drawn after Areas so they render on top of the band. Hover on toggle highlights one. */}
+      {(["min", "max", "avg"] as const).map((key) => {
+        const isHovered = hoveredMetric === key;
+        const isDimmed = hoveredMetric != null && hoveredMetric !== key;
+        const opacity = isDimmed ? 0.35 : 1;
+        const strokeW = key === "avg" ? 4 : 2.5;
+        const stroke = key === "min" ? CHART_COLORS.minLine : key === "max" ? CHART_COLORS.maxLine : CHART_COLORS.avgLine;
+        const name = key === "min" ? "Min (bottom)" : key === "max" ? "Max (top)" : "Average";
         return (
-          <ReferenceArea
-            key={`band-${i}-${row.tsMs}`}
-            x1={x1}
-            x2={x2}
-            y1={minY}
-            y2={maxY}
-            fill={CHART_COLORS.rangeFill}
+          <Line
+            key={key}
+            type="monotone"
+            dataKey={key}
+            stroke={stroke}
+            strokeWidth={isHovered ? strokeW + 1 : strokeW}
+            strokeOpacity={opacity}
+            strokeDasharray={key === "avg" ? undefined : "4 3"}
+            connectNulls={false}
+            dot={{ r: key === "avg" ? 5 : 4, fill: stroke, strokeWidth: 0, opacity }}
+            activeDot={{ r: key === "avg" ? 6 : 5, fill: stroke, stroke: "#fff", strokeWidth: 2 }}
+            name={name}
             isAnimationActive={false}
           />
         );
       })}
-      {/* Lines drawn after Areas so they render on top of the band */}
-      <Line
-        type="monotone"
-        dataKey="min"
-        stroke={CHART_COLORS.minLine}
-        strokeWidth={2.5}
-        strokeDasharray="4 3"
-        connectNulls={false}
-        dot={{ r: 4, fill: CHART_COLORS.minLine, strokeWidth: 0 }}
-        activeDot={{ r: 5, fill: CHART_COLORS.minLine, stroke: "#fff", strokeWidth: 2 }}
-        name="Min (bottom)"
-        isAnimationActive={false}
-      />
-      <Line
-        type="monotone"
-        dataKey="max"
-        stroke={CHART_COLORS.maxLine}
-        strokeWidth={2.5}
-        strokeDasharray="4 3"
-        connectNulls={false}
-        dot={{ r: 4, fill: CHART_COLORS.maxLine, strokeWidth: 0 }}
-        activeDot={{ r: 5, fill: CHART_COLORS.maxLine, stroke: "#fff", strokeWidth: 2 }}
-        name="Max (top)"
-        isAnimationActive={false}
-      />
-      <Line
-        type="monotone"
-        dataKey="avg"
-        stroke={CHART_COLORS.avgLine}
-        strokeWidth={4}
-        connectNulls={false}
-        dot={{ r: 5, fill: CHART_COLORS.avgLine, strokeWidth: 0 }}
-        activeDot={{ r: 6, fill: CHART_COLORS.avgLine, stroke: "#fff", strokeWidth: 2 }}
-        name="Average"
-        isAnimationActive={false}
-      />
       {selectedMetric !== "avg" && (
         <Line
           type="monotone"
@@ -389,15 +400,16 @@ export default function AnalyticsChart({
         const hasAnomalies = bucket.anomalies && bucket.anomalies.length > 0;
         const yVal = row.avg ?? row.max ?? row.min;
         if (!hasAnomalies || yVal == null || !Number.isFinite(yVal)) return null;
+        const isFocused = focusedTimestamp != null && bucket.timestamp === focusedTimestamp;
         return (
           <ReferenceDot
             key={`anomaly-${i}-${row.tsMs}`}
             x={row.tsMs}
             y={yVal}
-            r={5}
-            fill="#B45309"
+            r={isFocused ? 7 : 5}
+            fill={isFocused ? "#7C3AED" : "#B45309"}
             stroke="#fff"
-            strokeWidth={1.5}
+            strokeWidth={isFocused ? 2 : 1.5}
           />
         );
       })}

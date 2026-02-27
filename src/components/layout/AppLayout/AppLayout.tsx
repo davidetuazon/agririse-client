@@ -4,6 +4,7 @@ import colors from "../../../constants/colors";
 
 import Sidebar from "../../navigation/Sidebar";
 import UserProfile from "../UserProfile";
+import FirstTimeTour from "../../tour/FirstTimeTour";
 import cssStyles from "./AppLayout.module.css";
 
 interface Props {
@@ -18,7 +19,6 @@ export default function AppLayout({ children}: Props) {
     useEffect(() => {
         const checkScreenSize = () => {
             setIsDesktop(window.innerWidth >= 768);
-            // On desktop, keep sidebar open; on mobile, respect state
             if (window.innerWidth >= 768) {
                 setSidebarOpen(true);
             }
@@ -40,11 +40,11 @@ export default function AppLayout({ children}: Props) {
 
     return (
         <div style={styles.root}>
-            
             {/* sidebar / navigation */}
             <aside 
                 style={styles.sidebar}
                 className={`${cssStyles.sidebar} ${isDesktop || sidebarOpen ? cssStyles.open : ''}`}
+                data-tour="sidebar"
             >
                 <Sidebar onLinkClick={() => !isDesktop && setSidebarOpen(false)} />
             </aside>
@@ -61,7 +61,7 @@ export default function AppLayout({ children}: Props) {
             
             {/* main content & header */}
             <div style={styles.content}>
-                <header style={styles.header} className={cssStyles.header}>
+                <header style={styles.header} className={cssStyles.header} data-tour="header">
                     <div className={cssStyles.headerLeft}>
                         {/* Mobile menu button */}
                         <button
@@ -91,12 +91,11 @@ export default function AppLayout({ children}: Props) {
                 </header>
 
                 {/* scrollable main/page content */}
-                <main
-                    style={styles.main}
-                >
+                <main style={styles.main} data-tour="main">
                     {children}
                 </main>
             </div>
+            <FirstTimeTour />
         </div>
     )
 }
@@ -111,8 +110,8 @@ const styles: {[key: string]: React.CSSProperties} = {
         position: 'relative',
     },
     sidebar: {
-        backgroundColor: colors.mutedBackground,
-        borderRight: `1px solid ${colors.border}`,
+        background: 'linear-gradient(180deg, #f0fdfa 0%, #e0f2fe 50%, #f5f3ff 100%)',
+        borderRight: '1px solid rgba(6, 182, 212, 0.25)',
         flexShrink: 0,
     },
     overlay: {
@@ -177,5 +176,6 @@ const styles: {[key: string]: React.CSSProperties} = {
         gap: 'clamp(0.75rem, 2vw, 1.25rem)',
         width: '100%',
         minWidth: 0,
+        background: 'linear-gradient(165deg, #f0fdfa 0%, #e0f2fe 40%, #fefce8 70%, #f5f3ff 100%)',
     },
 }

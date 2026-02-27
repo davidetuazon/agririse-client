@@ -316,7 +316,7 @@ export default function History() {
                 chipValue={sensorLabel}
                 subtitle={`Historical readings for ${sensorLabel}`}
                 actions={
-                    <div className={cssStyles.headerActions}>
+                    <div className={cssStyles.headerActions} data-tour="import-export-actions">
                         <button
                             type="button"
                             onClick={() => setImportOpen(true)}
@@ -338,10 +338,10 @@ export default function History() {
                 }
             />
 
-            <Section style={styles.section}>
+            <Section style={styles.section} data-tour="history-content">
                 <div style={styles.header}>
                     {/* meta data */}
-                    <div style={styles.metaData} className={cssStyles.historyMetaData}>
+                    <div style={styles.metaData} className={cssStyles.historyMetaData} data-tour="history-date-range">
                         <div className={cssStyles.dateRangeInline}>
                             <span className={cssStyles.metaLabel}>From</span>
                             <DateRangeInput

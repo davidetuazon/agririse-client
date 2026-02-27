@@ -15,23 +15,23 @@
 .metaLabel {
   font-family: "Poppins-Light";
   font-size: 0.85rem;
-  color: #00684A;
+  color: var(--color-primary-action);
 }
 
 .dateInput {
   font-family: "Poppins-Light";
   font-size: 0.85rem;
   padding: 0.4rem 0.6rem;
-  border: 1px solid rgba(0, 104, 74, 0.25);
+  border: 1px solid var(--color-border-medium);
   border-radius: 8px;
-  color: #023430;
+  color: var(--color-text-heading);
   min-width: 140px;
 }
 
 .dateInput:focus {
   outline: none;
-  border-color: #00684A;
-  box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.15);
+  border-color: var(--color-primary-action);
+  box-shadow: 0 0 0 2px rgba(196, 92, 38, 0.15);
 }
 
 .dateInput option:disabled {
@@ -53,9 +53,9 @@
 }
 
 .setDatesButton {
-  border: 1px solid rgba(0, 104, 74, 0.35);
+  border: 1px solid rgba(196, 92, 38, 0.35);
   background: rgba(255, 255, 255, 0.9);
-  color: #00684A;
+  color: var(--color-primary-action);
   padding: 0.45rem 0.85rem;
   border-radius: 10px;
   font-family: "Poppins-SemiBold";
@@ -65,7 +65,7 @@
 }
 
 .setDatesButton:hover {
-  background: #E3FCF7;
+  background: var(--color-accent-two);
 }
 
 /* PageHeader actions: Import + Export */
@@ -76,9 +76,9 @@
 }
 
 .exportButton {
-  border: 1px solid rgba(0, 104, 74, 0.35);
+  border: 1px solid rgba(196, 92, 38, 0.35);
   background: rgba(255, 255, 255, 0.85);
-  color: #00684A;
+  color: var(--color-primary-action);
   padding: 0.45rem 0.85rem;
   border-radius: 10px;
   font-family: "Poppins-SemiBold";
@@ -87,7 +87,7 @@
 }
 
 .exportButton:hover {
-  background: #E3FCF7;
+  background: var(--color-accent-two);
 }
 
 .exportButton:disabled {
@@ -100,8 +100,8 @@
 /* Set Dates button */
 .setDatesButton {
   border: none;
-  background: #00684A;
-  color: #FFFFFF;
+  background: var(--color-primary-action);
+  color: var(--color-primary-action-text);
   padding: 0.45rem 1.1rem;
   border-radius: 10px;
   font-family: "Poppins-SemiBold";
@@ -113,17 +113,17 @@
 }
 
 .setDatesButton:hover {
-  background: #005538;
+  background: var(--color-primary-action-hover);
 }
 
 .setDatesButtonDirty {
-  box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.45);
+  box-shadow: 0 0 0 2px rgba(196, 92, 38, 0.45);
   animation: pulseBorder 1.6s ease-in-out infinite;
 }
 
 @keyframes pulseBorder {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.45); }
-  50%       { box-shadow: 0 0 0 4px rgba(0, 104, 74, 0.2); }
+  0%, 100% { box-shadow: 0 0 0 2px rgba(196, 92, 38, 0.45); }
+  50%       { box-shadow: 0 0 0 4px rgba(196, 92, 38, 0.2); }
 }
 
 /* Desktop: table columns can be wider */

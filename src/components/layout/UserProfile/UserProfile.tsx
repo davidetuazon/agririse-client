@@ -31,6 +31,11 @@ export default function UserProfile() {
     const handleLogout = () => {
         setDropdownOpen(false);
         Cookies.remove(ACCESS_TOKEN);
+        try {
+            sessionStorage.removeItem("agririse_optimization_run_id");
+        } catch {
+            /* ignore */
+        }
         setUser(null);
         toast.success("Signed out");
         navigate("/login", { replace: true });

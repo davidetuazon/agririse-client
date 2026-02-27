@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../providers/AuthProvider";
-import { latest, me } from "../../services/api";
+import { getSelectedSolutionsHistory, latest, me } from "../../services/api";
+import type { SelectedSolutionHistoryItem } from "../../services/api";
 import Text from "../../components/commons/Text";
 import Section from "../../components/commons/Section";
 import Dashboard from "../../components/home/Dashboard/Dashboard";
 import DashboardTrends from "../../components/home/Trends/DashboardTrends";
+import OptimizationTrendsCard from "../../components/optimization/OptimizationTrendsCard";
 import cssStyles from "./Home.module.css";
 import { timeAgo } from "../../utils/helpers";
 
@@ -58,6 +61,8 @@ type IoTReadings = {
 export default function Home() {
     const [latestReadings, setLatestReadings] = useState<IoTReadings | null>(null);
     const [locality, setLocality] = useState<any>();
+    const [optimizationHistory, setOptimizationHistory] = useState<SelectedSolutionHistoryItem[]>([]);
+    const [optimizationLoading, setOptimizationLoading] = useState(true);
     const { setUser } = useAuth();
 
     const lastUpdated = latestReadings
@@ -87,10 +92,28 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+        setOptimizationLoading(true);
+        getSelectedSolutionsHistory()
+            .then((list) => {
+                if (cancelled || !Array.isArray(list)) return;
+                const sorted = [...list].sort((a, b) => {
+                    const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                    return tb - ta;
+                });
+                setOptimizationHistory(sorted);
+            })
+            .catch(() => setOptimizationHistory([]))
+            .finally(() => { if (!cancelled) setOptimizationLoading(false); });
+        return () => { cancelled = true; };
+    }, []);
+
     return (
         <>
             {/* Overview header */}
-            <section className={cssStyles.overviewHeader}>
+            <section className={cssStyles.overviewHeader} data-tour="dashboard-overview">
                 <div className={cssStyles.overviewTitle}>
                     <Text variant="heading" style={{ margin: 0 }}>
                         Overview:
@@ -105,7 +128,7 @@ export default function Home() {
             </section>
 
             {/* Dashboard */}
-            <Section style={styles.dashboard}>
+            <Section style={styles.dashboard} data-tour="dashboard-iot">
                 <div className={cssStyles.dashboardHeader}>
                     <div>
                         <Text variant="heading" style={{ margin: 0 }}>
@@ -134,12 +157,18 @@ export default function Home() {
                     <DashboardTrends data={latestReadings} />
                 </Section>
                 <Section style={styles.optimization}>
-                    <Text
-                        variant="heading"
-                        style={{ margin: 0 }}
-                    >
-                        Optimization
-                    </Text>
+                    <div className={cssStyles.optimizationHeader}>
+                        <Text variant="heading" style={{ margin: 0 }}>
+                            Optimization
+                        </Text>
+                        <Link to="/allocations" className={cssStyles.optimizationLink}>
+                            Run optimization →
+                        </Link>
+                    </div>
+                    <p className={cssStyles.optimizationSubtitle}>
+                        Latest selected solution compared with previous
+                    </p>
+                    <OptimizationTrendsCard history={optimizationHistory} loading={optimizationLoading} />
                 </Section>
             </div>
         </>
@@ -157,19 +186,16 @@ const styles: {[key: string]: React.CSSProperties} = {
     core: {
         display: 'flex',
         flexDirection: 'column',
-        flex: 1,
         gap: 'clamp(0.75rem, 2vw, 1.25rem)',
         width: '100%',
         minWidth: 0,
     },
     trends: {
-        flex: 1,
         padding: 'clamp(1rem, 2.5vw, 1.25rem)',
         width: '100%',
         minWidth: 0,
     },
     optimization: {
-        flex: 1,
         padding: 'clamp(1rem, 2.5vw, 1.25rem)',
         width: '100%',
         minWidth: 0,

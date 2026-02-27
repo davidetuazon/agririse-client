@@ -145,3 +145,126 @@ export const changePassword = async (oldPassword: string, newPassword: string) =
         throw e;
     }
 }
+
+// Optimization / allocations
+export type OptimizationRun = {
+    _id: string;
+    status: 'pending' | 'completed' | 'failed';
+    triggeredBy?: { _id: string; name: string; email: string; role?: string };
+    inputSnapshot?: {
+        scenario: 'dry season' | 'wet season';
+        cropVariant?: 'main' | 'second';
+        locality?: string;
+        totalSeasonalWaterSupplyM3: number;
+        canalInput?: Array<{
+            _id?: string;
+            mainLateralId?: string;
+            tbsByDamHa?: number;
+            netWaterDemandM3?: number;
+            seepageM3?: number;
+            lossFactorPercentage?: number;
+            coverage?: Array<{ barangay: string; fractionalAreaHa?: number }>;
+        }>;
+        createdAt?: string;
+    };
+    createdAt?: string;
+};
+
+export type AllocationUnit = {
+    mainLateralId: string;
+    areaHa?: number;
+    allocatedWaterM3: number;
+    effectiveWaterM3?: number;
+    netWaterDemandM3?: number;
+    shortfallM3?: number;
+    shortfallPercentage?: number;
+    coveragePercentage?: number;
+    coverage?: Array<{ barangay: string; fractionalAreaHa: number }>;
+};
+
+export type ObjectiveValue = {
+    value: number;
+    unit: string;
+    direction: 'maximize' | 'minimize';
+};
+
+export type ParetoSolution = {
+    _id: string;
+    runId: string;
+    allocationVector: AllocationUnit[];
+    objectiveValues: Record<string, ObjectiveValue>;
+};
+
+export type SelectedSolutionHistoryItem = {
+    _id: string;
+    runId: string;
+    createdAt?: string;
+    runSnapshot?: {
+        createdAt?: string;
+        inputSnapshot?: {
+            scenario?: 'dry season' | 'wet season';
+            cropVariant?: 'main' | 'second';
+            totalSeasonalWaterSupplyM3?: number;
+        };
+    };
+    solutionSnapshot?: {
+        allocationVector?: AllocationUnit[];
+        objectiveValues?: Record<string, ObjectiveValue>;
+    };
+    selectedBy?: {
+        _id?: string;
+        name?: string;
+        email?: string;
+        role?: string;
+    };
+};
+
+export const createOptimizationRun = async (params: {
+    totalSeasonalWaterSupplyM3: number;
+    scenario: 'dry season' | 'wet season';
+}) => {
+    const res = await api.post<{ optimizationRun: OptimizationRun }>('/optimization/ga', params);
+    return res.data;
+};
+
+export const getOptimizationRunStatus = async (runId: string) => {
+    const res = await api.get<{ status: 'pending' | 'completed' | 'failed' }>(
+        `/optimization/runs/${runId}/status`
+    );
+    return res.data;
+};
+
+export const getOptimizationRunResults = async (runId: string) => {
+    const res = await api.get<{
+        optimizationRun: OptimizationRun;
+        paretoSolutions?: ParetoSolution[];
+        message?: string;
+    }>(`/optimization/runs/${runId}`);
+    return res.data;
+};
+
+export const selectOptimizationSolution = async (runId: string, solutionId: string) => {
+    const res = await api.post<{ success: boolean }>(`/optimization/runs/${runId}/select`, {
+        solutionId,
+    });
+    return res.data;
+}
+
+export const getSelectedSolutionsHistory = async (params?: {
+    year?: number;
+    scenario?: 'dry season' | 'wet season';
+    cropVariant?: 'main' | 'second';
+}) => {
+    const searchParams = new URLSearchParams();
+    if (params?.year != null) searchParams.set('year', String(params.year));
+    if (params?.scenario) searchParams.set('scenario', params.scenario);
+    if (params?.cropVariant) searchParams.set('cropVariant', params.cropVariant);
+
+    const queryString = searchParams.toString();
+    const url = queryString
+        ? `/optimization/runs/solutions?${queryString}`
+        : '/optimization/runs/solutions';
+
+    const res = await api.get<SelectedSolutionHistoryItem[]>(url);
+    return res.data;
+}

@@ -24,6 +24,21 @@ const PREVIEW_CHART_HEIGHT = 280;
 const MODAL_CHART_HEIGHT = 420;
 
 type AnalyticsData = AnalyticsBucket & { timestamp: string };
+type AnomalySeverity = "critical" | "warning" | "info" | "unknown";
+type TimelineAnomaly = {
+  id: string;
+  timestamp: string;
+  severity: AnomalySeverity;
+  type: string;
+  message: string;
+};
+type TimelineAnomalyGroup = {
+  timestamp: string;
+  label: string;
+  total: number;
+  counts: Record<AnomalySeverity, number>;
+  items: TimelineAnomaly[];
+};
 
 /** YYYY-MM-DD -> "M/D/YYYY" for display */
 function formatDateLabel(iso: string): string {
@@ -35,6 +50,17 @@ function addDays(iso: string, delta: number): string {
   const d = new Date(iso + "T12:00:00.000Z");
   d.setUTCDate(d.getUTCDate() + delta);
   return d.toISOString().slice(0, 10);
+}
+
+function formatAnomalyTimestamp(ts: string): string {
+  return new Date(ts).toISOString().replace("T", " ").slice(0, 19) + " UTC";
+}
+
+function normalizeSeverity(value?: string): AnomalySeverity {
+  if (value === "critical" || value === "warning" || value === "info") {
+    return value;
+  }
+  return "unknown";
 }
 
 /** Returns human-readable "no data" range(s) when selected range extends beyond actual data. */
@@ -100,6 +126,8 @@ export default function Analytics() {
   const [modalOpen, setModalOpen] = useState(false);
   const [chartFitMode, setChartFitMode] = useState<"fit" | "wide">("fit");
   const [selectedMetric, setSelectedMetric] = useState<MetricKey>("avg");
+  const [hoveredMetric, setHoveredMetric] = useState<MetricKey | null>(null);
+  const [focusedAnomalyTimestamp, setFocusedAnomalyTimestamp] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
@@ -219,6 +247,114 @@ export default function Analytics() {
         : data ?? [],
     [data, startDate, endDate, metaData?.granularity]
   );
+  const { anomalyEntries, anomalyGroups } = useMemo(() => {
+    const entries: TimelineAnomaly[] = [];
+    const groups: TimelineAnomalyGroup[] = [];
+
+    for (const bucket of data ?? []) {
+      const bucketAnomalies = (bucket as AnalyticsBucket & {
+        anomalies?: { message?: string; type?: string; severity?: string }[];
+      }).anomalies ?? [];
+      if (!bucketAnomalies.length) continue;
+
+      const items = bucketAnomalies.map((anomaly, index) => {
+        const severity = normalizeSeverity(anomaly.severity);
+        const type = anomaly.type ?? "unknown";
+        const message = anomaly.message ?? anomaly.type ?? "Unspecified anomaly";
+        const item: TimelineAnomaly = {
+          id: `${bucket.timestamp}-${index}-${type}-${severity}`,
+          timestamp: bucket.timestamp,
+          severity,
+          type,
+          message,
+        };
+        entries.push(item);
+        return item;
+      });
+
+      const counts: Record<AnomalySeverity, number> = {
+        critical: 0,
+        warning: 0,
+        info: 0,
+        unknown: 0,
+      };
+
+      for (const item of items) counts[item.severity] += 1;
+
+      groups.push({
+        timestamp: bucket.timestamp,
+        label: formatAnomalyTimestamp(bucket.timestamp),
+        total: items.length,
+        counts,
+        items,
+      });
+    }
+
+    groups.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+
+    return { anomalyEntries: entries, anomalyGroups: groups };
+  }, [data]);
+
+  const anomalySummary = useMemo(() => {
+    const raw = (metaData as {
+      anomalies?: {
+        total?: number;
+        critical?: number;
+        warning?: number;
+        info?: number;
+        types?: Record<string, number>;
+      };
+    } | null)?.anomalies;
+
+    if (raw) {
+      return {
+        total: Number(raw.total) || 0,
+        critical: Number(raw.critical) || 0,
+        warning: Number(raw.warning) || 0,
+        info: Number(raw.info) || 0,
+        types: raw.types ?? {},
+      };
+    }
+
+    const fallback = {
+      total: anomalyEntries.length,
+      critical: 0,
+      warning: 0,
+      info: 0,
+      types: {} as Record<string, number>,
+    };
+    for (const anomaly of anomalyEntries) {
+      if (anomaly.severity === "critical") fallback.critical += 1;
+      else if (anomaly.severity === "warning") fallback.warning += 1;
+      else fallback.info += 1;
+      fallback.types[anomaly.type] = (fallback.types[anomaly.type] || 0) + 1;
+    }
+    return fallback;
+  }, [metaData, anomalyEntries]);
+
+  const topAnomalyTypes = useMemo(
+    () =>
+      Object.entries(anomalySummary.types)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5),
+    [anomalySummary.types]
+  );
+
+  const focusedAnomalyGroup = useMemo(
+    () => anomalyGroups.find((group) => group.timestamp === focusedAnomalyTimestamp) ?? null,
+    [anomalyGroups, focusedAnomalyTimestamp]
+  );
+
+  useEffect(() => {
+    if (!focusedAnomalyTimestamp) return;
+    const stillExists = anomalyGroups.some(
+      (group) => group.timestamp === focusedAnomalyTimestamp
+    );
+    if (!stillExists) setFocusedAnomalyTimestamp(null);
+  }, [anomalyGroups, focusedAnomalyTimestamp]);
 
   const unit = metaData?.unit ?? "";
 
@@ -318,7 +454,7 @@ export default function Analytics() {
   const isDateDirty = localStartDate !== startDate || localEndDate !== endDate;
 
   const DateRangeControls = ({ extra }: { extra?: React.ReactNode }) => (
-    <div className={cssStyles.analyticsMetaData}>
+    <div className={cssStyles.analyticsMetaData} data-tour="analytics-date-range">
       <div className={cssStyles.dateRangeInline}>
         <span className={cssStyles.metaLabel}>From</span>
         <DateRangeInput
@@ -356,7 +492,7 @@ export default function Analytics() {
         chipValue={sensorLabel}
         subtitle={`Aggregated metrics for ${sensorLabel}`}
         actions={
-          <div className={cssStyles.headerActions}>
+          <div className={cssStyles.headerActions} data-tour="import-export-actions">
             <button
               type="button"
               onClick={() => setImportOpen(true)}
@@ -378,13 +514,13 @@ export default function Analytics() {
         }
       />
 
-      <Section>
+      <Section data-tour="analytics-content">
         {loading ? (
           <div className={cssStyles.loadingState}>
             <Text variant="subtitle">Loading analytics…</Text>
           </div>
         ) : error ? (
-          <div className={cssStyles.errorState}>
+            <div className={cssStyles.errorState}>
             <Text variant="subtitle" style={{ color: "#B91C1C" }}>
               {typeof error === "string" ? error : JSON.stringify(error)}
             </Text>
@@ -465,65 +601,123 @@ export default function Analytics() {
 
             {metaData?.anomalies && (
               <div className={cssStyles.anomaliesSection}>
-                <Text variant="title" style={{ margin: 0 }}>
-                  Anomalies
-                </Text>
-                {(metaData.anomalies as { total?: number }).total ? (
+                <div className={cssStyles.anomaliesHeader}>
+                  <Text variant="title" style={{ margin: 0 }}>
+                    Anomalies
+                  </Text>
+                  {focusedAnomalyGroup && (
+                    <button
+                      type="button"
+                      className={cssStyles.anomalyClearFocus}
+                      onClick={() => setFocusedAnomalyTimestamp(null)}
+                    >
+                      Clear chart focus ({focusedAnomalyGroup.label})
+                    </button>
+                  )}
+                </div>
+                {anomalySummary.total ? (
                   <>
-                    <div className={cssStyles.anomalySummary}>
-                      <span className={cssStyles.anomalySummaryTotal}>
-                        Total: {(metaData.anomalies as { total?: number }).total}
-                      </span>
-                      {(metaData.anomalies as { critical?: number }).critical > 0 && (
-                        <span className={cssStyles.anomalyBadgeCritical}>
-                          Critical: {(metaData.anomalies as { critical?: number }).critical}
+                    <div className={cssStyles.anomalyOverviewGrid}>
+                      <div className={cssStyles.anomalyOverviewCard}>
+                        <span className={cssStyles.anomalyOverviewLabel}>Total</span>
+                        <span className={cssStyles.anomalyOverviewValue}>
+                          {anomalySummary.total}
                         </span>
-                      )}
-                      {(metaData.anomalies as { warning?: number }).warning > 0 && (
-                        <span className={cssStyles.anomalyBadgeWarning}>
-                          Warning: {(metaData.anomalies as { warning?: number }).warning}
+                      </div>
+                      <div className={cssStyles.anomalyOverviewCard}>
+                        <span className={cssStyles.anomalyOverviewLabel}>Critical</span>
+                        <span className={cssStyles.anomalyOverviewValueCritical}>
+                          {anomalySummary.critical}
                         </span>
-                      )}
-                      {(metaData.anomalies as { info?: number }).info > 0 && (
-                        <span className={cssStyles.anomalyBadgeInfo}>
-                          Info: {(metaData.anomalies as { info?: number }).info}
+                      </div>
+                      <div className={cssStyles.anomalyOverviewCard}>
+                        <span className={cssStyles.anomalyOverviewLabel}>Warning</span>
+                        <span className={cssStyles.anomalyOverviewValueWarning}>
+                          {anomalySummary.warning}
                         </span>
-                      )}
-                      {(metaData.anomalies as { types?: Record<string, number> }).types &&
-                        Object.keys((metaData.anomalies as { types?: Record<string, number> }).types ?? {}).length > 0 && (
-                          <span className={cssStyles.anomalyTypes}>
-                            {Object.entries((metaData.anomalies as { types?: Record<string, number> }).types ?? {})
-                              .map(([t, c]) => `${t}: ${c}`)
-                              .join(", ")}
-                          </span>
-                        )}
+                      </div>
+                      <div className={cssStyles.anomalyOverviewCard}>
+                        <span className={cssStyles.anomalyOverviewLabel}>Info</span>
+                        <span className={cssStyles.anomalyOverviewValueInfo}>
+                          {anomalySummary.info}
+                        </span>
+                      </div>
                     </div>
-                    <div className={cssStyles.anomaliesByPeriod}>
+                    {topAnomalyTypes.length > 0 && (
+                      <div className={cssStyles.anomalyTypesRow}>
+                        <span className={cssStyles.anomalyTypesLabel}>Top types:</span>
+                        <div className={cssStyles.anomalyTypeChips}>
+                          {topAnomalyTypes.map(([type, count]) => (
+                            <span key={type} className={cssStyles.anomalyTypeChip}>
+                              {type}: {count}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className={cssStyles.anomalyTimeline}>
                       <Text variant="subtitle" style={{ margin: "0 0 0.5rem 0" }}>
-                        Anomalies by period
+                        Grouped timeline
                       </Text>
-                      <ul className={cssStyles.anomalyList}>
-                        {(data ?? [])
-                          .filter((b) => (b as AnalyticsBucket & { anomalies?: unknown[] }).anomalies?.length)
-                          .map((b) => {
-                            const bucket = b as AnalyticsBucket & { anomalies?: { message?: string; type?: string; severity?: string }[] };
-                            const ts = new Date(bucket.timestamp).toISOString().replace("T", " ").slice(0, 19);
-                            return (
-                              <li key={bucket.timestamp} className={cssStyles.anomalyListItem}>
-                                <span className={cssStyles.anomalyListTime}>{ts} UTC</span>
-                                <ul className={cssStyles.anomalyListMessages}>
-                                  {(bucket.anomalies ?? []).map((a, i) => (
-                                    <li key={i} className={cssStyles.anomalyMessage}>
-                                      <span className={a.severity === "critical" ? cssStyles.anomalySeverityCritical : a.severity === "warning" ? cssStyles.anomalySeverityWarning : cssStyles.anomalySeverityInfo}>
-                                        [{a.severity}]
-                                      </span>{" "}
-                                      {a.message ?? a.type}
-                                    </li>
-                                  ))}
-                                </ul>
+                      <ul className={cssStyles.anomalyTimelineList}>
+                        {anomalyGroups.map((group) => {
+                          const isFocused = focusedAnomalyTimestamp === group.timestamp;
+                          return (
+                            <li key={group.timestamp} className={cssStyles.anomalyTimelineItem}>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setFocusedAnomalyTimestamp((current) =>
+                                    current === group.timestamp ? null : group.timestamp
+                                  )
+                                }
+                                className={`${cssStyles.anomalyTimelineHeader}${isFocused ? ` ${cssStyles.anomalyTimelineHeaderFocused}` : ""}`}
+                              >
+                                <span className={cssStyles.anomalyListTime}>
+                                  {group.label}
+                                </span>
+                                <span className={cssStyles.anomalyTimelineTotal}>
+                                  {group.total} event{group.total > 1 ? "s" : ""}
+                                </span>
+                                <span className={cssStyles.anomalySeverityBadges}>
+                                  {group.counts.critical > 0 && (
+                                    <span className={cssStyles.anomalyBadgeCritical}>
+                                      Critical: {group.counts.critical}
+                                    </span>
+                                  )}
+                                  {group.counts.warning > 0 && (
+                                    <span className={cssStyles.anomalyBadgeWarning}>
+                                      Warning: {group.counts.warning}
+                                    </span>
+                                  )}
+                                  {group.counts.info > 0 && (
+                                    <span className={cssStyles.anomalyBadgeInfo}>
+                                      Info: {group.counts.info}
+                                    </span>
+                                  )}
+                                </span>
+                              </button>
+                              <ul className={cssStyles.anomalyListMessages}>
+                                {group.items.map((item) => (
+                                  <li key={item.id} className={cssStyles.anomalyMessage}>
+                                    <span
+                                      className={
+                                        item.severity === "critical"
+                                          ? cssStyles.anomalySeverityCritical
+                                          : item.severity === "warning"
+                                            ? cssStyles.anomalySeverityWarning
+                                            : cssStyles.anomalySeverityInfo
+                                      }
+                                    >
+                                      [{item.severity}]
+                                    </span>{" "}
+                                    {item.message}
+                                  </li>
+                                ))}
+                              </ul>
                               </li>
-                            );
-                          })}
+                          );
+                        })}
                       </ul>
                     </div>
                   </>
@@ -570,7 +764,7 @@ export default function Analytics() {
         ) : hasData && metaData ? (
           <>
             <div className={cssStyles.chartControls}>
-              <MetricToggle value={selectedMetric} onChange={setSelectedMetric} />
+              <MetricToggle value={selectedMetric} onChange={setSelectedMetric} onHover={setHoveredMetric} />
               <Text variant="caption" style={{ color: "#6B7280", margin: 0 }}>
                 Granularity: {metaData.granularity}
               </Text>
@@ -594,6 +788,8 @@ export default function Analytics() {
                 unit={unit}
                 granularity={metaData.granularity}
                 selectedMetric={selectedMetric}
+                hoveredMetric={hoveredMetric}
+                focusedTimestamp={focusedAnomalyTimestamp}
                 startDate={startDate}
                 endDate={endDate}
                 domainMode="data"
@@ -656,7 +852,7 @@ export default function Analytics() {
               </div>
             </div>
             <div className={cssStyles.modalMetricToggle}>
-              <MetricToggle value={selectedMetric} onChange={setSelectedMetric} />
+              <MetricToggle value={selectedMetric} onChange={setSelectedMetric} onHover={setHoveredMetric} />
             </div>
             <div key={`modal-chart-${startDate}-${endDate}`} className={cssStyles.modalChartWrapper}>
               <AnalyticsChart
@@ -664,6 +860,8 @@ export default function Analytics() {
                 unit={unit}
                 granularity={metaData.granularity}
                 selectedMetric={selectedMetric}
+                hoveredMetric={hoveredMetric}
+                focusedTimestamp={focusedAnomalyTimestamp}
                 startDate={startDate}
                 endDate={endDate}
                 domainMode="data"

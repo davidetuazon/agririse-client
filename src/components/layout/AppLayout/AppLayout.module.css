@@ -10,7 +10,7 @@
   z-index: 100;
   overflow-y: auto;
   overflow-x: hidden;
-  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.06);
+  box-shadow: 8px 0 24px rgba(16, 42, 51, 0.08);
 }
 
 .sidebar.open {
@@ -19,8 +19,9 @@
 
 .header {
   backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 6px 20px rgba(16, 42, 51, 0.06);
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .headerLeft {
@@ -37,16 +38,16 @@
 
 .headerBrand {
   font-family: "Poppins-SemiBold";
-  font-size: 0.85rem;
-  color: #00684A;
+  font-size: var(--font-caption);
+  color: var(--color-primary);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .headerPage {
   font-family: "Poppins-Bold";
-  font-size: 1.25rem;
-  color: #023430;
+  font-size: var(--font-heading-md);
+  color: var(--color-text-heading);
 }
 
 /* Desktop: sidebar always visible */
@@ -72,7 +73,7 @@
 
 /* Menu button hover effect */
 .menuButton:hover {
-  background-color: rgba(0, 104, 74, 0.1);
+  background-color: rgba(196, 92, 38, 0.14);
 }
 
 .menuButton:active {

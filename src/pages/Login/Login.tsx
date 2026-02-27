@@ -55,33 +55,24 @@ export default function Login() {
         )
     };
 
-    const briefDescription =
-        "A decision support system for data-driven water allocation using real-time IoT monitoring and analytics.";
-
     return (
         <div className={`${cssStyles.page} ${cssStyles.authState}`}>
             <section className={cssStyles.infoPanel}>
                 <div className={cssStyles.infoContent}>
-                    <div className={cssStyles.logoRow}>
+                    <div className={cssStyles.brandBlock}>
+                        <div className={cssStyles.logoRow} aria-hidden="true">
+                            <img
+                                src={`${import.meta.env.BASE_URL}Logos.png`}
+                                alt=""
+                                className={cssStyles.logosImage}
+                            />
+                        </div>
                         <img
-                            src="/bulsu-logo.png"
-                            alt="BulSU logo"
-                            className={cssStyles.sideLogo}
-                        />
-                        <img
-                            src="/agri-logo.png"
-                            alt="AgriRise logo"
-                            className={cssStyles.logo}
-                        />
-                        <img
-                            src="/cs-logo.png"
-                            alt="CS logo"
-                            className={cssStyles.sideLogo}
+                            src={`${import.meta.env.BASE_URL}Agri%20Text.png`}
+                            alt="AgriRise"
+                            className={cssStyles.agriTextImage}
                         />
                     </div>
-                    <h1 className={cssStyles.title}>AgriRise</h1>
-                    <h2 className={cssStyles.subtitle}>Decision Support System</h2>
-                    <p className={cssStyles.description}>{briefDescription}</p>
 
                     <div className={cssStyles.infoCardsGrid}>
                         <div className={cssStyles.featureCard}>

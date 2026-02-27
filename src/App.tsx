@@ -10,6 +10,8 @@ import Cookies from 'js-cookie';
 import { ACCESS_TOKEN } from './utils/constants';
 import { Toaster } from 'react-hot-toast';
 import AuthProvider from './providers/AuthProvider';
+import AllocationRunProvider from './providers/AllocationRunProvider';
+import colors from './constants/colors';
 import './App.css';
 
 const AppLayout = lazy(() => import('./components/layout/AppLayout/AppLayout'));
@@ -37,9 +39,9 @@ function App() {
           success: {duration: 1250},
           error: {duration: 4000},
           style: {
-            background: '#FFFFFF',
+            background: colors.surfaceElevated,
             fontFamily: 'Poppins-SemiBold',
-            color: '#023430',
+            color: colors.textHeading,
             width: 'fit-content',
             maxWidth: '500px',
             whiteSpace: 'pre-wrap'
@@ -47,62 +49,64 @@ function App() {
         }}
       />
       <AuthProvider>
-        <Suspense fallback={<FullPageLoader />}>
-          <Routes>
-            <Route path='/login' element={<Login />} />
-            <Route path='/' element={ <Navigate to='/home' /> } />
-            <Route 
-              path='/home'
-              element={
-                <AppLayout>
-                  <RequireAuth>
-                    <Home/>
-                  </RequireAuth>
-                </AppLayout>
-              }
-            />
-            <Route
-              path='/allocations'
-              element={
-                <AppLayout>
-                  <RequireAuth>
-                    <Allocations/>
-                  </RequireAuth>
-                </AppLayout>
-              }
-            />
-            <Route
-              path='/iot/analytics'
-              element={
-                <AppLayout>
-                  <RequireAuth>
-                    <Analytics/>
-                  </RequireAuth>
-                </AppLayout>
-              }
-            />
-            <Route
-              path='/iot/history'
-              element={
-                <AppLayout>
-                  <RequireAuth>
-                    <History/>
-                  </RequireAuth>
-                </AppLayout>
-              }
-            />
-            <Route
-              path='/settings'
-              element={
-                <AppLayout>
-                  <RequireAuth>
-                    <Settings/>
-                  </RequireAuth>
-                </AppLayout>
-              }
-            />
-          </Routes>
-        </Suspense>
+        <AllocationRunProvider>
+          <Suspense fallback={<FullPageLoader />}>
+            <Routes>
+              <Route path='/login' element={<Login />} />
+              <Route path='/' element={ <Navigate to='/home' /> } />
+              <Route 
+                path='/home'
+                element={
+                  <AppLayout>
+                    <RequireAuth>
+                      <Home/>
+                    </RequireAuth>
+                  </AppLayout>
+                }
+              />
+              <Route
+                path='/allocations'
+                element={
+                  <AppLayout>
+                    <RequireAuth>
+                      <Allocations/>
+                    </RequireAuth>
+                  </AppLayout>
+                }
+              />
+              <Route
+                path='/iot/analytics'
+                element={
+                  <AppLayout>
+                    <RequireAuth>
+                      <Analytics/>
+                    </RequireAuth>
+                  </AppLayout>
+                }
+              />
+              <Route
+                path='/iot/history'
+                element={
+                  <AppLayout>
+                    <RequireAuth>
+                      <History/>
+                    </RequireAuth>
+                  </AppLayout>
+                }
+              />
+              <Route
+                path='/settings'
+                element={
+                  <AppLayout>
+                    <RequireAuth>
+                      <Settings/>
+                    </RequireAuth>
+                  </AppLayout>
+                }
+              />
+            </Routes>
+          </Suspense>
+        </AllocationRunProvider>
       </AuthProvider>
     </BrowserRouter>
   )

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import colors from "../../../constants/colors";
 import { Link, useLocation } from "react-router-dom";
-import { Sprout } from "lucide-react";
 
 import DashboardSection from "../DashboardSection";
 import AllocationsSection from "../AllocationsSection";
@@ -34,12 +33,11 @@ export default function Sidebar({ onLinkClick }: SidebarProps) {
                 className={cssStyles.brandHeader}
                 style={{ textDecoration: 'none' }}
             >
-                <span className={cssStyles.brandIcon}>
-                    <Sprout size={20} color={colors.primary} />
-                </span>
-                <span className={cssStyles.brandText}>
-                    <span className={cssStyles.brandSubtitle}>Water Allocation</span>
-                </span>
+                <img
+                    src="/Agri%20Text.png"
+                    alt="AgriRise"
+                    className={cssStyles.brandImage}
+                />
             </Link>
             <main style={styles.main}>
                 <div className={cssStyles.navGroup}>

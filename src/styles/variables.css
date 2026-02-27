@@ -1,32 +1,71 @@
+/* Central palette — sync with src/constants/colors.tsx */
 :root {
-  --color-primary: #00684A;
-  --color-primary-light: #00ED64;
+  --color-primary: #0C6A4A;
+  --color-primary-light: #2FC38A;
   --color-secondary: #ffffff;
 
   --color-water-primary: #2F6F73;
-  --color-water-light: #E3F3F2;
+  --color-water-light: #E9F5F6;
 
-  --color-accent-one: #F9EBFF;
-  --color-accent-two: #E3FCF7;
+  --color-accent-one: #EDE4FF;
+  --color-accent-two: #F2FBF8;
+  --color-accent-warm: #C45C26;
+  --color-accent-warm-hover: #A74A1B;
+  --color-primary-action: #C45C26;
+  --color-primary-action-hover: #A74A1B;
+  --color-primary-action-text: #ffffff;
 
-  --color-bg-primary: #001E2B;
-  --color-bg-secondary: #023430;
-  --color-bg-muted: #F0F3F2;
+  --color-bg-primary: #0B2530;
+  --color-bg-secondary: #123C3D;
+  --color-bg-muted: #F5F8F8;
+  --color-surface-elevated: #ffffff;
+  --color-surface-subtle: #F4FAF8;
 
-  --color-text-primary: #000000;
-  --color-text-secondary: #C1C7C6;
+  --color-text-primary: #102A33;
+  --color-text-heading: #0D2129;
+  --color-text-secondary: #5E6E77;
+  --color-text-body: #334D57;
+  --color-text-muted: #9BA8AE;
 
-  --color-border: #E8EDEB;
+  --color-border: #DFE8E6;
+  --color-border-medium: #D5E0DD;
+  --color-border-subtle: #E8EFED;
 
-  --color-error: #b91c1c;
-  --color-info: #0498ec;
-  --color-success: #6EE7B7;
+  --color-error: #B42318;
+  --color-info: #1877F2;
+  --color-success: #15A66D;
+  --color-warning: #D97706;
 
-  --color-primary-08: rgba(0, 104, 74, 0.08);
-  --color-primary-10: rgba(0, 104, 74, 0.1);
-  --color-primary-12: rgba(0, 104, 74, 0.12);
-  --color-primary-18: rgba(0, 104, 74, 0.18);
-  --color-primary-30: rgba(0, 104, 74, 0.3);
+  --color-chart-avg: #2F6F73;
+  --color-chart-min: #DC2626;
+  --color-chart-max: #B91C1C;
+  --color-chart-grid: #A5B4C1;
+  --color-chart-axis: #274453;
+  --color-chart-metric: #7C3AED;
+  --color-chart-anomaly: #C45C26;
+  --color-chart-positive: #15803D;
+  --color-chart-negative: #B91C1C;
+  --color-chart-neutral: #52646E;
+  --color-chart-previous: #748695;
+
+  --color-primary-08: rgba(12, 106, 74, 0.08);
+  --color-primary-10: rgba(12, 106, 74, 0.1);
+  --color-primary-12: rgba(12, 106, 74, 0.12);
+  --color-primary-18: rgba(12, 106, 74, 0.18);
+  --color-primary-25: rgba(12, 106, 74, 0.25);
+  --color-primary-30: rgba(12, 106, 74, 0.3);
+  --color-primary-35: rgba(12, 106, 74, 0.35);
+  --color-primary-45: rgba(12, 106, 74, 0.45);
   --color-water-08: rgba(47, 111, 115, 0.08);
   --color-water-12: rgba(47, 111, 115, 0.12);
+
+  --font-heading-lg: clamp(1.25rem, 2.2vw, 1.7rem);
+  --font-heading-md: clamp(1.05rem, 1.5vw, 1.25rem);
+  --font-title: clamp(0.95rem, 1.2vw, 1.08rem);
+  --font-body: clamp(0.86rem, 0.95vw, 0.95rem);
+  --font-caption: clamp(0.72rem, 0.75vw, 0.82rem);
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
 }

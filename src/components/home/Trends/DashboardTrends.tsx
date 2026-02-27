@@ -33,8 +33,8 @@ type Props = {
 };
 
 const CHART_COLORS = {
-  previous: "#64748B",
-  latest: "#00684A",
+  previous: "#DC2626",
+  latest: "#16A34A",
   grid: "#CBD5E1",
   axis: "#334155",
   positive: "#15803D",
@@ -171,8 +171,6 @@ export default function DashboardTrends({ data }: Props) {
   const selectedChartData = useMemo(() => {
     const previousValue = typeof selectedReading?.previousValue === "number" ? selectedReading.previousValue : 0;
     const currentValue = typeof selectedReading?.value === "number" ? selectedReading.value : 0;
-    const delta = currentValue - previousValue;
-    const changeColor = delta > 0 ? CHART_COLORS.positive : delta < 0 ? CHART_COLORS.negative : CHART_COLORS.neutral;
     
     return [
       {
@@ -187,7 +185,7 @@ export default function DashboardTrends({ data }: Props) {
         label: "Latest", 
         timestamp: selectedReading?.recordedAt ?? null,
         value: currentValue,
-        fill: changeColor,
+        fill: CHART_COLORS.latest,
       },
     ];
   }, [selectedReading]);
@@ -198,8 +196,6 @@ export default function DashboardTrends({ data }: Props) {
   const previewChartData = useMemo(() => {
     const previousValue = typeof previewReading?.previousValue === "number" ? previewReading.previousValue : 0;
     const currentValue = typeof previewReading?.value === "number" ? previewReading.value : 0;
-    const delta = currentValue - previousValue;
-    const changeColor = delta > 0 ? CHART_COLORS.positive : delta < 0 ? CHART_COLORS.negative : CHART_COLORS.neutral;
     
     return [
       {
@@ -214,7 +210,7 @@ export default function DashboardTrends({ data }: Props) {
         label: "Latest",
         timestamp: previewReading?.recordedAt ?? null,
         value: currentValue,
-        fill: changeColor,
+        fill: CHART_COLORS.latest,
       },
     ];
   }, [previewReading]);
@@ -236,47 +232,47 @@ export default function DashboardTrends({ data }: Props) {
     currentValue: number
   ) => {
     const yAxisRange = calculateYAxisRange(previousValue, currentValue, unit);
-    
+
     return (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={chartData} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
-        <XAxis
-          dataKey="name"
-          tick={{ fontSize: 11, fill: CHART_COLORS.axis }}
-          tickLine={false}
-          axisLine={{ stroke: CHART_COLORS.grid }}
-        />
-        <YAxis
-          domain={yAxisRange}
-          tick={{ fontSize: 11, fill: CHART_COLORS.axis }}
-          tickLine={false}
-          axisLine={{ stroke: CHART_COLORS.grid }}
-          tickFormatter={(v) => (typeof v === "number" ? `${v.toFixed(1)}${unit}` : String(v))}
-        />
-        <Tooltip
-          labelFormatter={(label, payload) => {
-            const p = payload?.[0]?.payload as
-              | { name?: string; timestamp?: string | null }
-              | undefined;
-            if (!p) return "";
-            return `${p.name ?? ""} - ${formatUtc(p.timestamp ?? null)}`;
-          }}
-          formatter={(value: unknown) =>
-            typeof value === "number" ? `${value.toFixed(2)}${unit}` : "—"
-          }
-        />
-        <Bar
-          dataKey="value"
-          radius={[4, 4, 0, 0]}
-          shape={(props: any) => {
-            const { fill, ...rest } = props;
-            const dataPoint = chartData[props.index];
-            return <rect {...rest} fill={dataPoint?.fill || CHART_COLORS.neutral} />;
-          }}
-        />
-      </BarChart>
-    </ResponsiveContainer>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={chartData} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
+          <XAxis
+            dataKey="name"
+            tick={{ fontSize: 11, fill: CHART_COLORS.axis }}
+            tickLine={false}
+            axisLine={{ stroke: CHART_COLORS.grid }}
+          />
+          <YAxis
+            domain={yAxisRange}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axis }}
+            tickLine={false}
+            axisLine={{ stroke: CHART_COLORS.grid }}
+            tickFormatter={(v) => (typeof v === "number" ? `${v.toFixed(1)}${unit}` : String(v))}
+          />
+          <Tooltip
+            labelFormatter={(label, payload) => {
+              const p = payload?.[0]?.payload as
+                | { name?: string; timestamp?: string | null }
+                | undefined;
+              if (!p) return "";
+              return `${p.name ?? ""} - ${formatUtc(p.timestamp ?? null)}`;
+            }}
+            formatter={(value: unknown) =>
+              typeof value === "number" ? `${value.toFixed(2)}${unit}` : "—"
+            }
+          />
+          <Bar
+            dataKey="value"
+            radius={[4, 4, 0, 0]}
+            shape={(props: any) => {
+              const { fill, ...rest } = props;
+              const dataPoint = chartData[props.index];
+              return <rect {...rest} fill={dataPoint?.fill || CHART_COLORS.neutral} />;
+            }}
+          />
+        </BarChart>
+      </ResponsiveContainer>
     );
   };
 
@@ -333,15 +329,9 @@ export default function DashboardTrends({ data }: Props) {
           <span className={cssStyles.legendItem}>
             <span 
               className={cssStyles.legendDot} 
-              style={{ 
-                background: getChangeColor(previewReading?.value && previewReading?.previousValue 
-                  ? previewReading.value - previewReading.previousValue 
-                  : previewReading?.delta)
-              }} 
+              style={{ background: CHART_COLORS.latest }} 
             />
-            <span style={{ color: getChangeColor(previewReading?.value && previewReading?.previousValue 
-              ? previewReading.value - previewReading.previousValue 
-              : previewReading?.delta) }}>
+            <span style={{ color: CHART_COLORS.latest }}>
               Latest
             </span>
           </span>
@@ -430,9 +420,7 @@ export default function DashboardTrends({ data }: Props) {
               <div className={cssStyles.detailRow}>
                 <span 
                   className={cssStyles.detailKey} 
-                  style={{ color: getChangeColor(selectedReading?.value && selectedReading?.previousValue 
-                    ? selectedReading.value - selectedReading.previousValue 
-                    : selectedReading?.delta) }}
+                  style={{ color: CHART_COLORS.latest }}
                 >
                   Latest
                 </span>
@@ -465,19 +453,8 @@ export default function DashboardTrends({ data }: Props) {
               </div>
               <Text variant="caption" style={{ margin: 0 }}>
                 Showing {selectedLabel} comparison between previous and latest readings. 
-                <span style={{ color: getChangeColor(selectedReading?.value && selectedReading?.previousValue 
-                  ? selectedReading.value - selectedReading.previousValue 
-                  : selectedReading?.delta) }}>
-                  {(() => {
-                    const calculatedDelta = selectedReading?.value && selectedReading?.previousValue 
-                      ? selectedReading.value - selectedReading.previousValue 
-                      : selectedReading?.delta;
-                    return calculatedDelta && calculatedDelta > 0 
-                      ? " Green indicates increase." 
-                      : calculatedDelta && calculatedDelta < 0 
-                      ? " Red indicates decrease." 
-                      : " No change detected.";
-                  })()}
+                <span style={{ color: CHART_COLORS.axis }}>
+                  {" Latest is shown in green and previous is shown in red."}
                 </span>
               </Text>
             </div>

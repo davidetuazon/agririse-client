@@ -3,9 +3,9 @@
   flex-direction: column;
   gap: 0.35rem;
   padding: clamp(0.75rem, 2vw, 1.25rem);
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(0, 104, 74, 0.08), rgba(47, 111, 115, 0.08));
-  border: 1px solid rgba(0, 104, 74, 0.1);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #fefce8 100%);
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.12), 0 2px 8px rgba(12, 106, 74, 0.06);
 }
 
 .titleRow {
@@ -38,22 +38,22 @@
   gap: 0.35rem;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  background: rgba(0, 104, 74, 0.12);
-  color: #00684A;
+  background: var(--color-primary-12);
+  color: var(--color-primary);
   font-family: "Poppins-SemiBold";
-  font-size: 0.8rem;
+  font-size: var(--font-caption);
 }
 
 .chipLabel {
-  color: #023430;
+  color: var(--color-text-heading);
 }
 
 .chipValue {
-  color: #00684A;
+  color: var(--color-primary);
 }
 
 .subtitle {
   font-family: "Poppins-Light";
-  font-size: 0.75rem;
-  color: #2F6F73;
+  font-size: var(--font-caption);
+  color: var(--color-text-secondary);
 }

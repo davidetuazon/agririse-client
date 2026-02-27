@@ -4,7 +4,6 @@ import {
     Thermometer,
     Waves
 } from "lucide-react";
-import colors from "../../../constants/colors";
 import Text from "../../commons/Text";
 import cssStyles from "./SensorMetricCard.module.css";
 
@@ -20,19 +19,34 @@ type Props = {
     onClick?: () => void;
 };
 
+const SENSOR_ACCENT: Record<SensorType, string> = {
+    damWaterLevel: '#06b6d4',
+    humidity: '#22d3ee',
+    rainfall: '#3b82f6',
+    temperature: '#f59e0b',
+};
+
 const getSensorIcon = (sensorType: SensorType) => {
+    const accent = SENSOR_ACCENT[sensorType];
     switch (sensorType) {
         case 'damWaterLevel':
-            return <Waves size={20} color={colors.primary} />;
+            return <Waves size={20} color={accent} />;
         case 'humidity':
-            return <Droplets size={20} color={colors.primary} />;
+            return <Droplets size={20} color={accent} />;
         case 'rainfall':
-            return <CloudRain size={20} color={colors.primary} />;
+            return <CloudRain size={20} color={accent} />;
         case 'temperature':
-            return <Thermometer size={20} color={colors.primary} />;
+            return <Thermometer size={20} color={accent} />;
         default:
             return null;
     }
+};
+
+const CARD_CLASS: Record<SensorType, string> = {
+    damWaterLevel: cssStyles.cardWater,
+    humidity: cssStyles.cardHumidity,
+    rainfall: cssStyles.cardRainfall,
+    temperature: cssStyles.cardTemperature,
 };
 
 export default function SensorMetricCard(props: Props) {
@@ -50,7 +64,7 @@ export default function SensorMetricCard(props: Props) {
     return (
         <button
             type="button"
-            className={cssStyles.card}
+            className={`${cssStyles.card} ${CARD_CLASS[sensorType] ?? ""}`}
             onClick={onClick}
         >
             <div className={cssStyles.header}>

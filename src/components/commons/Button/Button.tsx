@@ -43,8 +43,8 @@ export default function Button(props: Props & { type?: 'button' | 'submit' }) {
 const styles: {[key: string]: React.CSSProperties} = {
     container: {
         border: 'none',
-        backgroundColor: colors.waterPrimary,
-        borderRadius: 'clamp(0.5rem, 1vw, 0.75rem)',
+        backgroundColor: colors.primaryAction,
+        borderRadius: 'clamp(0.625rem, 1vw, 0.875rem)',
         padding: 'clamp(0.625rem, 2vw, 1.25rem)',
         margin: 'clamp(0.375rem, 1vw, 0.625rem)',
         cursor: 'pointer',
@@ -54,13 +54,14 @@ const styles: {[key: string]: React.CSSProperties} = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        boxShadow: '0 8px 18px rgba(167, 74, 27, 0.2)',
         transition: 'background-color 0.2s, transform 0.1s',
     },
     title: {
         margin: 0,
         textAlign: 'center',
         fontFamily: 'Poppins-SemiBold',
-        color: colors.textPrimary,
+        color: colors.primaryActionText,
         fontSize: typography.subtitle,
         whiteSpace: 'nowrap',
     },

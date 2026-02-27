@@ -14,10 +14,12 @@ const METRIC_OPTIONS: { key: MetricKey; label: string }[] = [
 type Props = {
   value: MetricKey;
   onChange: (metric: MetricKey) => void;
+  /** When user hovers a button, call with that metric; when hover ends, call with null. Chart can highlight that line. */
+  onHover?: (metric: MetricKey | null) => void;
   className?: string;
 };
 
-export default function MetricToggle({ value, onChange, className }: Props) {
+export default function MetricToggle({ value, onChange, onHover, className }: Props) {
   return (
     <div className={`${cssStyles.wrapper} ${className ?? ""}`} role="group" aria-label="Metric to emphasize">
       <span className={cssStyles.label}>Emphasize:</span>
@@ -28,6 +30,8 @@ export default function MetricToggle({ value, onChange, className }: Props) {
             type="button"
             className={value === key ? cssStyles.buttonActive : cssStyles.button}
             onClick={() => onChange(key)}
+            onMouseEnter={() => onHover?.(key)}
+            onMouseLeave={() => onHover?.(null)}
             aria-pressed={value === key}
           >
             {label}
