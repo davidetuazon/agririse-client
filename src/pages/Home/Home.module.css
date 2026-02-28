@@ -224,6 +224,109 @@
   text-align: right;
 }
 
+/* Optimization expandable preview (like Trends) */
+.optimizationPreviewCard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  cursor: pointer;
+}
+
+.optimizationPreviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.optimizationPreviewHint {
+  font-family: "Poppins-SemiBold";
+  font-size: 0.75rem;
+  color: #00684A;
+  background: rgba(0, 104, 74, 0.12);
+  border: 1px solid rgba(0, 104, 74, 0.28);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+
+.optimizationPreviewChart {
+  height: 180px;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.25rem 0.5rem;
+  background: var(--color-surface-elevated);
+}
+
+/* Optimization modal */
+.optimizationModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 130;
+  padding: 1rem;
+}
+
+.optimizationModalCard {
+  background: #ffffff;
+  border-radius: 16px;
+  width: min(900px, 95vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: auto;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.optimizationModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.optimizationModalTitle {
+  margin: 0;
+  font-family: "Poppins-SemiBold";
+  font-size: var(--font-heading-md);
+  color: var(--color-text-heading);
+}
+
+.optimizationModalClose {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #2f6f73;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.optimizationModalClose:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #023430;
+}
+
+.optimizationModalChartWrap {
+  height: 320px;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.35rem 0.5rem;
+  background: var(--color-surface-elevated);
+}
+
 /* Desktop: side by side layout */
 @media (min-width: 768px) {
   .homeCore {

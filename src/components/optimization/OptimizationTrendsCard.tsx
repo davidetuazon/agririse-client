@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -13,6 +13,7 @@ import type { SelectedSolutionHistoryItem } from "../../services/api";
 import cssStyles from "../../pages/Home/Home.module.css";
 import colors from "../../constants/colors";
 import { timeAgo } from "../../utils/helpers";
+import Text from "../commons/Text";
 
 type Props = {
   history: SelectedSolutionHistoryItem[];
@@ -62,6 +63,7 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
     [latest]
   );
   const [manualObjectiveKey, setManualObjectiveKey] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const selectedObjectiveKey = useMemo(() => {
     if (!objectiveKeys.length) return "";
     if (manualObjectiveKey && objectiveKeys.includes(manualObjectiveKey)) {
@@ -151,6 +153,80 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
       .reverse();
   }, [history, selectedObjectiveKey]);
 
+  useEffect(() => {
+    if (!modalOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setModalOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [modalOpen]);
+
+  const renderChart = (height: number) => (
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={chartPoints} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+        <XAxis
+          dataKey="label"
+          tick={{ fontSize: 11, fill: colors.chartNeutral }}
+          axisLine={{ stroke: colors.border }}
+          tickLine={false}
+        />
+        <YAxis
+          tick={{ fontSize: 11, fill: colors.chartNeutral }}
+          axisLine={{ stroke: colors.border }}
+          tickLine={false}
+        />
+        <Tooltip
+          cursor={{ fill: "rgba(15, 23, 42, 0.06)" }}
+          content={({ active, payload }) => {
+            const point = payload?.[0]?.payload as
+              | {
+                  label: string;
+                  value: number;
+                  dateTime: { date: string; time: string };
+                  chronologicalNumber: number;
+                  deficitLabel: string;
+                  deficitValue: number | null;
+                  fairnessLabel: string;
+                  fairnessValue: number | null;
+                }
+              | undefined;
+            if (!active || !point) return null;
+            return (
+              <div
+                style={{
+                  background: "#fff",
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: "10px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                  padding: "0.5rem 0.65rem",
+                  fontSize: "0.78rem",
+                }}
+              >
+                <div><strong>{point.label}</strong> (#{point.chronologicalNumber})</div>
+                <div>Date: {point.dateTime.date}</div>
+                <div>Time: {point.dateTime.time}</div>
+                <div>{selectedObjectiveKey}: {point.value.toFixed(2)}</div>
+                {point.deficitValue != null && (
+                  <div>{point.deficitLabel}: {point.deficitValue.toFixed(2)}</div>
+                )}
+                {point.fairnessValue != null && (
+                  <div>{point.fairnessLabel}: {point.fairnessValue.toFixed(2)}</div>
+                )}
+              </div>
+            );
+          }}
+        />
+        <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+          {chartPoints.map((point) => (
+            <Cell key={point.key} fill={point.color} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+
   if (loading) {
     return <p className={cssStyles.optimizationMeta}>Loading…</p>;
   }
@@ -163,8 +239,10 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
     );
   }
 
-  return (
-    <div className={cssStyles.optimizationVizRoot}>
+  const hasChart = chartPoints.length >= 2;
+
+  const innerContent = (
+    <>
       {objectiveKeys.length > 1 && (
         <div className={cssStyles.optimizationSelectorRow}>
           <label htmlFor="optimization-objective-select" className={cssStyles.optimizationSelectorLabel}>
@@ -220,70 +298,9 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
         </p>
       )}
 
-      {chartPoints.length >= 2 ? (
+      {hasChart ? (
         <div className={cssStyles.optimizationChartWrap}>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={chartPoints} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 11, fill: colors.chartNeutral }}
-                axisLine={{ stroke: colors.border }}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: colors.chartNeutral }}
-                axisLine={{ stroke: colors.border }}
-                tickLine={false}
-              />
-              <Tooltip
-                cursor={{ fill: "rgba(15, 23, 42, 0.06)" }}
-                content={({ active, payload }) => {
-                  const point = payload?.[0]?.payload as
-                    | {
-                        label: string;
-                        value: number;
-                        dateTime: { date: string; time: string };
-                        chronologicalNumber: number;
-                        deficitLabel: string;
-                        deficitValue: number | null;
-                        fairnessLabel: string;
-                        fairnessValue: number | null;
-                      }
-                    | undefined;
-                  if (!active || !point) return null;
-                  return (
-                    <div
-                      style={{
-                        background: "#fff",
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: "10px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                        padding: "0.5rem 0.65rem",
-                        fontSize: "0.78rem",
-                      }}
-                    >
-                      <div><strong>{point.label}</strong> (#{point.chronologicalNumber})</div>
-                      <div>Date: {point.dateTime.date}</div>
-                      <div>Time: {point.dateTime.time}</div>
-                      <div>{selectedObjectiveKey}: {point.value.toFixed(2)}</div>
-                      {point.deficitValue != null && (
-                        <div>{point.deficitLabel}: {point.deficitValue.toFixed(2)}</div>
-                      )}
-                      {point.fairnessValue != null && (
-                        <div>{point.fairnessLabel}: {point.fairnessValue.toFixed(2)}</div>
-                      )}
-                    </div>
-                  );
-                }}
-              />
-              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                {chartPoints.map((point) => (
-                  <Cell key={point.key} fill={point.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          {renderChart(180)}
           <p className={cssStyles.optimizationChartHint}>
             Previous (red) vs Latest (green)
           </p>
@@ -293,6 +310,127 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
           Need at least 2 selected solutions to render the comparison chart.
         </p>
       )}
-    </div>
+    </>
   );
+
+  if (hasChart) {
+    return (
+      <>
+        <div
+          className={cssStyles.optimizationPreviewCard}
+          role="button"
+          tabIndex={0}
+          onClick={() => setModalOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setModalOpen(true);
+            }
+          }}
+          aria-label="Open optimization chart"
+        >
+          <div className={cssStyles.optimizationPreviewHeader}>
+            <Text variant="heading" style={{ margin: 0 }}>
+              Optimization
+            </Text>
+            <span className={cssStyles.optimizationPreviewHint}>Click to expand</span>
+          </div>
+          <div className={cssStyles.optimizationPreviewChart}>
+            {renderChart(180)}
+          </div>
+          <p className={cssStyles.optimizationChartHint}>
+            Previous (red) vs Latest (green)
+          </p>
+        </div>
+
+        {modalOpen && (
+          <div
+            className={cssStyles.optimizationModalOverlay}
+            onClick={() => setModalOpen(false)}
+          >
+            <div
+              className={cssStyles.optimizationModalCard}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="optimization-modal-title"
+            >
+              <div className={cssStyles.optimizationModalHeader}>
+                <h2 id="optimization-modal-title" className={cssStyles.optimizationModalTitle}>
+                  Optimization
+                </h2>
+                <button
+                  type="button"
+                  className={cssStyles.optimizationModalClose}
+                  onClick={() => setModalOpen(false)}
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+              </div>
+              {objectiveKeys.length > 1 && (
+                <div className={cssStyles.optimizationSelectorRow}>
+                  <label htmlFor="optimization-modal-objective" className={cssStyles.optimizationSelectorLabel}>
+                    Objective
+                  </label>
+                  <select
+                    id="optimization-modal-objective"
+                    className={cssStyles.optimizationObjectiveSelect}
+                    value={selectedObjectiveKey}
+                    onChange={(event) => setManualObjectiveKey(event.target.value)}
+                  >
+                    {objectiveKeys.map((key) => (
+                      <option key={key} value={key}>
+                        {key}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className={cssStyles.optimizationKpiGrid}>
+                <div className={cssStyles.optimizationKpiCard}>
+                  <span className={cssStyles.optimizationKpiLabel}>Latest {selectedObjectiveKey}</span>
+                  <strong className={cssStyles.optimizationKpiValue}>
+                    {latestObjectiveValue != null ? latestObjectiveValue.toFixed(2) : "—"}
+                    {objectiveUnit}
+                  </strong>
+                  {objectiveDelta != null && (
+                    <span className={`${cssStyles.optimizationDeltaPill} ${objectiveDeltaClass}`}>
+                      {objectiveDelta >= 0 ? "+" : ""}
+                      {objectiveDelta.toFixed(2)} vs previous
+                    </span>
+                  )}
+                </div>
+                <div className={cssStyles.optimizationKpiCard}>
+                  <span className={cssStyles.optimizationKpiLabel}>Average coverage</span>
+                  <strong className={cssStyles.optimizationKpiValue}>
+                    {latestCoverage != null ? `${latestCoverage.toFixed(1)}%` : "—"}
+                  </strong>
+                  {coverageDelta != null && (
+                    <span className={`${cssStyles.optimizationDeltaPill} ${coverageDeltaClass}`}>
+                      {coverageDelta >= 0 ? "+" : ""}
+                      {coverageDelta.toFixed(1)}% vs previous
+                    </span>
+                  )}
+                </div>
+              </div>
+              {latest.createdAt && (
+                <p className={cssStyles.optimizationMeta}>
+                  Scenario: {latest.runSnapshot?.inputSnapshot?.scenario ?? "—"} · Selected {timeAgo(latest.createdAt)}
+                </p>
+              )}
+              <div className={cssStyles.optimizationModalChartWrap}>
+                {renderChart(320)}
+              </div>
+              <p className={cssStyles.optimizationChartHint}>
+                Previous (red) vs Latest (green)
+              </p>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  return <div className={cssStyles.optimizationVizRoot}>{innerContent}</div>;
 }
