@@ -486,7 +486,7 @@ export default function Analytics() {
   );
 
   return (
-    <>
+    <div className={cssStyles.pageScroll}>
       <PageHeader
         title="Analytics:"
         chipValue={sensorLabel}
@@ -925,7 +925,7 @@ export default function Analytics() {
         sensorType={sensorType}
         sensorLabel={(SENSOR_TYPES as Record<string, { label: string }>)[sensorType]?.label ?? sensorType}
       />
-    </>
+    </div>
   );
 }
 

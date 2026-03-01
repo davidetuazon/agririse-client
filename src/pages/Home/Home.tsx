@@ -111,7 +111,7 @@ export default function Home() {
     }, []);
 
     return (
-        <>
+        <div className={cssStyles.pageScroll}>
             {/* Overview header */}
             <section className={cssStyles.overviewHeader} data-tour="dashboard-overview">
                 <div className={cssStyles.overviewTitle}>
@@ -171,7 +171,7 @@ export default function Home() {
                     <OptimizationTrendsCard history={optimizationHistory} loading={optimizationLoading} />
                 </Section>
             </div>
-        </>
+        </div>
     )
 }
 

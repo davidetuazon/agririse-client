@@ -310,7 +310,7 @@ export default function History() {
     // }, [pageInfo, data])
 
     return (
-        <>
+        <div className={cssStyles.pageScroll}>
             <PageHeader
                 title="History:"
                 chipValue={sensorLabel}
@@ -610,7 +610,7 @@ export default function History() {
                 sensorType={sensorType}
                 sensorLabel={(SENSOR_TYPES as Record<string, { label: string }>)[sensorType]?.label ?? metaData?.sensorType ?? sensorType}
             />
-        </>
+        </div>
     )
 }
 

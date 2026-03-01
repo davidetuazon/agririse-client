@@ -198,6 +198,7 @@ export type ParetoSolution = {
 export type SelectedSolutionHistoryItem = {
     _id: string;
     runId: string;
+    solutionId?: string;
     createdAt?: string;
     runSnapshot?: {
         createdAt?: string;

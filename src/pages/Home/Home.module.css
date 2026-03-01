@@ -1,5 +1,16 @@
 /* Mobile-first: stacked layout (default) */
 
+/* Scrollable page content for all pages */
+.pageScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+}
+
 .overviewHeader {
   display: flex;
   flex-direction: column;
@@ -139,6 +150,7 @@
 .optimizationSelectorRow {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
@@ -335,5 +347,29 @@
 
   .optimizationKpiGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboardMeta {
+    width: 100%;
+    text-align: center;
+  }
+
+  .optimizationPreviewChart {
+    height: 160px;
+  }
+
+  .optimizationModalCard {
+    width: 100%;
+    padding: 0.85rem;
+  }
+
+  .optimizationModalChartWrap {
+    height: 260px;
+  }
+
+  .optimizationChartHint {
+    text-align: left;
   }
 }

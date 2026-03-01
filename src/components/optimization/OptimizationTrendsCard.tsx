@@ -12,7 +12,6 @@ import {
 import type { SelectedSolutionHistoryItem } from "../../services/api";
 import cssStyles from "../../pages/Home/Home.module.css";
 import colors from "../../constants/colors";
-import { timeAgo } from "../../utils/helpers";
 import Text from "../commons/Text";
 
 type Props = {
@@ -292,9 +291,21 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
         </div>
       </div>
 
-      {latest.createdAt && (
+      {(latest.runId || latest.createdAt) && (
         <p className={cssStyles.optimizationMeta}>
-          Scenario: {latest.runSnapshot?.inputSnapshot?.scenario ?? "—"} · Selected {timeAgo(latest.createdAt)}
+          {latest.runId && (
+            <>
+              <strong>Run {latest.runId}</strong>
+              {" · "}
+            </>
+          )}
+          Scenario: {latest.runSnapshot?.inputSnapshot?.scenario ?? "—"}
+          {latest.createdAt && (
+            <>
+              {" · "}
+              <strong>Created at:</strong> {formatDateTime(latest.createdAt).date} at {formatDateTime(latest.createdAt).time}
+            </>
+          )}
         </p>
       )}
 
@@ -414,9 +425,21 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
                   )}
                 </div>
               </div>
-              {latest.createdAt && (
+              {(latest.runId || latest.createdAt) && (
                 <p className={cssStyles.optimizationMeta}>
-                  Scenario: {latest.runSnapshot?.inputSnapshot?.scenario ?? "—"} · Selected {timeAgo(latest.createdAt)}
+                  {latest.runId && (
+                    <>
+                      <strong>Run {latest.runId}</strong>
+                      {" · "}
+                    </>
+                  )}
+                  Scenario: {latest.runSnapshot?.inputSnapshot?.scenario ?? "—"}
+                  {latest.createdAt && (
+                    <>
+                      {" · "}
+                      <strong>Created at:</strong> {formatDateTime(latest.createdAt).date} at {formatDateTime(latest.createdAt).time}
+                    </>
+                  )}
                 </p>
               )}
               <div className={cssStyles.optimizationModalChartWrap}>

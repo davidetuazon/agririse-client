@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import PageHeader from "../../components/commons/PageHeader";
 import Button from "../../components/commons/Button";
+import FairnessDeficitScatter from "../../components/optimization/FairnessDeficitScatter";
 import {
     getSelectedSolutionsHistory,
     selectOptimizationSolution,
@@ -28,6 +29,39 @@ type RunFormInputs = {
     scenario: "dry season" | "wet season";
 };
 
+type ObjectiveLikeMap =
+    | Record<string, { value?: unknown; unit?: string } | undefined>
+    | undefined;
+
+function extractObjectiveMetric(objectiveValues: ObjectiveLikeMap, matcher: RegExp) {
+    const entry = Object.entries(objectiveValues ?? {}).find(([key]) => matcher.test(key));
+    const value = entry?.[1]?.value;
+    if (typeof value !== "number" || !Number.isFinite(value)) return null;
+    return {
+        label: entry?.[0] ?? "",
+        value,
+        unit: entry?.[1]?.unit ?? "",
+    };
+}
+
+function formatNumber(value: unknown, maximumFractionDigits = 2): string {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+    return value.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits,
+    });
+}
+
+function formatObjectiveValue(value: unknown): string {
+    if (typeof value === "number" && Number.isFinite(value)) return formatNumber(value, 2);
+    return value == null ? "—" : String(value);
+}
+
+function prettifyName(value?: string | null): string {
+    if (!value) return "—";
+    return value.replace(/_/g, " ").trim();
+}
+
 export default function Allocations() {
     const { currentRun, runResults, setRunResults, setCurrentRun, startRun } = useAllocationRun();
     const [selectingId, setSelectingId] = useState<string | null>(null);
@@ -37,10 +71,10 @@ export default function Allocations() {
     const [viewingHistorySolution, setViewingHistorySolution] = useState<SelectedSolutionHistoryItem | null>(null);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [historyError, setHistoryError] = useState<string | null>(null);
+    const [scenarioFilter, setScenarioFilter] = useState<"" | "dry season" | "wet season">("");
     const [showSolutions, setShowSolutions] = useState(false);
     const [showCompletionModal, setShowCompletionModal] = useState(false);
     const completionNotifiedRunRef = useRef<string | null>(null);
-
     const {
         register,
         handleSubmit,
@@ -96,7 +130,8 @@ export default function Allocations() {
         setHistoryError(null);
 
         try {
-            const data = await getSelectedSolutionsHistory();
+            const params = scenarioFilter ? { scenario: scenarioFilter } : undefined;
+            const data = await getSelectedSolutionsHistory(params);
             setSelectedHistory(data ?? []);
         } catch (e: unknown) {
             const err = e as { response?: { data?: { error?: string } }; message?: string };
@@ -109,7 +144,7 @@ export default function Allocations() {
         } finally {
             setHistoryLoading(false);
         }
-    }, []);
+    }, [scenarioFilter]);
 
     useEffect(() => {
         if (viewMode !== "history") return;
@@ -327,6 +362,18 @@ export default function Allocations() {
                             {runResults.paretoSolutions.length > 1 ? "s" : ""}
                         </span>
                     </div>
+                    <div className={cssStyles.resultsParetoWrap}>
+                        <p className={cssStyles.previewObjectivesTitle} style={{ marginBottom: "0.5rem" }}>
+                            Pareto position (fairness vs deficit)
+                        </p>
+                        <div className={cssStyles.previewScatterWrap}>
+                            <FairnessDeficitScatter
+                                solutions={runResults.paretoSolutions}
+                                height={220}
+                                variant="full"
+                            />
+                        </div>
+                    </div>
                     <div className={cssStyles.solutionsGrid}>
                         {runResults.paretoSolutions.map((sol, idx) => {
                             const coverageValues = (sol.allocationVector ?? [])
@@ -336,6 +383,8 @@ export default function Allocations() {
                                 coverageValues.length > 0
                                     ? coverageValues.reduce((sum, v) => sum + v, 0) / coverageValues.length
                                     : null;
+                            const deficitMetric = extractObjectiveMetric(sol.objectiveValues, /deficit/i);
+                            const fairnessMetric = extractObjectiveMetric(sol.objectiveValues, /fair/i);
 
                             return (
                                 <div key={sol._id ?? idx} className={cssStyles.solutionCard}>
@@ -375,11 +424,37 @@ export default function Allocations() {
                                             Object.entries(sol.objectiveValues).map(([key, obj]) => (
                                                 <span key={key} className={cssStyles.objectiveChip}>
                                                     <strong>{key}:</strong>{" "}
-                                                    {typeof obj?.value === "number" ? obj.value : obj?.value}{" "}
+                                                    {formatObjectiveValue(obj?.value)}{" "}
                                                     ({obj?.unit ?? ""})
                                                 </span>
                                             ))}
                                     </div>
+                                    {(deficitMetric || fairnessMetric) && (
+                                        <div className={cssStyles.primaryObjectiveRow}>
+                                            {deficitMetric && (
+                                                <div className={`${cssStyles.primaryObjectiveCard} ${cssStyles.primaryObjectiveDeficit}`}>
+                                                    <span className={cssStyles.primaryObjectiveLabel}>
+                                                        {deficitMetric.label || "Deficit"}
+                                                    </span>
+                                                    <strong className={cssStyles.primaryObjectiveValue}>
+                                                        {formatNumber(deficitMetric.value, 2)}
+                                                        {deficitMetric.unit ? ` ${deficitMetric.unit}` : ""}
+                                                    </strong>
+                                                </div>
+                                            )}
+                                            {fairnessMetric && (
+                                                <div className={`${cssStyles.primaryObjectiveCard} ${cssStyles.primaryObjectiveFairness}`}>
+                                                    <span className={cssStyles.primaryObjectiveLabel}>
+                                                        {fairnessMetric.label || "Fairness"}
+                                                    </span>
+                                                    <strong className={cssStyles.primaryObjectiveValue}>
+                                                        {formatNumber(fairnessMetric.value, 2)}
+                                                        {fairnessMetric.unit ? ` ${fairnessMetric.unit}` : ""}
+                                                    </strong>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -400,14 +475,34 @@ export default function Allocations() {
                     <article className={cssStyles.historyPanel}>
                         <div className={cssStyles.historyPanelHeader}>
                             <h3 className={cssStyles.historyTitle}>Selected solution history</h3>
-                            <button
-                                type="button"
-                                className={cssStyles.historyRefreshBtn}
-                                onClick={loadSelectedHistory}
-                                disabled={historyLoading}
-                            >
-                                {historyLoading ? "Loading..." : "Refresh"}
-                            </button>
+                            <div className={cssStyles.historyFilters}>
+                                <label htmlFor="history-scenario-filter" className={cssStyles.filterLabel}>
+                                    Scenario
+                                </label>
+                                <select
+                                    id="history-scenario-filter"
+                                    className={cssStyles.scenarioFilterSelect}
+                                    value={scenarioFilter}
+                                    onChange={(e) =>
+                                        setScenarioFilter(
+                                            (e.target.value || "") as "" | "dry season" | "wet season"
+                                        )
+                                    }
+                                    title="Filter by scenario"
+                                >
+                                    <option value="">All scenarios</option>
+                                    <option value="dry season">Dry season</option>
+                                    <option value="wet season">Wet season</option>
+                                </select>
+                                <button
+                                    type="button"
+                                    className={cssStyles.historyRefreshBtn}
+                                    onClick={loadSelectedHistory}
+                                    disabled={historyLoading}
+                                >
+                                    {historyLoading ? "Loading..." : "Refresh"}
+                                </button>
+                            </div>
                         </div>
                         {historyError && <p className={cssStyles.historyError}>{historyError}</p>}
                         {!historyError && selectedHistory.length === 0 && !historyLoading && (
@@ -419,6 +514,8 @@ export default function Allocations() {
                             {selectedHistory.map((item, index) => {
                                 const allocationVector = item.solutionSnapshot?.allocationVector ?? [];
                                 const objectiveValues = item.solutionSnapshot?.objectiveValues ?? {};
+                                const deficitMetric = extractObjectiveMetric(objectiveValues, /deficit/i);
+                                const fairnessMetric = extractObjectiveMetric(objectiveValues, /fair/i);
                                 const coverageValues = allocationVector
                                     .map((a) => a.coveragePercentage)
                                     .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
@@ -449,9 +546,9 @@ export default function Allocations() {
                                 return (
                                     <div key={item._id} className={cssStyles.historyCard}>
                                         <div className={cssStyles.historyCardTop}>
-                                            <strong className={cssStyles.historyCardTitle}>
+                                            <span className={cssStyles.historyRunIdBadge}>
                                                 Run {item.runId}
-                                            </strong>
+                                            </span>
                                             <div className={cssStyles.historyCardBadges}>
                                                 <span className={cssStyles.historyChronological}>
                                                     #{chronologicalNumber}
@@ -462,7 +559,7 @@ export default function Allocations() {
                                             </div>
                                         </div>
                                         <p className={cssStyles.historyMeta}>
-                                            Selected on {selectedDateStr} at {selectedTimeStr}
+                                            <strong>Created at:</strong> {selectedDateStr} at {selectedTimeStr}
                                         </p>
                                         <p className={cssStyles.historyMeta}>
                                             Supply:{" "}
@@ -486,10 +583,36 @@ export default function Allocations() {
                                                 {Object.entries(objectiveValues).slice(0, 3).map(([key, obj]) => (
                                                     <span key={key} className={cssStyles.objectiveChip}>
                                                         <strong>{key}:</strong>{" "}
-                                                        {typeof obj?.value === "number" ? obj.value : obj?.value}{" "}
+                                                        {formatObjectiveValue(obj?.value)}{" "}
                                                         ({obj?.unit ?? ""})
                                                     </span>
                                                 ))}
+                                            </div>
+                                        )}
+                                        {(deficitMetric || fairnessMetric) && (
+                                            <div className={cssStyles.primaryObjectiveRow}>
+                                                {deficitMetric && (
+                                                    <div className={`${cssStyles.primaryObjectiveCard} ${cssStyles.primaryObjectiveDeficit}`}>
+                                                        <span className={cssStyles.primaryObjectiveLabel}>
+                                                            {deficitMetric.label || "Deficit"}
+                                                        </span>
+                                                        <strong className={cssStyles.primaryObjectiveValue}>
+                                                            {formatNumber(deficitMetric.value, 2)}
+                                                            {deficitMetric.unit ? ` ${deficitMetric.unit}` : ""}
+                                                        </strong>
+                                                    </div>
+                                                )}
+                                                {fairnessMetric && (
+                                                    <div className={`${cssStyles.primaryObjectiveCard} ${cssStyles.primaryObjectiveFairness}`}>
+                                                        <span className={cssStyles.primaryObjectiveLabel}>
+                                                            {fairnessMetric.label || "Fairness"}
+                                                        </span>
+                                                        <strong className={cssStyles.primaryObjectiveValue}>
+                                                            {formatNumber(fairnessMetric.value, 2)}
+                                                            {fairnessMetric.unit ? ` ${fairnessMetric.unit}` : ""}
+                                                        </strong>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                         <button
@@ -573,16 +696,50 @@ export default function Allocations() {
                             {viewingSolution.objectiveValues &&
                                 Object.keys(viewingSolution.objectiveValues).length > 0 && (
                                     <div>
+                                        {(() => {
+                                            const deficitMetric = extractObjectiveMetric(viewingSolution.objectiveValues, /deficit/i);
+                                            const fairnessMetric = extractObjectiveMetric(viewingSolution.objectiveValues, /fair/i);
+                                            return (
+                                                <>
                                         <p className={cssStyles.previewObjectivesTitle}>Objectives</p>
                                         <div className={cssStyles.previewObjectives}>
                                             {Object.entries(viewingSolution.objectiveValues).map(([key, obj]) => (
                                                 <span key={key} className={cssStyles.objectiveChip}>
                                                     <strong>{key}:</strong>{" "}
-                                                    {typeof obj?.value === "number" ? obj.value : obj?.value}{" "}
+                                                    {formatObjectiveValue(obj?.value)}{" "}
                                                     {obj?.unit ? `(${obj.unit})` : ""}
                                                 </span>
                                             ))}
                                         </div>
+                                        {(deficitMetric || fairnessMetric) && (
+                                            <div className={cssStyles.primaryObjectiveRow}>
+                                                {deficitMetric && (
+                                                    <div className={`${cssStyles.primaryObjectiveCard} ${cssStyles.primaryObjectiveDeficit}`}>
+                                                        <span className={cssStyles.primaryObjectiveLabel}>
+                                                            {deficitMetric.label || "Deficit"}
+                                                        </span>
+                                                        <strong className={cssStyles.primaryObjectiveValue}>
+                                                            {formatNumber(deficitMetric.value, 2)}
+                                                            {deficitMetric.unit ? ` ${deficitMetric.unit}` : ""}
+                                                        </strong>
+                                                    </div>
+                                                )}
+                                                {fairnessMetric && (
+                                                    <div className={`${cssStyles.primaryObjectiveCard} ${cssStyles.primaryObjectiveFairness}`}>
+                                                        <span className={cssStyles.primaryObjectiveLabel}>
+                                                            {fairnessMetric.label || "Fairness"}
+                                                        </span>
+                                                        <strong className={cssStyles.primaryObjectiveValue}>
+                                                            {formatNumber(fairnessMetric.value, 2)}
+                                                            {fairnessMetric.unit ? ` ${fairnessMetric.unit}` : ""}
+                                                        </strong>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                                </>
+                                            );
+                                        })()}
                                     </div>
                                 )}
                             {viewingSolution.allocationVector && viewingSolution.allocationVector.length > 0 && (
@@ -593,7 +750,7 @@ export default function Allocations() {
                                     <ResponsiveContainer width="100%" height={260}>
                                         <BarChart
                                             data={viewingSolution.allocationVector.map((a) => ({
-                                                name: a.mainLateralId ?? "—",
+                                                name: prettifyName(a.mainLateralId),
                                                 allocated: Number(a.allocatedWaterM3) || 0,
                                                 coverage:
                                                     typeof a.coveragePercentage === "number" && Number.isFinite(a.coveragePercentage)
@@ -616,7 +773,7 @@ export default function Allocations() {
                                                 tickFormatter={(v) => (typeof v === "number" ? `${v}` : String(v))}
                                             />
                                             <Tooltip
-                                                formatter={(value: unknown) => [value, "Allocated (m³)"]}
+                                                formatter={(value: unknown) => [formatNumber(value, 2), "Allocated (m³)"]}
                                                 labelFormatter={(label) => `Lateral: ${label}`}
                                                 contentStyle={{
                                                     borderRadius: "10px",
@@ -651,12 +808,12 @@ export default function Allocations() {
                                                             : "—";
                                                     return (
                                                         <tr key={i}>
-                                                            <td>{alloc.mainLateralId ?? "—"}</td>
-                                                            <td>{alloc.allocatedWaterM3 ?? "—"}</td>
+                                                            <td>{prettifyName(alloc.mainLateralId)}</td>
+                                                            <td>{formatNumber(alloc.allocatedWaterM3, 2)}</td>
                                                             <td>
                                                                 {alloc.effectiveWaterM3 != null &&
                                                                 Number.isFinite(Number(alloc.effectiveWaterM3))
-                                                                    ? alloc.effectiveWaterM3
+                                                                    ? formatNumber(Number(alloc.effectiveWaterM3), 2)
                                                                     : "—"}
                                                             </td>
                                                             <td>{covDisplay}</td>
@@ -703,31 +860,77 @@ export default function Allocations() {
                     <div className={cssStyles.previewModal} onClick={(e) => e.stopPropagation()}>
                         <div className={cssStyles.previewHeader}>
                             <h2 id="selected-history-title" className={cssStyles.previewTitle}>
-                                Selected solution history — Run {viewingHistorySolution.runId}
+                                Selected solution history — <span className={cssStyles.previewRunIdBadge}>Run {viewingHistorySolution.runId}</span>
                             </h2>
                             <p className={cssStyles.historyModalMeta}>
-                                Selected by {viewingHistorySolution.selectedBy?.name ?? "—"} ·{" "}
+                                <strong>Created at:</strong>{" "}
                                 {viewingHistorySolution.createdAt
                                     ? new Date(viewingHistorySolution.createdAt).toLocaleString()
                                     : "—"}
+                            </p>
+                            <p className={cssStyles.historyModalMeta}>
+                                Scenario: {viewingHistorySolution.runSnapshot?.inputSnapshot?.scenario ?? "—"}
+                            </p>
+                            <p className={cssStyles.historyModalMeta}>
+                                Selected by {viewingHistorySolution.selectedBy?.name ?? "—"}
                             </p>
                         </div>
                         <div className={cssStyles.previewBody}>
                             {viewingHistorySolution.solutionSnapshot?.objectiveValues &&
                                 Object.keys(viewingHistorySolution.solutionSnapshot.objectiveValues).length > 0 && (
                                     <div>
+                                        {(() => {
+                                            const deficitMetric = extractObjectiveMetric(
+                                                viewingHistorySolution.solutionSnapshot?.objectiveValues,
+                                                /deficit/i
+                                            );
+                                            const fairnessMetric = extractObjectiveMetric(
+                                                viewingHistorySolution.solutionSnapshot?.objectiveValues,
+                                                /fair/i
+                                            );
+                                            return (
+                                                <>
                                         <p className={cssStyles.previewObjectivesTitle}>Objectives</p>
                                         <div className={cssStyles.previewObjectives}>
                                             {Object.entries(viewingHistorySolution.solutionSnapshot.objectiveValues).map(
                                                 ([key, obj]) => (
                                                     <span key={key} className={cssStyles.objectiveChip}>
                                                         <strong>{key}:</strong>{" "}
-                                                        {typeof obj?.value === "number" ? obj.value : obj?.value}{" "}
+                                                        {formatObjectiveValue(obj?.value)}{" "}
                                                         {obj?.unit ? `(${obj.unit})` : ""}
                                                     </span>
                                                 )
                                             )}
                                         </div>
+                                        {(deficitMetric || fairnessMetric) && (
+                                            <div className={cssStyles.primaryObjectiveRow}>
+                                                {deficitMetric && (
+                                                    <div className={`${cssStyles.primaryObjectiveCard} ${cssStyles.primaryObjectiveDeficit}`}>
+                                                        <span className={cssStyles.primaryObjectiveLabel}>
+                                                            {deficitMetric.label || "Deficit"}
+                                                        </span>
+                                                        <strong className={cssStyles.primaryObjectiveValue}>
+                                                            {formatNumber(deficitMetric.value, 2)}
+                                                            {deficitMetric.unit ? ` ${deficitMetric.unit}` : ""}
+                                                        </strong>
+                                                    </div>
+                                                )}
+                                                {fairnessMetric && (
+                                                    <div className={`${cssStyles.primaryObjectiveCard} ${cssStyles.primaryObjectiveFairness}`}>
+                                                        <span className={cssStyles.primaryObjectiveLabel}>
+                                                            {fairnessMetric.label || "Fairness"}
+                                                        </span>
+                                                        <strong className={cssStyles.primaryObjectiveValue}>
+                                                            {formatNumber(fairnessMetric.value, 2)}
+                                                            {fairnessMetric.unit ? ` ${fairnessMetric.unit}` : ""}
+                                                        </strong>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                                </>
+                                            );
+                                        })()}
                                     </div>
                                 )}
                             {viewingHistorySolution.solutionSnapshot?.allocationVector &&
@@ -739,7 +942,7 @@ export default function Allocations() {
                                         <ResponsiveContainer width="100%" height={260}>
                                             <BarChart
                                                 data={viewingHistorySolution.solutionSnapshot.allocationVector.map((a) => ({
-                                                    name: a.mainLateralId ?? "—",
+                                                    name: prettifyName(a.mainLateralId),
                                                     allocated: Number(a.allocatedWaterM3) || 0,
                                                 }))}
                                                 margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
@@ -757,7 +960,7 @@ export default function Allocations() {
                                                     axisLine={{ stroke: colors.border }}
                                                 />
                                                 <Tooltip
-                                                    formatter={(value: unknown) => [value, "Allocated (m³)"]}
+                                                    formatter={(value: unknown) => [formatNumber(value, 2), "Allocated (m³)"]}
                                                     labelFormatter={(label) => `Lateral: ${label}`}
                                                     contentStyle={{
                                                         borderRadius: "10px",
@@ -792,12 +995,12 @@ export default function Allocations() {
                                                                 : "—";
                                                         return (
                                                             <tr key={i}>
-                                                                <td>{alloc.mainLateralId ?? "—"}</td>
-                                                                <td>{alloc.allocatedWaterM3 ?? "—"}</td>
+                                                                <td>{prettifyName(alloc.mainLateralId)}</td>
+                                                                <td>{formatNumber(alloc.allocatedWaterM3, 2)}</td>
                                                                 <td>
                                                                     {alloc.effectiveWaterM3 != null &&
                                                                     Number.isFinite(Number(alloc.effectiveWaterM3))
-                                                                        ? alloc.effectiveWaterM3
+                                                                        ? formatNumber(Number(alloc.effectiveWaterM3), 2)
                                                                         : "—"}
                                                                 </td>
                                                                 <td>{covDisplay}</td>

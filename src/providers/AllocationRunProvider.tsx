@@ -22,6 +22,19 @@ import cssStyles from "./AllocationRunProvider.module.css";
 const POLL_INTERVAL_MS = 3000;
 const POLL_MAX_MS = 10 * 60 * 1000;
 
+function formatNumber(value: unknown, maximumFractionDigits = 2): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits,
+  });
+}
+
+function prettifyName(value?: string | null): string {
+  if (!value) return "—";
+  return value.replace(/_/g, " ").trim();
+}
+
 type Scenario = "dry season" | "wet season";
 
 export type AllocationRunResults = {
@@ -243,15 +256,17 @@ export default function AllocationRunProvider({ children }: { children: ReactNod
                     ) : (
                       pendingCanals.map((canal, index) => {
                         const barangays = canal.coverage?.map((c) => c.barangay).filter(Boolean);
-                        const barangayDisplay = barangays?.length ? barangays.join(", ") : "—";
+                        const barangayDisplay = barangays?.length
+                          ? barangays.map((b) => prettifyName(b)).join(", ")
+                          : "—";
                         return (
                           <tr key={canal._id ?? `${canal.mainLateralId}-${index}`}>
-                            <td>{canal.mainLateralId ?? "—"}</td>
+                            <td>{prettifyName(canal.mainLateralId)}</td>
                             <td className={cssStyles.barangayCell}>{barangayDisplay}</td>
-                            <td>{canal.tbsByDamHa ?? "—"}</td>
-                            <td>{canal.netWaterDemandM3 ?? "—"}</td>
-                            <td>{canal.seepageM3 ?? "—"}</td>
-                            <td>{canal.lossFactorPercentage ?? "—"}</td>
+                            <td>{formatNumber(canal.tbsByDamHa)}</td>
+                            <td>{formatNumber(canal.netWaterDemandM3)}</td>
+                            <td>{formatNumber(canal.seepageM3)}</td>
+                            <td>{formatNumber(canal.lossFactorPercentage)}</td>
                           </tr>
                         );
                       })

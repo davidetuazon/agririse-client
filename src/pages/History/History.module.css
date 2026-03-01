@@ -1,5 +1,16 @@
 /* Mobile-first: table scrolls horizontally, metadata stacks */
 
+/* Scrollable page content */
+.pageScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+}
+
 /* Ensure table container allows horizontal scroll on small screens */
 .historyTable {
   -webkit-overflow-scrolling: touch;
