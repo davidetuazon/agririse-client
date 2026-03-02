@@ -1,33 +1,66 @@
+/**
+ * Central palette.
+ * Keep agriculture/water identity, but add warm accent for stronger contrast.
+ */
 const colors = {
-    // Brand / Primary (Agriculture)
-    primary: '#00684A',         // Forest Green
-    primaryLight: '#00ED64',    // Spring Green
-    secondary: '#FFFFFF',       // Pure White
+    // Brand / core tones
+    primary: '#0C6A4A',
+    primaryLight: '#2FC38A',
+    secondary: '#FFFFFF',
 
-    // Water / Hydrology
-    waterPrimary: '#2F6F73',     // Teal water (natural)
-    waterLight: '#E3F3F2',       // Shallow water highlight
+    // Water tones
+    waterPrimary: '#2F6F73',
+    waterLight: '#E9F5F6',
 
-    // Accent
-    accentOne: '#F9EBFF',   // Lavender
-    accentTwo: '#E3FCF7',   // Mist
+    // Accent family (complements green/teal)
+    accentOne: '#EDE4FF',
+    accentTwo: '#F2FBF8',
+    accentWarm: '#C45C26',
+    accentWarmHover: '#A74A1B',
 
-    // Backgrounds
-    primaryBackground: '#001E2B',     // Slate Blue
-    secondaryBackground: '#023430',   // Evergreen
-    mutedBackground: '#F0F3F2',        // Light Gray
+    // Semantic action tokens
+    primaryAction: '#C45C26',
+    primaryActionHover: '#A74A1B',
+    primaryActionText: '#FFFFFF',
+
+    // Surfaces
+    primaryBackground: '#0B2530',
+    secondaryBackground: '#123C3D',
+    mutedBackground: '#F5F8F8',
+    surfaceElevated: '#FFFFFF',
+    surfaceSubtle: '#F4FAF8',
 
     // Text
-    textPrimary: '#000000',    // main text
-    textSecondary: '#C1C7C6',  // muted text
+    textPrimary: '#102A33',
+    textHeading: '#0D2129',
+    textSecondary: '#5E6E77',
+    textBody: '#334D57',
+    textMuted: '#9BA8AE',
 
-    // Borders / Dividers
-    border: '#E8EDEB',         // light dark separator
+    // Borders / dividers
+    border: '#DFE8E6',
+    borderMedium: '#D5E0DD',
+    borderSubtle: '#E8EFED',
 
     // Feedback
-    error: '#B91C1C',           // lighter red for contrast
-    info: '#0498EC',            // lighter blue
-    success: '#6EE7B7',         // lighter green
+    error: '#B42318',
+    info: '#1877F2',
+    success: '#15A66D',
+    warning: '#D97706',
+
+    // Chart
+    chartAvg: '#2F6F73',
+    chartRangeFill: 'rgba(12, 106, 74, 0.28)',
+    chartMin: '#DC2626',
+    chartMax: '#B91C1C',
+    chartGrid: '#A5B4C1',
+    chartAxis: '#274453',
+    chartMetric: '#7C3AED',
+    chartAnomaly: '#C45C26',
+    chartPositive: '#15803D',
+    chartNegative: '#B91C1C',
+    chartNeutral: '#52646E',
+    chartPrevious: '#748695',
 };
 
 export default colors;

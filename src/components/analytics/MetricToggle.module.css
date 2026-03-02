@@ -1,0 +1,41 @@
+.wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.label {
+  font-family: "Poppins-SemiBold";
+  font-size: 0.8rem;
+  color: #023430;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.button,
+.buttonActive {
+  border: 1px solid rgba(0, 104, 74, 0.35);
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  font-family: "Poppins-Light";
+  font-size: 0.75rem;
+  cursor: pointer;
+  background: transparent;
+  color: #023430;
+}
+
+.button:hover {
+  background: #E3FCF7;
+  border-color: #00684A;
+}
+
+.buttonActive {
+  background: #00684A;
+  color: #FFFFFF;
+  border-color: #00684A;
+}

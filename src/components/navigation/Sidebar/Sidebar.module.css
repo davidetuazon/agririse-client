@@ -1,0 +1,66 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.brandHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.9rem, 2vw, 1.25rem);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.brandImage {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  min-height: 44px;
+  max-height: 80px;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+
+.brandIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: rgba(196, 92, 38, 0.14);
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.brandTitle {
+  font-family: "Poppins-SemiBold";
+  font-size: var(--font-title);
+  color: var(--color-primary);
+}
+
+.brandSubtitle {
+  font-family: "Poppins-Light";
+  font-size: var(--font-caption);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.navGroup {
+  padding: 0.75rem 0;
+}
+
+.navLabel {
+  font-family: "Poppins-SemiBold";
+  font-size: var(--font-caption);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: 0 1.25rem 0.5rem;
+}

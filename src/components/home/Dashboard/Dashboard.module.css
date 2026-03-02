@@ -1,0 +1,96 @@
+.dashboardContainer {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  padding: clamp(0.5rem, 1.5vw, 1rem) clamp(0.75rem, 2vw, 1.25rem);
+  width: 100%;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, rgba(240, 253, 250, 0.5) 0%, rgba(224, 242, 254, 0.25) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(6, 182, 212, 0.15);
+}
+
+@media (min-width: 768px) {
+  .dashboardContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .dashboardContainer {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+  padding: 1rem;
+}
+
+.modalCard {
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 1.25rem;
+  width: min(420px, 92vw);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.modalTitle {
+  font-family: "Poppins-SemiBold";
+  font-size: 1rem;
+  color: #023430;
+}
+
+.modalSubtitle {
+  font-family: "Poppins-Light";
+  font-size: 0.8rem;
+  color: #2F6F73;
+  margin: 0.5rem 0 1rem;
+}
+
+.modalClose {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #2F6F73;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.modalButton {
+  border: none;
+  background: #00684A;
+  color: #FFFFFF;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-family: "Poppins-SemiBold";
+  cursor: pointer;
+}
+
+.modalButtonSecondary {
+  border: 1px solid rgba(0, 104, 74, 0.3);
+  background: transparent;
+  color: #00684A;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-family: "Poppins-SemiBold";
+  cursor: pointer;
+}
