@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import type { SelectedSolutionHistoryItem } from "../services/api";
 
 type AnalyticsPdfArgs = {
   title: string;
@@ -255,6 +256,167 @@ export function buildHistoryPdf(args: HistoryPdfArgs) {
       1: { cellWidth: usableWidth * 0.2, halign: "right" },
       2: { cellWidth: usableWidth * 0.28, halign: "right" },
     },
+  });
+
+  doc.setTextColor(0, 0, 0);
+  return doc;
+}
+
+type SelectedSolutionPdfArgs = {
+  title: string;
+  item: SelectedSolutionHistoryItem;
+  chartPngDataUrl?: string;
+};
+
+export function buildSelectedSolutionPdf(args: SelectedSolutionPdfArgs) {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const margin = 12;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const usableWidth = pageWidth - margin * 2;
+  let y = 14;
+  const brand = [0, 104, 74] as const;
+
+  const ensureSpace = (requiredHeight: number) => {
+    if (y + requiredHeight > pageHeight - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const drawSectionTitle = (title: string) => {
+    ensureSpace(10);
+    doc.setFillColor(246, 250, 248);
+    doc.rect(margin, y - 4, usableWidth, 8, "F");
+    doc.setDrawColor(224, 232, 228);
+    doc.rect(margin, y - 4, usableWidth, 8);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(brand[0], brand[1], brand[2]);
+    doc.text(title, margin + 3, y + 1.5);
+    y += 10;
+  };
+
+  const formatDateTime = (value?: string) => {
+    if (!value) return "-";
+    const d = new Date(value);
+    if (!Number.isFinite(d.getTime())) return "-";
+    return d.toLocaleString();
+  };
+
+  const formatNum = (value: unknown, digits = 2) => {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "-";
+    return value.toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: digits,
+    });
+  };
+
+  const prettifyName = (value?: string | null) => {
+    if (!value) return "-";
+    return value.replace(/_/g, " ").trim();
+  };
+
+  const scenario = args.item.runSnapshot?.inputSnapshot?.scenario ?? "-";
+  const supply = args.item.runSnapshot?.inputSnapshot?.totalSeasonalWaterSupplyM3;
+  const selectedBy = args.item.selectedBy?.name ?? "-";
+  const objectiveValues = args.item.solutionSnapshot?.objectiveValues ?? {};
+  const allocationVector = args.item.solutionSnapshot?.allocationVector ?? [];
+
+  // Header band
+  doc.setFillColor(brand[0], brand[1], brand[2]);
+  doc.rect(0, 0, pageWidth, 24, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.setTextColor(255, 255, 255);
+  doc.text(args.title, margin, 12);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - margin, 12, { align: "right" });
+  y = 30;
+
+  drawSectionTitle("Selected solution details");
+  autoTable(doc, {
+    startY: y - 1,
+    head: [["Field", "Value"]],
+    body: [
+      ["Run ID", args.item.runId ?? "-"],
+      ["Solution ID", args.item.solutionId ?? "-"],
+      ["Scenario", scenario],
+      ["Selected at", formatDateTime(args.item.createdAt)],
+      ["Selected by", selectedBy],
+      ["Total seasonal water supply (m3)", supply != null ? formatNum(supply, 2) : "-"],
+      ["Allocation rows", String(allocationVector.length)],
+    ],
+    styles: { fontSize: 9, cellPadding: 2.3, textColor: [30, 41, 59] },
+    headStyles: { fillColor: [236, 244, 240], textColor: [0, 104, 74] },
+    alternateRowStyles: { fillColor: [250, 252, 251] },
+    theme: "grid",
+    margin: { left: margin, right: margin },
+    columnStyles: {
+      0: { cellWidth: 56, fontStyle: "bold" },
+      1: { cellWidth: usableWidth - 56 },
+    },
+  });
+  y = (doc as any).lastAutoTable.finalY + 8;
+
+  drawSectionTitle("Objectives (View details)");
+  const objectiveRows =
+    Object.entries(objectiveValues).length > 0
+      ? Object.entries(objectiveValues).map(([key, obj]) => [
+          key,
+          formatNum(obj?.value, 2),
+          obj?.unit ?? "-",
+          obj?.direction ?? "-",
+        ])
+      : [["-", "-", "-", "-"]];
+
+  autoTable(doc, {
+    startY: y - 1,
+    head: [["Objective", "Value", "Unit", "Direction"]],
+    body: objectiveRows,
+    styles: { fontSize: 8.8, cellPadding: 2.2, textColor: [17, 24, 39] },
+    headStyles: { fillColor: [236, 244, 240], textColor: [0, 104, 74] },
+    alternateRowStyles: { fillColor: [250, 252, 251] },
+    theme: "grid",
+    margin: { left: margin, right: margin },
+  });
+  y = (doc as any).lastAutoTable.finalY + 8;
+
+  if (args.chartPngDataUrl) {
+    drawSectionTitle("Allocation bar chart (View details)");
+    ensureSpace(78);
+    const imgX = margin;
+    const imgY = y;
+    const imgW = usableWidth;
+    const imgH = 70;
+    doc.addImage(args.chartPngDataUrl, "PNG", imgX, imgY, imgW, imgH);
+    y += imgH + 8;
+  }
+
+  drawSectionTitle("Allocation table (View details)");
+  autoTable(doc, {
+    startY: y - 1,
+    head: [["Lateral", "Allocated (m3)", "Effective (m3)", "Coverage %"]],
+    body:
+      allocationVector.length > 0
+        ? allocationVector.map((alloc) => {
+            const cov = alloc.coveragePercentage;
+            const covDisplay =
+              typeof cov === "number" && Number.isFinite(cov) ? `${cov.toFixed(1)}%` : "-";
+            return [
+              prettifyName(alloc.mainLateralId),
+              formatNum(alloc.allocatedWaterM3, 2),
+              alloc.effectiveWaterM3 != null ? formatNum(Number(alloc.effectiveWaterM3), 2) : "-",
+              covDisplay,
+            ];
+          })
+        : [["-", "-", "-", "-"]],
+    styles: { fontSize: 8.6, cellPadding: 2.1, textColor: [17, 24, 39] },
+    headStyles: { fillColor: [236, 244, 240], textColor: [0, 104, 74] },
+    alternateRowStyles: { fillColor: [250, 252, 251] },
+    theme: "grid",
+    margin: { left: margin, right: margin },
   });
 
   doc.setTextColor(0, 0, 0);

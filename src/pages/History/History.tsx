@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getHistory } from "../../services/api";
+import { getHistory, getSensorDataBoundsByHistory } from "../../services/api";
 import colors from "../../constants/colors";
 import Text from "../../components/commons/Text";
 import Section from "../../components/commons/Section";
@@ -83,9 +83,12 @@ export default function History() {
 
     const sensorType = searchParams.get('sensorType') ?? 'damWaterLevel';
     const sensorLabel = (SENSOR_TYPES as Record<string, { label: string }>)[sensorType]?.label ?? sensorType;
-    const endDate = searchParams.get('endDate') ?? new Date().toISOString().split('T')[0];
-    const startDate = searchParams.get('startDate')
-        ?? new Date(new Date(endDate).getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const todayIso = new Date().toISOString().split('T')[0];
+    const defaultEndDate = '2026-01-16';
+    const endDate = searchParams.get('endDate') ?? defaultEndDate;
+    const [boundsDateRange, setBoundsDateRange] = useState<{ startDate: string; endDate: string } | null>(null);
+    const startDate = searchParams.get('startDate') ?? boundsDateRange?.startDate ?? '';
+    const effectiveEndDate = endDate || boundsDateRange?.endDate || todayIso;
     const limit = Number(searchParams.get('limit')) || 10;
 
     // Unit conversion state
@@ -102,10 +105,33 @@ export default function History() {
         setSearchParams((prev) => {
             const next = new URLSearchParams(prev);
             next.set('startDate', from);
-            next.set('endDate', to);
+            if (to) next.set('endDate', to);
+            else next.delete('endDate');
             return next;
         });
     };
+
+    useEffect(() => {
+        let cancelled = false;
+        const bootstrapBounds = async () => {
+            const bounds = await getSensorDataBoundsByHistory(sensorType);
+            if (cancelled || bounds?.error || !bounds?.startDate || !bounds?.endDate) return;
+            setBoundsDateRange({ startDate: bounds.startDate, endDate: bounds.endDate });
+            setSearchParams((prev) => {
+                const next = new URLSearchParams(prev);
+                next.set('startDate', bounds.startDate);
+                next.set('endDate', defaultEndDate);
+                return next;
+            });
+            setLocalStartDate(bounds.startDate);
+            setLocalEndDate(defaultEndDate);
+        };
+        bootstrapBounds();
+        return () => {
+            cancelled = true;
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sensorType]);
 
     const fetchAllForExport = async () => {
         setExportBusy(true);
@@ -122,7 +148,7 @@ export default function History() {
                 const res = await getHistory({
                     sensorType,
                     startDate,
-                    endDate,
+                    endDate: effectiveEndDate,
                     limit: pageLimit,
                     cursor: nextCursor,
                 });
@@ -157,7 +183,7 @@ export default function History() {
 
     const exportDisabled = !data || data.length === 0;
     const exportTitle = `History: ${metaData?.sensorType ?? sensorType}`;
-    const exportFilenameBase = `history_${sensorType}_${startDate}_${endDate}`;
+    const exportFilenameBase = `history_${sensorType}_${startDate}_${effectiveEndDate}`;
 
     const handleOpenExport = () => {
         setExportOpen(true);
@@ -209,7 +235,7 @@ export default function History() {
         const doc = buildHistoryPdf({
             title: exportTitle,
             startDate,
-            endDate,
+            endDate: effectiveEndDate,
             unit: selectedUnit,
             chartPngDataUrl: chartPng,
             rows: convertedRows,
@@ -217,13 +243,10 @@ export default function History() {
         doc.save(`${exportFilenameBase}.pdf`);
     };
 
-    // Reset draft dates to committed URL dates when sensor type changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         setLocalStartDate(startDate);
         setLocalEndDate(endDate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sensorType]);
+    }, [startDate, endDate]);
 
     // Reset selected unit when source unit changes (e.g., when switching sensors)
     useEffect(() => {
@@ -242,8 +265,8 @@ export default function History() {
     };
 
     const init = async () => {
-        if (!startDate || !endDate) return;
-        const res = await getHistory({ sensorType, startDate, endDate, limit, cursor });
+        if (!startDate || !effectiveEndDate) return;
+        const res = await getHistory({ sensorType, startDate, endDate: effectiveEndDate, limit, cursor });
 
         if (res.error) {
             setData(null);
@@ -260,12 +283,12 @@ export default function History() {
     useEffect(() => {
         init();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sensorType, startDate, endDate, limit]);
+    }, [sensorType, startDate, effectiveEndDate, limit]);
 
     // pagination logic
     const fetchMore = async () => {
         if (!pageInfo?.hasNext) return;
-        const res = await getHistory({ sensorType, startDate, endDate, limit, cursor: pageInfo?.nextCursor || '' });
+        const res = await getHistory({ sensorType, startDate, endDate: effectiveEndDate, limit, cursor: pageInfo?.nextCursor || '' });
 
         if (res.error) {
             setData(null);
@@ -303,7 +326,7 @@ export default function History() {
         setCursor(null);
         init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sensorType, startDate, endDate]);
+    }, [sensorType, startDate, effectiveEndDate]);
 
     // useEffect(() => {
     //     console.log({ pageInfo, data })
@@ -346,7 +369,7 @@ export default function History() {
                             <span className={cssStyles.metaLabel}>From</span>
                             <DateRangeInput
                                 value={localStartDate}
-                                max={localEndDate}
+                                max={localEndDate || boundsDateRange?.endDate}
                                 onChange={setLocalStartDate}
                             />
                         </div>
@@ -369,7 +392,7 @@ export default function History() {
                             <select
                                 value={selectedUnit}
                                 onChange={(e) => setSelectedUnit(e.target.value)}
-                                className={cssStyles.dateInput}
+                                className={cssStyles.unitSelect}
                                 title="Select display unit"
                             >
                                 {unitOptions.map((option) => (
@@ -517,8 +540,8 @@ export default function History() {
                 title={`Export – ${exportTitle}`}
                 subtitle={
                     exportBusy
-                        ? `${startDate} → ${endDate} · fetching pages: ${exportProgress?.pages ?? 0} · rows: ${exportProgress?.rows ?? 0}`
-                        : `${startDate} → ${endDate} · rows: ${exportRows?.length ?? '—'}`
+                        ? `${startDate} → ${endDate || 'Not set'} · fetching pages: ${exportProgress?.pages ?? 0} · rows: ${exportProgress?.rows ?? 0}`
+                        : `${startDate} → ${endDate || 'Not set'} · rows: ${exportRows?.length ?? '—'}`
                 }
                 onClose={() => setExportOpen(false)}
                 onDownloadCsv={handleDownloadHistoryCsv}
@@ -531,7 +554,7 @@ export default function History() {
                         <div><strong>Sensor</strong>: {metaData?.sensorType ?? '—'}</div>
                         <div><strong>Unit</strong>: {selectedUnit || '—'}</div>
                         <div><strong>From</strong>: {startDate}</div>
-                        <div><strong>To</strong>: {endDate}</div>
+                        <div><strong>To</strong>: {endDate || 'Not set'}</div>
                     </div>
 
                     {exportErr && (

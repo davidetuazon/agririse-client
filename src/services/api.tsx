@@ -94,6 +94,47 @@ export const getHistory = async (
     }
 }
 
+export const getSensorDataBoundsByHistory = async (sensorType: string) => {
+    const today = new Date();
+    const endDate = today.toISOString().split('T')[0];
+    const startDate = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const pageLimit = 200;
+    let cursor = '';
+    let latestDate: string | null = null;
+    let earliestDate: string | null = null;
+
+    while (true) {
+        const res = await getHistory({
+            sensorType,
+            startDate,
+            endDate,
+            limit: pageLimit,
+            cursor,
+        });
+
+        if (res.error) return { data: null, error: res.error };
+        const rows = res.data ?? [];
+        if (!rows.length) break;
+
+        if (!latestDate) {
+            latestDate = new Date(rows[0].recordedAt).toISOString().slice(0, 10);
+        }
+        earliestDate = new Date(rows[rows.length - 1].recordedAt).toISOString().slice(0, 10);
+
+        if (!res.pageInfo?.hasNext || !res.pageInfo?.nextCursor) break;
+        cursor = String(res.pageInfo.nextCursor);
+    }
+
+    if (!latestDate || !earliestDate) {
+        return { data: null, error: 'No available data for date range in database' };
+    }
+
+    return {
+        startDate: earliestDate,
+        endDate: latestDate,
+    };
+}
+
 export type ImportRow = {
     recordedAt: string;
     value: number | string;

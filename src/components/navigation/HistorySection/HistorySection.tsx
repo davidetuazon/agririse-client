@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import colors from "../../../constants/colors";
 import { Link, useLocation } from "react-router-dom";
-import { CloudRain, Droplets, History, Thermometer, Waves } from "lucide-react";
+import { ChevronDown, ChevronUp, CloudRain, Droplets, History, Thermometer, Waves } from "lucide-react";
 
 import Text from "../../commons/Text";
 
@@ -52,15 +52,14 @@ export default function HistorySection(props: Props) {
         }
     };
 
-    const historyUrl = (sensorType: SensorType, defaultDays = 30, limit: number = 20) => {
-        const end = new Date();
-        const start = new Date(end.getTime() - defaultDays * 24 * 60 * 60 * 1000);
-
-        const startDate = start.toISOString().split('T')[0];
-        const endDate = end.toISOString().split('T')[0];
-
-        return `/iot/history?sensorType=${sensorType}&startDate=${startDate}&endDate=${endDate}&limit=${limit}`;
-    }
+    const historyUrl = (sensorType: SensorType) => {
+        const params = new URLSearchParams(location.search);
+        params.set("sensorType", sensorType);
+        if (!params.get("limit")) {
+            params.set("limit", "20");
+        }
+        return `/iot/history?${params.toString()}`;
+    };
 
     return (
         <>
@@ -71,13 +70,20 @@ export default function HistorySection(props: Props) {
             onClick={() => setIsVisible(prev => !prev)}
         >
             <span style={styles.sectionHeader}>
-                <History size={18} color={colors.primary} />
-                <Text
-                    variant="subtitle"
-                    style={styles.sectionLabel}
-                >
-                    History
-                </Text>
+                <span style={styles.sectionHeaderLeft}>
+                    <History size={18} color={colors.primary} />
+                    <Text
+                        variant="subtitle"
+                        style={styles.sectionLabel}
+                    >
+                        History
+                    </Text>
+                </span>
+                {isVisible ? (
+                    <ChevronDown size={16} color={colors.primary} style={styles.chevron} />
+                ) : (
+                    <ChevronUp size={16} color={colors.primary} style={styles.chevron} />
+                )}
             </span>
         </div>
         <div
@@ -133,7 +139,16 @@ const styles: {[key: string]: React.CSSProperties} = {
     sectionHeader: {
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    sectionHeaderLeft: {
+        display: 'flex',
+        alignItems: 'center',
         gap: '0.6rem',
+    },
+    chevron: {
+        flexShrink: 0,
     },
     sectionLabel: {
         color: colors.primary,

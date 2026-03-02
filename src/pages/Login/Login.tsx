@@ -79,7 +79,7 @@ export default function Login() {
                             <span className={cssStyles.featureIcon}>🌾</span>
                             <h3 className={cssStyles.featureTitle}>Smart Monitoring</h3>
                             <p className={cssStyles.featureDescription}>
-                                Real-time IoT sensor data collection for water levels, temperature, humidity,
+                                Real-time sensor data collection for water levels, temperature, humidity,
                                 and rainfall to track agricultural conditions.
                             </p>
                         </div>
