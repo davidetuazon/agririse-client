@@ -20,7 +20,7 @@ type Props = {
 };
 
 const BAR_COLOR_LATEST = "#16A34A";
-const BAR_COLOR_PREVIOUS = "#DC2626";
+const BAR_COLOR_PREVIOUS = colors.chartPrevious;
 
 function computeAvgCoverage(item: SelectedSolutionHistoryItem | null): number | null {
   const values =
@@ -54,8 +54,37 @@ function formatDateTime(value?: string): { date: string; time: string } {
 }
 
 export default function OptimizationTrendsCard({ history, loading }: Props) {
-  const latest = history[0] ?? null;
-  const previous = history[1] ?? null;
+  const scenarioOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: string[] = [];
+    history.forEach((item) => {
+      const scenario = item.runSnapshot?.inputSnapshot?.scenario?.trim() || "Unspecified";
+      if (!seen.has(scenario)) {
+        seen.add(scenario);
+        options.push(scenario);
+      }
+    });
+    return options;
+  }, [history]);
+
+  const [manualScenario, setManualScenario] = useState<string | null>(null);
+  const selectedScenario = useMemo(() => {
+    if (!scenarioOptions.length) return "";
+    if (manualScenario && scenarioOptions.includes(manualScenario)) return manualScenario;
+    return scenarioOptions[0];
+  }, [scenarioOptions, manualScenario]);
+
+  const scenarioHistory = useMemo(
+    () =>
+      history.filter(
+        (item) =>
+          (item.runSnapshot?.inputSnapshot?.scenario?.trim() || "Unspecified") === selectedScenario
+      ),
+    [history, selectedScenario]
+  );
+
+  const latest = scenarioHistory[0] ?? null;
+  const previous = scenarioHistory[1] ?? null;
 
   const objectiveKeys = useMemo(
     () => Object.keys(latest?.solutionSnapshot?.objectiveValues ?? {}),
@@ -117,7 +146,7 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
 
   const chartPoints = useMemo(() => {
     if (!selectedObjectiveKey) return [];
-    const candidates = history.slice(0, 2);
+    const candidates = scenarioHistory.slice(0, 2);
     return candidates
       .map((item, index) => {
         const value = normalizeNumber(
@@ -150,7 +179,7 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
       })
       .filter((point): point is NonNullable<typeof point> => point != null)
       .reverse();
-  }, [history, selectedObjectiveKey]);
+  }, [scenarioHistory, selectedObjectiveKey]);
 
   useEffect(() => {
     if (!modalOpen) return;
@@ -239,27 +268,60 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
   }
 
   const hasChart = chartPoints.length >= 2;
+  const hasObjectiveFilter = objectiveKeys.length > 1;
+  const hasScenarioFilter = scenarioOptions.length > 1;
 
   const innerContent = (
     <>
-      {objectiveKeys.length > 1 && (
-        <div className={cssStyles.optimizationSelectorRow}>
-          <label htmlFor="optimization-objective-select" className={cssStyles.optimizationSelectorLabel}>
-            Objective
-          </label>
-          <select
-            id="optimization-objective-select"
-            className={cssStyles.optimizationObjectiveSelect}
-            value={selectedObjectiveKey}
-            onChange={(event) => setManualObjectiveKey(event.target.value)}
-          >
-            {objectiveKeys.map((key) => (
-              <option key={key} value={key}>
-                {key}
-              </option>
-            ))}
-          </select>
-        </div>
+      {(hasObjectiveFilter || hasScenarioFilter) && (
+        <>
+          <div className={cssStyles.optimizationSelectorRow}>
+            {hasObjectiveFilter && (
+              <>
+                <label htmlFor="optimization-objective-select" className={cssStyles.optimizationSelectorLabel}>
+                  Objective
+                </label>
+                <select
+                  id="optimization-objective-select"
+                  className={cssStyles.optimizationObjectiveSelect}
+                  value={selectedObjectiveKey}
+                  onChange={(event) => setManualObjectiveKey(event.target.value)}
+                >
+                  {objectiveKeys.map((key) => (
+                    <option key={key} value={key}>
+                      {key}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+            {hasScenarioFilter && (
+              <>
+                <label htmlFor="optimization-scenario-select" className={cssStyles.optimizationSelectorLabel}>
+                  Scenario
+                </label>
+                <select
+                  id="optimization-scenario-select"
+                  className={cssStyles.optimizationObjectiveSelect}
+                  value={selectedScenario}
+                  onChange={(event) => setManualScenario(event.target.value)}
+                >
+                  {scenarioOptions.map((scenario) => (
+                    <option key={scenario} value={scenario}>
+                      {scenario}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+          </div>
+          <Text variant="caption" style={{ margin: 0, color: "#6B7280" }}>
+            {hasObjectiveFilter ? "Objective shows which score metric is being compared. " : ""}
+            {hasScenarioFilter
+              ? "Scenario lets you choose which season/scenario to compare latest and previous scores."
+              : ""}
+          </Text>
+        </>
       )}
 
       <div className={cssStyles.optimizationKpiGrid}>
@@ -291,29 +353,11 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
         </div>
       </div>
 
-      {(latest.runId || latest.createdAt) && (
-        <p className={cssStyles.optimizationMeta}>
-          {latest.runId && (
-            <>
-              <strong>Run {latest.runId}</strong>
-              {" · "}
-            </>
-          )}
-          Scenario: {latest.runSnapshot?.inputSnapshot?.scenario ?? "—"}
-          {latest.createdAt && (
-            <>
-              {" · "}
-              <strong>Created at:</strong> {formatDateTime(latest.createdAt).date} at {formatDateTime(latest.createdAt).time}
-            </>
-          )}
-        </p>
-      )}
-
       {hasChart ? (
         <div className={cssStyles.optimizationChartWrap}>
           {renderChart(180)}
           <p className={cssStyles.optimizationChartHint}>
-            Previous (red) vs Latest (green)
+            Previous (slate) vs Latest (green)
           </p>
         </div>
       ) : (
@@ -342,7 +386,7 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
         >
           <div className={cssStyles.optimizationPreviewHeader}>
             <Text variant="heading" style={{ margin: 0 }}>
-              Optimization
+              Selected Solution Trend
             </Text>
             <span className={cssStyles.optimizationPreviewHint}>Click to expand</span>
           </div>
@@ -350,7 +394,7 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
             {renderChart(180)}
           </div>
           <p className={cssStyles.optimizationChartHint}>
-            Previous (red) vs Latest (green)
+            Previous (slate) vs Latest (green)
           </p>
         </div>
 
@@ -368,7 +412,7 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
             >
               <div className={cssStyles.optimizationModalHeader}>
                 <h2 id="optimization-modal-title" className={cssStyles.optimizationModalTitle}>
-                  Optimization
+                  Selected Solution Trend
                 </h2>
                 <button
                   type="button"
@@ -379,24 +423,55 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
                   ×
                 </button>
               </div>
-              {objectiveKeys.length > 1 && (
-                <div className={cssStyles.optimizationSelectorRow}>
-                  <label htmlFor="optimization-modal-objective" className={cssStyles.optimizationSelectorLabel}>
-                    Objective
-                  </label>
-                  <select
-                    id="optimization-modal-objective"
-                    className={cssStyles.optimizationObjectiveSelect}
-                    value={selectedObjectiveKey}
-                    onChange={(event) => setManualObjectiveKey(event.target.value)}
-                  >
-                    {objectiveKeys.map((key) => (
-                      <option key={key} value={key}>
-                        {key}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {(hasObjectiveFilter || hasScenarioFilter) && (
+                <>
+                  <div className={cssStyles.optimizationSelectorRow}>
+                    {hasObjectiveFilter && (
+                      <>
+                        <label htmlFor="optimization-modal-objective" className={cssStyles.optimizationSelectorLabel}>
+                          Objective
+                        </label>
+                        <select
+                          id="optimization-modal-objective"
+                          className={cssStyles.optimizationObjectiveSelect}
+                          value={selectedObjectiveKey}
+                          onChange={(event) => setManualObjectiveKey(event.target.value)}
+                        >
+                          {objectiveKeys.map((key) => (
+                            <option key={key} value={key}>
+                              {key}
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    )}
+                    {hasScenarioFilter && (
+                      <>
+                        <label htmlFor="optimization-modal-scenario" className={cssStyles.optimizationSelectorLabel}>
+                          Scenario
+                        </label>
+                        <select
+                          id="optimization-modal-scenario"
+                          className={cssStyles.optimizationObjectiveSelect}
+                          value={selectedScenario}
+                          onChange={(event) => setManualScenario(event.target.value)}
+                        >
+                          {scenarioOptions.map((scenario) => (
+                            <option key={scenario} value={scenario}>
+                              {scenario}
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    )}
+                  </div>
+                  <Text variant="caption" style={{ margin: 0, color: "#6B7280" }}>
+                    {hasObjectiveFilter ? "Objective shows which score metric is being compared. " : ""}
+                    {hasScenarioFilter
+                      ? "Scenario lets you choose which season/scenario to compare latest and previous scores."
+                      : ""}
+                  </Text>
+                </>
               )}
               <div className={cssStyles.optimizationKpiGrid}>
                 <div className={cssStyles.optimizationKpiCard}>
@@ -425,28 +500,11 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
                   )}
                 </div>
               </div>
-              {(latest.runId || latest.createdAt) && (
-                <p className={cssStyles.optimizationMeta}>
-                  {latest.runId && (
-                    <>
-                      <strong>Run {latest.runId}</strong>
-                      {" · "}
-                    </>
-                  )}
-                  Scenario: {latest.runSnapshot?.inputSnapshot?.scenario ?? "—"}
-                  {latest.createdAt && (
-                    <>
-                      {" · "}
-                      <strong>Created at:</strong> {formatDateTime(latest.createdAt).date} at {formatDateTime(latest.createdAt).time}
-                    </>
-                  )}
-                </p>
-              )}
               <div className={cssStyles.optimizationModalChartWrap}>
                 {renderChart(320)}
               </div>
               <p className={cssStyles.optimizationChartHint}>
-                Previous (red) vs Latest (green)
+                Previous (slate) vs Latest (green)
               </p>
             </div>
           </div>

@@ -128,11 +128,11 @@ export default function Home() {
             </section>
 
             {/* Dashboard */}
-            <Section style={styles.dashboard} data-tour="dashboard-iot">
+            <Section style={styles.dashboard} data-tour="dashboard-sensors">
                 <div className={cssStyles.dashboardHeader}>
                     <div>
                         <Text variant="heading" style={{ margin: 0 }}>
-                            IoT Dashboard
+                            Sensor Dashboard
                         </Text>
                         <span className={cssStyles.dashboardSubtitle}>
                             Live sensor snapshot

@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import colors from "../../../constants/colors";
 import { SENSOR_TYPES } from "../../../utils/constants";
 import Text from "../../commons/Text";
 import cssStyles from "./DashboardTrends.module.css";
@@ -33,13 +34,13 @@ type Props = {
 };
 
 const CHART_COLORS = {
-  previous: "#DC2626",
-  latest: "#16A34A",
-  grid: "#CBD5E1",
-  axis: "#334155",
-  positive: "#15803D",
-  negative: "#B91C1C",
-  neutral: "#475569",
+  previous: colors.chartPrevious,
+  latest: colors.chartPositive,
+  grid: colors.chartGrid,
+  axis: colors.chartAxis,
+  positive: colors.chartPositive,
+  negative: colors.chartAnomaly,
+  neutral: colors.chartNeutral,
 };
 
 function formatUtc(ts?: string | null): string {
@@ -454,7 +455,7 @@ export default function DashboardTrends({ data }: Props) {
               <Text variant="caption" style={{ margin: 0 }}>
                 Showing {selectedLabel} comparison between previous and latest readings. 
                 <span style={{ color: CHART_COLORS.axis }}>
-                  {" Latest is shown in green and previous is shown in red."}
+                  {" Latest is shown in green and previous is shown in slate."}
                 </span>
               </Text>
             </div>

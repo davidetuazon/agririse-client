@@ -14,6 +14,7 @@ import {
 import PageHeader from "../../components/commons/PageHeader";
 import Button from "../../components/commons/Button";
 import FairnessDeficitScatter from "../../components/optimization/FairnessDeficitScatter";
+import { buildSelectedSolutionPdf } from "../../utils/exportPdf";
 import {
     getSelectedSolutionsHistory,
     selectOptimizationSolution,
@@ -21,6 +22,7 @@ import {
     type SelectedSolutionHistoryItem,
 } from "../../services/api";
 import { useAllocationRun } from "../../providers/AllocationRunProvider";
+import { useGenerateImage } from "recharts-to-png";
 import colors from "../../constants/colors";
 import cssStyles from "./Allocations.module.css";
 
@@ -71,6 +73,12 @@ export default function Allocations() {
     const [viewingHistorySolution, setViewingHistorySolution] = useState<SelectedSolutionHistoryItem | null>(null);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [historyError, setHistoryError] = useState<string | null>(null);
+    const [exportingHistoryId, setExportingHistoryId] = useState<string | null>(null);
+    const [getSelectedHistoryChartPng, { ref: selectedHistoryChartRef }] =
+        useGenerateImage<HTMLDivElement>({
+            options: { backgroundColor: "#FFFFFF", scale: 2 } as any,
+            type: "image/png",
+        });
     const [scenarioFilter, setScenarioFilter] = useState<"" | "dry season" | "wet season">("");
     const [showSolutions, setShowSolutions] = useState(false);
     const [showCompletionModal, setShowCompletionModal] = useState(false);
@@ -176,6 +184,25 @@ export default function Allocations() {
               : currentRun?.status === "pending"
                 ? "Pending"
                 : "Not started";
+
+    const handleExportSelectedHistoryPdf = async (item: SelectedSolutionHistoryItem) => {
+        setExportingHistoryId(item._id);
+        try {
+            const chartPng = await getSelectedHistoryChartPng();
+            const doc = buildSelectedSolutionPdf({
+                title: "Selected Solution Details",
+                item,
+                chartPngDataUrl: chartPng,
+            });
+            const scenario = item.runSnapshot?.inputSnapshot?.scenario ?? "scenario";
+            const filename = `selected_solution_${item.runId}_${scenario.replace(/\s+/g, "_")}.pdf`;
+            doc.save(filename);
+        } catch (e) {
+            toast.error("Failed to export selected solution PDF.");
+        } finally {
+            setExportingHistoryId(null);
+        }
+    };
 
     return (
         <div className={cssStyles.page}>
@@ -939,43 +966,45 @@ export default function Allocations() {
                                         <p className={cssStyles.previewObjectivesTitle} style={{ marginBottom: "0.5rem" }}>
                                             Water allocation by lateral (m³)
                                         </p>
-                                        <ResponsiveContainer width="100%" height={260}>
-                                            <BarChart
-                                                data={viewingHistorySolution.solutionSnapshot.allocationVector.map((a) => ({
-                                                    name: prettifyName(a.mainLateralId),
-                                                    allocated: Number(a.allocatedWaterM3) || 0,
-                                                }))}
-                                                margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
-                                            >
-                                                <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
-                                                <XAxis
-                                                    dataKey="name"
-                                                    tick={{ fontSize: 11, fill: colors.chartNeutral }}
-                                                    tickLine={false}
-                                                    axisLine={{ stroke: colors.border }}
-                                                />
-                                                <YAxis
-                                                    tick={{ fontSize: 11, fill: colors.chartNeutral }}
-                                                    tickLine={false}
-                                                    axisLine={{ stroke: colors.border }}
-                                                />
-                                                <Tooltip
-                                                    formatter={(value: unknown) => [formatNumber(value, 2), "Allocated (m³)"]}
-                                                    labelFormatter={(label) => `Lateral: ${label}`}
-                                                    contentStyle={{
-                                                        borderRadius: "10px",
-                                                        border: `1px solid ${colors.border}`,
-                                                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                                                    }}
-                                                />
-                                                <Bar
-                                                    dataKey="allocated"
-                                                    fill={colors.chartAnomaly}
-                                                    radius={[6, 6, 0, 0]}
-                                                    name="Allocated (m³)"
-                                                />
-                                            </BarChart>
-                                        </ResponsiveContainer>
+                                        <div ref={selectedHistoryChartRef} style={{ width: "100%", height: 260, background: "#FFFFFF" }}>
+                                            <ResponsiveContainer width="100%" height={260}>
+                                                <BarChart
+                                                    data={viewingHistorySolution.solutionSnapshot.allocationVector.map((a) => ({
+                                                        name: prettifyName(a.mainLateralId),
+                                                        allocated: Number(a.allocatedWaterM3) || 0,
+                                                    }))}
+                                                    margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+                                                    <XAxis
+                                                        dataKey="name"
+                                                        tick={{ fontSize: 11, fill: colors.chartNeutral }}
+                                                        tickLine={false}
+                                                        axisLine={{ stroke: colors.border }}
+                                                    />
+                                                    <YAxis
+                                                        tick={{ fontSize: 11, fill: colors.chartNeutral }}
+                                                        tickLine={false}
+                                                        axisLine={{ stroke: colors.border }}
+                                                    />
+                                                    <Tooltip
+                                                        formatter={(value: unknown) => [formatNumber(value, 2), "Allocated (m³)"]}
+                                                        labelFormatter={(label) => `Lateral: ${label}`}
+                                                        contentStyle={{
+                                                            borderRadius: "10px",
+                                                            border: `1px solid ${colors.border}`,
+                                                            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                                                        }}
+                                                    />
+                                                    <Bar
+                                                        dataKey="allocated"
+                                                        fill={colors.chartAnomaly}
+                                                        radius={[6, 6, 0, 0]}
+                                                        name="Allocated (m³)"
+                                                    />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
                                         <div className={cssStyles.allocationTableWrap}>
                                             <table className={cssStyles.allocationTable}>
                                                 <thead>
@@ -1020,6 +1049,14 @@ export default function Allocations() {
                                 onClick={() => setViewingHistorySolution(null)}
                             >
                                 Close
+                            </button>
+                            <button
+                                type="button"
+                                className={cssStyles.btnSelectInPreview}
+                                onClick={() => handleExportSelectedHistoryPdf(viewingHistorySolution)}
+                                disabled={exportingHistoryId === viewingHistorySolution._id}
+                            >
+                                {exportingHistoryId === viewingHistorySolution._id ? "Exporting..." : "Export PDF"}
                             </button>
                         </div>
                     </div>

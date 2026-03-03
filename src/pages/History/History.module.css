@@ -2,13 +2,11 @@
 
 /* Scrollable page content */
 .pageScroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: clamp(0.75rem, 2vw, 1.25rem);
+  min-width: 0;
 }
 
 /* Ensure table container allows horizontal scroll on small screens */
@@ -61,6 +59,41 @@
 
 .datePickerWrapper .react-datepicker__input-container input {
   width: 100%;
+}
+
+.pageScroll :global(.react-datepicker__month-select),
+.pageScroll :global(.react-datepicker__year-select) {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 1.85rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23334155' d='M1 1l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.55rem center;
+  background-size: 10px 6px;
+}
+
+.unitSelect {
+  font-family: "Poppins-Light";
+  font-size: 0.85rem;
+  padding: 0.4rem 2rem 0.4rem 0.6rem;
+  border: 1px solid var(--color-border-medium);
+  border-radius: 8px;
+  color: var(--color-text-heading);
+  min-width: 140px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23334155' d='M1 1l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 10px 6px;
+}
+
+.unitSelect:focus {
+  outline: none;
+  border-color: var(--color-primary-action);
+  box-shadow: 0 0 0 2px rgba(196, 92, 38, 0.15);
 }
 
 .setDatesButton {

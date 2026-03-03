@@ -51,7 +51,7 @@ export default function FirstTimeTour() {
           content: (
             <p style={{ margin: 0 }}>
               This is your <strong>Dashboard</strong>. Here you see an
-              overview and live IoT sensor data for your location.
+              overview and live sensor data for your location.
             </p>
           ),
           title: "Dashboard",
@@ -83,10 +83,10 @@ export default function FirstTimeTour() {
           placement: "bottom",
         },
         {
-          target: '[data-tour="dashboard-iot"]',
+          target: '[data-tour="dashboard-sensors"]',
           content:
-            "The IoT Dashboard displays live sensor readings: water level, humidity, rainfall, and temperature. Use this for a quick snapshot of conditions.",
-          title: "IoT Dashboard",
+            "The Sensor Dashboard displays live sensor readings: water level, humidity, rainfall, and temperature. Use this for a quick snapshot of conditions.",
+          title: "Sensor Dashboard",
           disableBeacon: true,
           placement: "top",
         },

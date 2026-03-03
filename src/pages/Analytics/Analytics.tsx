@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getAnalytics } from "../../services/api";
+import { getAnalytics, getSensorDataBoundsByHistory } from "../../services/api";
 import Text from "../../components/commons/Text";
 import Section from "../../components/commons/Section";
 import PageHeader from "../../components/commons/PageHeader";
@@ -141,10 +141,11 @@ export default function Analytics() {
   const sensorType = searchParams.get("sensorType") ?? "damWaterLevel";
   const sensorLabel = (SENSOR_TYPES as Record<string, { label: string }>)[sensorType]?.label ?? sensorType;
   const todayIso = new Date().toISOString().split("T")[0];
-  const endDate = searchParams.get("endDate") ?? todayIso;
-  // includes the server’s earliest data (e.g. 1/14); we then set From = first date in data, To = that + 1 month.
-  const startDate =
-    searchParams.get("startDate") ?? addDays(endDate, -30);
+  const defaultEndDate = "2026-01-16";
+  const endDate = searchParams.get("endDate") ?? defaultEndDate;
+  const [boundsDateRange, setBoundsDateRange] = useState<{ startDate: string; endDate: string } | null>(null);
+  const startDate = searchParams.get("startDate") ?? boundsDateRange?.startDate ?? "";
+  const effectiveEndDate = endDate || boundsDateRange?.endDate || todayIso;
 
   // Draft date state — only committed to URL (and triggers fetch) when "Set Dates" is clicked
   const [localStartDate, setLocalStartDate] = useState(startDate);
@@ -154,13 +155,36 @@ export default function Analytics() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set("startDate", from);
-      next.set("endDate", to);
+      if (to) next.set("endDate", to);
+      else next.delete("endDate");
       return next;
     });
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    const bootstrapBounds = async () => {
+      const bounds = await getSensorDataBoundsByHistory(sensorType);
+      if (cancelled || bounds?.error || !bounds?.startDate || !bounds?.endDate) return;
+      setBoundsDateRange({ startDate: bounds.startDate, endDate: bounds.endDate });
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("startDate", bounds.startDate);
+        next.set("endDate", defaultEndDate);
+        return next;
+      });
+      setLocalStartDate(bounds.startDate);
+      setLocalEndDate(defaultEndDate);
+    };
+    bootstrapBounds();
+    return () => {
+      cancelled = true;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sensorType]);
+
   const fetchAllPages = useCallback(async () => {
-    if (!startDate || !endDate) return;
+    if (!startDate || !effectiveEndDate) return;
     setLoading(true);
     setError(null);
     setData(null);
@@ -173,7 +197,7 @@ export default function Analytics() {
       const res = await getAnalytics({
         sensorType,
         startDate,
-        endDate,
+        endDate: effectiveEndDate,
         limit: 100,
         cursor,
       });
@@ -217,7 +241,7 @@ export default function Analytics() {
     setData(allSeries);
     setMetaData(meta);
     setLoading(false);
-  }, [sensorType, startDate, endDate]);
+  }, [sensorType, startDate, effectiveEndDate]);
 
   useEffect(() => {
     fetchAllPages();
@@ -235,17 +259,16 @@ export default function Analytics() {
   useEffect(() => {
     setLocalStartDate(startDate);
     setLocalEndDate(endDate);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sensorType]);
+  }, [startDate, endDate]);
 
   const hasData = data && data.length > 0;
   const latest = hasData ? data[data.length - 1] : null;
   const chartSeries = useMemo(
     () =>
       metaData?.granularity
-        ? normalizeAnalyticsSeries(data ?? [], startDate, endDate, metaData.granularity)
+        ? normalizeAnalyticsSeries(data ?? [], startDate, effectiveEndDate, metaData.granularity)
         : data ?? [],
-    [data, startDate, endDate, metaData?.granularity]
+    [data, startDate, effectiveEndDate, metaData?.granularity]
   );
   const { anomalyEntries, anomalyGroups } = useMemo(() => {
     const entries: TimelineAnomaly[] = [];
@@ -360,12 +383,12 @@ export default function Analytics() {
 
   const exportDisabled = loading || Boolean(error) || !hasData || !latest;
   const exportTitle = `Analytics: ${metaData?.sensorType ?? sensorType}`;
-  const exportFilenameBase = `analytics_${sensorType}_${startDate}_${endDate}`;
+  const exportFilenameBase = `analytics_${sensorType}_${startDate}_${effectiveEndDate}`;
   const totalBucketCount = chartSeries.length;
   const dataPointCount = data?.length ?? 0;
 
   const dataRangeGapMessages = useMemo(
-    () => getDataRangeGapMessages(data ?? [], startDate, endDate),
+    () => (endDate ? getDataRangeGapMessages(data ?? [], startDate, endDate) : []),
     [data, startDate, endDate]
   );
   const showDataRangeGapPrompt = dataRangeGapMessages.length > 0;
@@ -409,7 +432,7 @@ export default function Analytics() {
       meta: {
         dateRange: {
           startDate: new Date(startDate + "T00:00:00.000Z").toISOString(),
-          endDate: new Date(endDate + "T23:59:59.999Z").toISOString(),
+          endDate: new Date(effectiveEndDate + "T23:59:59.999Z").toISOString(),
         },
         granularity: metaData.granularity ?? null,
         unit: metaData.unit ?? null,
@@ -433,7 +456,7 @@ export default function Analytics() {
         title: exportTitle,
         sensorLabel: metaData?.sensorType,
         startDate,
-        endDate,
+        endDate: effectiveEndDate,
         metric: metaData?.metric,
         granularity: metaData?.granularity,
         unit,
@@ -459,7 +482,7 @@ export default function Analytics() {
         <span className={cssStyles.metaLabel}>From</span>
         <DateRangeInput
           value={localStartDate}
-          max={localEndDate}
+          max={localEndDate || boundsDateRange?.endDate}
           onChange={setLocalStartDate}
           ariaLabel="Start date"
         />
@@ -751,7 +774,7 @@ export default function Analytics() {
           {metaData?.granularity && (
             <span className={cssStyles.rangeCoverage}>
               <Text variant="caption">
-                Selected: {startDate} to {endDate} · Granularity: {metaData.granularity} · Buckets:{" "}
+                Selected: {startDate} to {endDate || "Not set"} · Granularity: {metaData.granularity} · Buckets:{" "}
                 {totalBucketCount} · Data points: {dataPointCount}
               </Text>
             </span>
@@ -770,7 +793,7 @@ export default function Analytics() {
               </Text>
             </div>
             <div
-              key={`chart-${startDate}-${endDate}`}
+              key={`chart-${startDate}-${effectiveEndDate}`}
               className={cssStyles.chartPreviewWrapper}
               onClick={() => setModalOpen(true)}
               role="button"
@@ -791,7 +814,7 @@ export default function Analytics() {
                 hoveredMetric={hoveredMetric}
                 focusedTimestamp={focusedAnomalyTimestamp}
                 startDate={startDate}
-                endDate={endDate}
+                endDate={effectiveEndDate}
                 domainMode="data"
                 mode="wide"
                 height={PREVIEW_CHART_HEIGHT}
@@ -826,7 +849,7 @@ export default function Analytics() {
                   {metaData.sensorType} - Chart
                 </span>
                 <span className={cssStyles.modalSubtitle}>
-                  Date range: {startDate} to {endDate} | Granularity: {metaData.granularity}
+                  Date range: {startDate} to {endDate || "Not set"} | Granularity: {metaData.granularity}
                 </span>
               </div>
               <div className={cssStyles.modalHeaderActions}>
@@ -854,7 +877,7 @@ export default function Analytics() {
             <div className={cssStyles.modalMetricToggle}>
               <MetricToggle value={selectedMetric} onChange={setSelectedMetric} onHover={setHoveredMetric} />
             </div>
-            <div key={`modal-chart-${startDate}-${endDate}`} className={cssStyles.modalChartWrapper}>
+            <div key={`modal-chart-${startDate}-${effectiveEndDate}`} className={cssStyles.modalChartWrapper}>
               <AnalyticsChart
                 series={data ?? []}
                 unit={unit}
@@ -863,7 +886,7 @@ export default function Analytics() {
                 hoveredMetric={hoveredMetric}
                 focusedTimestamp={focusedAnomalyTimestamp}
                 startDate={startDate}
-                endDate={endDate}
+                endDate={effectiveEndDate}
                 domainMode="data"
                 mode={chartFitMode}
                 height={MODAL_CHART_HEIGHT}
@@ -876,7 +899,7 @@ export default function Analytics() {
       <ExportPreviewModal
         open={exportOpen}
         title={`Export – ${exportTitle}`}
-        subtitle={`${startDate} → ${endDate} · ${metaData?.granularity ?? "—"}`}
+        subtitle={`${startDate} → ${endDate || "Not set"} · ${metaData?.granularity ?? "—"}`}
         onClose={() => setExportOpen(false)}
         onDownloadJson={handleDownloadAnalyticsJson}
         onDownloadPdf={handleDownloadAnalyticsPdf}
@@ -902,13 +925,13 @@ export default function Analytics() {
         <div ref={exportChartRef} className={cssStyles.exportPreviewChart}>
           {hasData && metaData ? (
             <AnalyticsChart
-              key={`export-chart-${startDate}-${endDate}`}
+              key={`export-chart-${startDate}-${effectiveEndDate}`}
               series={data ?? []}
               unit={unit}
               granularity={metaData.granularity}
               selectedMetric={selectedMetric}
               startDate={startDate}
-              endDate={endDate}
+              endDate={effectiveEndDate}
               domainMode="data"
               mode="fit"
               height={320}
