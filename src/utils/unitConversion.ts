@@ -219,7 +219,9 @@ function convertHumidity(value: number, from: string, to: string): number {
   const TEMP_K = 293.15; // 20°C in Kelvin
   const PRESSURE_PA = 101325; // 1013.25 hPa in Pascals
   const SATURATION_VAPOR_PRESSURE_PA = 2337; // at 20°C
-  
+  const R = 8.314; // J/(mol·K) — used for % ↔ g/m³ conversions
+  const M_WATER = 0.018015; // kg/mol (molar mass of water)
+
   // Convert to percentage first (as base unit)
   let percent: number;
   switch (from) {
@@ -230,16 +232,12 @@ function convertHumidity(value: number, from: string, to: string): number {
       // Convert absolute humidity to relative humidity
       // RH = (actual vapor pressure / saturation vapor pressure) * 100
       // Using ideal gas law: P = (ρ * R * T) / M
-      // where ρ = density (g/m³), R = gas constant, T = temperature, M = molar mass of water
-      const R = 8.314; // J/(mol·K)
-      const M_WATER = 0.018015; // kg/mol (molar mass of water)
       const vapor_pressure = (value / 1000) * R * TEMP_K / M_WATER; // Convert g/m³ to Pa
       percent = (vapor_pressure / SATURATION_VAPOR_PRESSURE_PA) * 100;
       break;
     case 'g/kg':
       // Convert specific humidity to relative humidity
       // This is a simplified conversion assuming standard atmospheric conditions
-      // Specific humidity to mixing ratio, then to relative humidity
       const mixing_ratio = value / (1000 - value); // g/kg to kg/kg
       const saturation_mixing_ratio = 0.622 * SATURATION_VAPOR_PRESSURE_PA / (PRESSURE_PA - SATURATION_VAPOR_PRESSURE_PA);
       percent = (mixing_ratio / saturation_mixing_ratio) * 100;
@@ -247,7 +245,7 @@ function convertHumidity(value: number, from: string, to: string): number {
     default:
       return value;
   }
-  
+
   // Convert from percentage to target
   switch (to) {
     case '%':
@@ -255,8 +253,7 @@ function convertHumidity(value: number, from: string, to: string): number {
     case 'g/m³':
       // Convert relative humidity to absolute humidity
       const vapor_pressure_target = (percent / 100) * SATURATION_VAPOR_PRESSURE_PA;
-      const M_WATER_KG = 0.018015; // kg/mol
-      const density_kg_m3 = (vapor_pressure_target * M_WATER_KG) / (R * TEMP_K);
+      const density_kg_m3 = (vapor_pressure_target * M_WATER) / (R * TEMP_K);
       return density_kg_m3 * 1000; // Convert kg/m³ to g/m³
     case 'g/kg':
       // Convert relative humidity to specific humidity

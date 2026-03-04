@@ -2,6 +2,22 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { SelectedSolutionHistoryItem } from "../services/api";
 
+export type AnalyticsPdfAnomalySummary = {
+  total: number;
+  critical: number;
+  warning: number;
+  info: number;
+  types: Record<string, number>;
+};
+
+export type AnalyticsPdfAnomalyGroup = {
+  timestamp: string;
+  label: string;
+  total: number;
+  counts: Record<string, number>;
+  items: Array<{ severity: string; type: string; message: string }>;
+};
+
 type AnalyticsPdfArgs = {
   title: string;
   sensorLabel?: string;
@@ -17,6 +33,11 @@ type AnalyticsPdfArgs = {
     stdDev: number;
   };
   chartPngDataUrl?: string;
+  /** Anomalies for the report. When summary.total > 0, an "Anomalies" section is included in the PDF. */
+  anomalies: {
+    summary: AnalyticsPdfAnomalySummary;
+    groups: AnalyticsPdfAnomalyGroup[];
+  };
 };
 
 export function buildAnalyticsPdf(args: AnalyticsPdfArgs) {
@@ -132,6 +153,159 @@ export function buildAnalyticsPdf(args: AnalyticsPdfArgs) {
       margin,
       y
     );
+    y += 6;
+  }
+
+  // Anomalies section (only when reported anomalies exist)
+  const anomalies = args.anomalies;
+  if (anomalies && anomalies.summary.total > 0) {
+    const { summary: anomSummary, groups: anomGroups } = anomalies;
+    const severityCritical = [254, 226, 226] as const;
+    const severityWarning = [254, 243, 199] as const;
+    const severityInfo = [219, 234, 254] as const;
+    const lineHeight = 4;
+
+    const drawWrappedText = (text: string, x: number, maxWidthMm: number): void => {
+      const lines = doc.splitTextToSize(text, maxWidthMm);
+      doc.text(lines, x, y + 3);
+      y += lines.length * lineHeight + 1;
+    };
+
+    drawSectionTitle("Anomalies");
+
+    // Summary: severity counts with colored rows
+    ensureSpace(32);
+    const summaryRows: [string, string][] = [
+      ["Total", String(anomSummary.total)],
+      ["Critical", String(anomSummary.critical)],
+      ["Warning", String(anomSummary.warning)],
+      ["Info", String(anomSummary.info)],
+    ];
+
+    autoTable(doc, {
+      startY: y - 1,
+      head: [["Severity", "Count"]],
+      body: summaryRows,
+      styles: { fontSize: 9, cellPadding: 2.8, textColor: [30, 41, 59] },
+      headStyles: { fillColor: [0, 104, 74], textColor: [255, 255, 255], fontStyle: "bold" },
+      bodyStyles: { fontSize: 9 },
+      theme: "plain",
+      margin: { left: margin, right: margin },
+      columnStyles: {
+        0: { cellWidth: 42, fontStyle: "bold" },
+        1: { cellWidth: usableWidth - 42, halign: "right" },
+      },
+      didParseCell: (data) => {
+        if (data.section === "body") {
+          const rowIndex = data.row.index;
+          if (rowIndex === 1) data.cell.styles.fillColor = severityCritical;
+          else if (rowIndex === 2) data.cell.styles.fillColor = severityWarning;
+          else if (rowIndex === 3) data.cell.styles.fillColor = severityInfo;
+        }
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 8;
+
+    // All anomaly types (no limit)
+    const allTypes = Object.entries(anomSummary.types || {}).sort((a, b) => b[1] - a[1]);
+    if (allTypes.length > 0) {
+      ensureSpace(12 + allTypes.length * 5);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(brand[0], brand[1], brand[2]);
+      doc.text("Anomaly types", margin, y + 4);
+      y += 7;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(30, 41, 59);
+      autoTable(doc, {
+        startY: y - 1,
+        head: [["Type", "Count"]],
+        body: allTypes.map(([type, count]) => [type, String(count)]),
+        styles: { fontSize: 8.5, cellPadding: 2.2, textColor: [30, 41, 59] },
+        headStyles: { fillColor: [236, 244, 240], textColor: [0, 104, 74] },
+        alternateRowStyles: { fillColor: [250, 252, 251] },
+        theme: "grid",
+        margin: { left: margin, right: margin },
+        columnStyles: {
+          0: { cellWidth: usableWidth * 0.7 },
+          1: { cellWidth: usableWidth * 0.3, halign: "right" },
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+    }
+
+    // Full timeline table (all groups)
+    if (anomGroups.length > 0) {
+      drawSectionTitle("Anomaly timeline");
+      ensureSpace(15);
+
+      const timelineBody = anomGroups.map((g) => {
+        const severityParts: string[] = [];
+        if (g.counts.critical) severityParts.push(`Critical: ${g.counts.critical}`);
+        if (g.counts.warning) severityParts.push(`Warning: ${g.counts.warning}`);
+        if (g.counts.info) severityParts.push(`Info: ${g.counts.info}`);
+        if (g.counts.unknown) severityParts.push(`Unknown: ${g.counts.unknown}`);
+        return [g.label, String(g.total), severityParts.join(" · ")];
+      });
+      autoTable(doc, {
+        startY: y - 1,
+        head: [["Timestamp (UTC)", "Count", "By severity"]],
+        body: timelineBody,
+        styles: { fontSize: 8, cellPadding: 2.5, textColor: [17, 24, 39] },
+        headStyles: { fillColor: [0, 104, 74], textColor: [255, 255, 255], fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [250, 252, 251] },
+        theme: "grid",
+        margin: { left: margin, right: margin },
+        columnStyles: {
+          0: { cellWidth: usableWidth * 0.48 },
+          1: { cellWidth: usableWidth * 0.12, halign: "right" },
+          2: { cellWidth: usableWidth * 0.4 },
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 10;
+
+      // All groups, all messages — full detail with wrapped text and severity colors
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(30, 41, 59);
+      doc.text("Details by time bucket", margin, y + 4);
+      y += 9;
+
+      const detailIndent = 4;
+      const msgMaxWidth = usableWidth - detailIndent - 2;
+
+      for (const g of anomGroups) {
+        ensureSpace(14);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(0, 104, 74);
+        doc.text(g.label, margin, y + 3);
+        y += 6;
+
+        for (const item of g.items) {
+          ensureSpace(lineHeight * 3 + 4);
+          if (item.severity === "critical")
+            doc.setTextColor(185, 28, 28);
+          else if (item.severity === "warning")
+            doc.setTextColor(180, 83, 9);
+          else if (item.severity === "info")
+            doc.setTextColor(29, 78, 216);
+          else
+            doc.setTextColor(muted[0], muted[1], muted[2]);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(7.5);
+          doc.text(`[${item.severity}]`, margin + detailIndent, y + 3);
+          y += lineHeight + 1;
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(55, 65, 81);
+          doc.setFontSize(7.5);
+          drawWrappedText(item.message, margin + detailIndent, msgMaxWidth);
+          y += 2;
+        }
+        y += 5;
+      }
+    }
   }
 
   doc.setTextColor(0, 0, 0);

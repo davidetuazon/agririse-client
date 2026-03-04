@@ -19,8 +19,8 @@ type Props = {
   loading: boolean;
 };
 
-const BAR_COLOR_LATEST = "#16A34A";
-const BAR_COLOR_PREVIOUS = colors.chartPrevious;
+const BAR_COLOR_LATEST = colors.primaryLight;
+const BAR_COLOR_PREVIOUS = colors.primary;
 
 function computeAvgCoverage(item: SelectedSolutionHistoryItem | null): number | null {
   const values =
@@ -51,6 +51,21 @@ function formatDateTime(value?: string): { date: string; time: string } {
       second: "2-digit",
     }),
   };
+}
+
+function formatShortDate(value?: string): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "—";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function describeObjectiveMetric(key: string): string {
+  const normalized = key.trim().toLowerCase();
+  if (normalized.includes("deficit")) return "Total unmet water demand across laterals; lower is better.";
+  if (normalized.includes("fair")) return "How evenly water is shared across laterals; higher is better.";
+  if (normalized.includes("coverage")) return "Share of demand satisfied; higher is better.";
+  return "Objective score for this solution.";
 }
 
 export default function OptimizationTrendsCard({ history, loading }: Props) {
@@ -105,6 +120,7 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
     : undefined;
   const objectiveUnit = selectedObjective?.unit ? ` (${selectedObjective.unit})` : "";
   const objectiveDirection = selectedObjective?.direction;
+  const selectedObjectiveDescription = describeObjectiveMetric(selectedObjectiveKey);
 
   const latestObjectiveValue = normalizeNumber(selectedObjective?.value);
   const previousObjectiveValue = normalizeNumber(
@@ -166,6 +182,7 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
         return {
           key: item._id,
           label: index === 0 ? "Latest" : "Previous",
+          axisLabel: formatShortDate(item.createdAt),
           value,
           color: index === 0 ? BAR_COLOR_LATEST : BAR_COLOR_PREVIOUS,
           createdAt: item.createdAt,
@@ -195,7 +212,7 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
       <BarChart data={chartPoints} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
         <XAxis
-          dataKey="label"
+          dataKey="axisLabel"
           tick={{ fontSize: 11, fill: colors.chartNeutral }}
           axisLine={{ stroke: colors.border }}
           tickLine={false}
@@ -233,14 +250,20 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
                 }}
               >
                 <div><strong>{point.label}</strong> (#{point.chronologicalNumber})</div>
-                <div>Date: {point.dateTime.date}</div>
-                <div>Time: {point.dateTime.time}</div>
-                <div>{selectedObjectiveKey}: {point.value.toFixed(2)}</div>
-                {point.deficitValue != null && (
-                  <div>{point.deficitLabel}: {point.deficitValue.toFixed(2)}</div>
+                <div>Date: {point.dateTime.date}, {point.dateTime.time}</div>
+                <div style={{ marginTop: "0.25rem" }}>{selectedObjectiveKey}: {point.value.toFixed(2)}{objectiveUnit}</div>
+                <div style={{ marginTop: "0.15rem", fontSize: "0.72rem", color: colors.chartNeutral }}>{selectedObjectiveDescription}</div>
+                {point.deficitValue != null && !/deficit/i.test(selectedObjectiveKey) && (
+                  <>
+                    <div style={{ marginTop: "0.25rem" }}>{point.deficitLabel}: {point.deficitValue.toFixed(2)}</div>
+                    <div style={{ marginTop: "0.1rem", fontSize: "0.72rem", color: colors.chartNeutral }}>Total unmet demand; lower is better.</div>
+                  </>
                 )}
-                {point.fairnessValue != null && (
-                  <div>{point.fairnessLabel}: {point.fairnessValue.toFixed(2)}</div>
+                {point.fairnessValue != null && !/fair/i.test(selectedObjectiveKey) && (
+                  <>
+                    <div style={{ marginTop: "0.25rem" }}>{point.fairnessLabel}: {point.fairnessValue.toFixed(2)}</div>
+                    <div style={{ marginTop: "0.1rem", fontSize: "0.72rem", color: colors.chartNeutral }}>Evenness of sharing; higher is better.</div>
+                  </>
                 )}
               </div>
             );
@@ -355,9 +378,14 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
 
       {hasChart ? (
         <div className={cssStyles.optimizationChartWrap}>
+          {chartPoints.length >= 2 && (
+            <p className={cssStyles.optimizationChartHint} style={{ marginBottom: "0.25rem" }}>
+              {chartPoints[0].axisLabel} – {chartPoints[chartPoints.length - 1].axisLabel}
+            </p>
+          )}
           {renderChart(180)}
           <p className={cssStyles.optimizationChartHint}>
-            Previous (slate) vs Latest (green)
+            Previous (dark green) vs Latest (light green)
           </p>
         </div>
       ) : (
@@ -391,10 +419,15 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
             <span className={cssStyles.optimizationPreviewHint}>Click to expand</span>
           </div>
           <div className={cssStyles.optimizationPreviewChart}>
+            {chartPoints.length >= 2 && (
+              <p className={cssStyles.optimizationChartHint} style={{ marginBottom: "0.25rem" }}>
+                {chartPoints[0].axisLabel} – {chartPoints[chartPoints.length - 1].axisLabel}
+              </p>
+            )}
             {renderChart(180)}
           </div>
           <p className={cssStyles.optimizationChartHint}>
-            Previous (slate) vs Latest (green)
+            Previous (dark green) vs Latest (light green)
           </p>
         </div>
 
@@ -501,10 +534,15 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
                 </div>
               </div>
               <div className={cssStyles.optimizationModalChartWrap}>
+                {chartPoints.length >= 2 && (
+                  <p className={cssStyles.optimizationChartHint} style={{ marginBottom: "0.25rem" }}>
+                    {chartPoints[0].axisLabel} – {chartPoints[chartPoints.length - 1].axisLabel}
+                  </p>
+                )}
                 {renderChart(320)}
               </div>
               <p className={cssStyles.optimizationChartHint}>
-                Previous (slate) vs Latest (green)
+                Previous (dark green) vs Latest (light green)
               </p>
             </div>
           </div>

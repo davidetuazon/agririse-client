@@ -395,6 +395,14 @@
   color: var(--color-text-heading);
 }
 
+.primaryObjectiveContext {
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--color-text-secondary);
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
 .objectiveChip {
   border-radius: 10px;
   padding: 0.33rem 0.62rem;

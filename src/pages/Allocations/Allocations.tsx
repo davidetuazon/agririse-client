@@ -8,6 +8,7 @@ import {
     XAxis,
     YAxis,
     CartesianGrid,
+    Legend,
     Tooltip,
     ResponsiveContainer,
 } from "recharts";
@@ -34,6 +35,14 @@ type RunFormInputs = {
 type ObjectiveLikeMap =
     | Record<string, { value?: unknown; unit?: string } | undefined>
     | undefined;
+
+type AllocationBarPoint = {
+    name: string;
+    allocated: number;
+    demand: number;
+    effective: number;
+    coverage: number;
+};
 
 function extractObjectiveMetric(objectiveValues: ObjectiveLikeMap, matcher: RegExp) {
     const entry = Object.entries(objectiveValues ?? {}).find(([key]) => matcher.test(key));
@@ -64,6 +73,42 @@ function prettifyName(value?: string | null): string {
     return value.replace(/_/g, " ").trim();
 }
 
+function renderAllocationTooltip(active?: boolean, payload?: Array<{ payload?: AllocationBarPoint }>, label?: unknown) {
+    const point = payload?.[0]?.payload;
+    if (!active || !point) return null;
+
+    const gap = point.allocated - point.demand;
+    const gapLabel = gap >= 0 ? "Surplus vs demand" : "Shortfall vs demand";
+    const gapDisplay = `${gap >= 0 ? "+" : ""}${formatNumber(gap, 2)} m³`;
+
+    return (
+        <div
+            style={{
+                background: "#fff",
+                border: `1px solid ${colors.border}`,
+                borderRadius: "10px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                padding: "0.55rem 0.7rem",
+                fontSize: "0.8rem",
+            }}
+        >
+            <div style={{ marginBottom: "0.2rem" }}>
+                <strong>Lateral:</strong> {String(label ?? point.name)}
+            </div>
+            <div>Net demand: {formatNumber(point.demand, 2)} m³</div>
+            <div>Allocated: {formatNumber(point.allocated, 2)} m³</div>
+            <div>Effective water: {formatNumber(point.effective, 2)} m³</div>
+            <div>Coverage: {formatNumber(point.coverage, 1)}%</div>
+            <div style={{ marginTop: "0.2rem", color: colors.chartNeutral }}>
+                {gapLabel}: {gapDisplay}
+            </div>
+            <div style={{ color: colors.chartNeutral }}>
+                Demand is required water; allocated is planned release; effective accounts for losses.
+            </div>
+        </div>
+    );
+}
+
 export default function Allocations() {
     const { currentRun, runResults, setRunResults, setCurrentRun, startRun } = useAllocationRun();
     const [selectingId, setSelectingId] = useState<string | null>(null);
@@ -73,6 +118,7 @@ export default function Allocations() {
     const [viewingHistorySolution, setViewingHistorySolution] = useState<SelectedSolutionHistoryItem | null>(null);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [historyError, setHistoryError] = useState<string | null>(null);
+    const [runStartError, setRunStartError] = useState<string | null>(null);
     const [exportingHistoryId, setExportingHistoryId] = useState<string | null>(null);
     const [getSelectedHistoryChartPng, { ref: selectedHistoryChartRef }] =
         useGenerateImage<HTMLDivElement>({
@@ -95,6 +141,7 @@ export default function Allocations() {
     const onSubmit: SubmitHandler<RunFormInputs> = async (data) => {
         const total = parseFloat(data.totalSeasonalWaterSupplyM3);
         if (Number.isNaN(total) || total <= 0) return;
+        setRunStartError(null);
         // Clear previous run and results immediately so they disappear before the new run starts
         setRunResults(null);
         setShowSolutions(false);
@@ -108,7 +155,7 @@ export default function Allocations() {
         } catch (e: unknown) {
             const err = e as { response?: { data?: { error?: string } }; status?: number };
             const msg = err?.response?.data?.error ?? "Failed to start optimization";
-            toast.error(msg);
+            setRunStartError(msg);
         }
     };
 
@@ -302,6 +349,11 @@ export default function Allocations() {
                                 titleStyle={{ color: colors.primaryActionText, fontSize: "0.9375rem", textAlign: "center" }}
                             />
                         </div>
+                        {runStartError && (
+                            <p className={cssStyles.errorText} role="alert" style={{ margin: "0.55rem 0 0" }}>
+                                {runStartError}
+                            </p>
+                        )}
                     </form>
                 </article>
 
@@ -391,12 +443,12 @@ export default function Allocations() {
                     </div>
                     <div className={cssStyles.resultsParetoWrap}>
                         <p className={cssStyles.previewObjectivesTitle} style={{ marginBottom: "0.5rem" }}>
-                            Pareto position (fairness vs deficit)
+                            Pareto position (deficit score vs fairness)
                         </p>
                         <div className={cssStyles.previewScatterWrap}>
                             <FairnessDeficitScatter
                                 solutions={runResults.paretoSolutions}
-                                height={220}
+                                height={300}
                                 variant="full"
                             />
                         </div>
@@ -467,6 +519,9 @@ export default function Allocations() {
                                                         {formatNumber(deficitMetric.value, 2)}
                                                         {deficitMetric.unit ? ` ${deficitMetric.unit}` : ""}
                                                     </strong>
+                                                    <span className={cssStyles.primaryObjectiveContext}>
+                                                        Total unmet demand; lower is better.
+                                                    </span>
                                                 </div>
                                             )}
                                             {fairnessMetric && (
@@ -478,6 +533,9 @@ export default function Allocations() {
                                                         {formatNumber(fairnessMetric.value, 2)}
                                                         {fairnessMetric.unit ? ` ${fairnessMetric.unit}` : ""}
                                                     </strong>
+                                                    <span className={cssStyles.primaryObjectiveContext}>
+                                                        Evenness of sharing; higher is better.
+                                                    </span>
                                                 </div>
                                             )}
                                         </div>
@@ -627,6 +685,9 @@ export default function Allocations() {
                                                             {formatNumber(deficitMetric.value, 2)}
                                                             {deficitMetric.unit ? ` ${deficitMetric.unit}` : ""}
                                                         </strong>
+                                                        <span className={cssStyles.primaryObjectiveContext}>
+                                                            Total unmet demand; lower is better.
+                                                        </span>
                                                     </div>
                                                 )}
                                                 {fairnessMetric && (
@@ -638,6 +699,9 @@ export default function Allocations() {
                                                             {formatNumber(fairnessMetric.value, 2)}
                                                             {fairnessMetric.unit ? ` ${fairnessMetric.unit}` : ""}
                                                         </strong>
+                                                        <span className={cssStyles.primaryObjectiveContext}>
+                                                            Evenness of sharing; higher is better.
+                                                        </span>
                                                     </div>
                                                 )}
                                             </div>
@@ -749,6 +813,9 @@ export default function Allocations() {
                                                             {formatNumber(deficitMetric.value, 2)}
                                                             {deficitMetric.unit ? ` ${deficitMetric.unit}` : ""}
                                                         </strong>
+                                                        <span className={cssStyles.primaryObjectiveContext}>
+                                                            Total unmet demand; lower is better.
+                                                        </span>
                                                     </div>
                                                 )}
                                                 {fairnessMetric && (
@@ -760,6 +827,9 @@ export default function Allocations() {
                                                             {formatNumber(fairnessMetric.value, 2)}
                                                             {fairnessMetric.unit ? ` ${fairnessMetric.unit}` : ""}
                                                         </strong>
+                                                        <span className={cssStyles.primaryObjectiveContext}>
+                                                            Evenness of sharing; higher is better.
+                                                        </span>
                                                     </div>
                                                 )}
                                             </div>
@@ -779,6 +849,14 @@ export default function Allocations() {
                                             data={viewingSolution.allocationVector.map((a) => ({
                                                 name: prettifyName(a.mainLateralId),
                                                 allocated: Number(a.allocatedWaterM3) || 0,
+                                                demand:
+                                                    typeof a.netWaterDemandM3 === "number" && Number.isFinite(a.netWaterDemandM3)
+                                                        ? a.netWaterDemandM3
+                                                        : 0,
+                                                effective:
+                                                    typeof a.effectiveWaterM3 === "number" && Number.isFinite(a.effectiveWaterM3)
+                                                        ? a.effectiveWaterM3
+                                                        : 0,
                                                 coverage:
                                                     typeof a.coveragePercentage === "number" && Number.isFinite(a.coveragePercentage)
                                                         ? a.coveragePercentage
@@ -800,13 +878,20 @@ export default function Allocations() {
                                                 tickFormatter={(v) => (typeof v === "number" ? `${v}` : String(v))}
                                             />
                                             <Tooltip
-                                                formatter={(value: unknown) => [formatNumber(value, 2), "Allocated (m³)"]}
-                                                labelFormatter={(label) => `Lateral: ${label}`}
-                                                contentStyle={{
-                                                    borderRadius: "10px",
-                                                    border: `1px solid ${colors.border}`,
-                                                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                                                }}
+                                                content={({ active, payload, label }) =>
+                                                    renderAllocationTooltip(
+                                                        active,
+                                                        payload as Array<{ payload?: AllocationBarPoint }>,
+                                                        label
+                                                    )
+                                                }
+                                            />
+                                            <Legend verticalAlign="top" height={28} />
+                                            <Bar
+                                                dataKey="demand"
+                                                fill={colors.chartPrevious}
+                                                radius={[6, 6, 0, 0]}
+                                                name="Net demand (m³)"
                                             />
                                             <Bar
                                                 dataKey="allocated"
@@ -816,11 +901,15 @@ export default function Allocations() {
                                             />
                                         </BarChart>
                                     </ResponsiveContainer>
+                                    <p className={cssStyles.message} style={{ marginTop: "0.5rem" }}>
+                                        Compare each lateral&apos;s net demand against allocated water. Bars closer in height indicate better demand coverage.
+                                    </p>
                                     <div className={cssStyles.allocationTableWrap}>
                                         <table className={cssStyles.allocationTable}>
                                             <thead>
                                                 <tr>
                                                     <th>Lateral</th>
+                                                    <th>Demand (m³)</th>
                                                     <th>Allocated (m³)</th>
                                                     <th>Effective (m³)</th>
                                                     <th>Coverage %</th>
@@ -836,6 +925,12 @@ export default function Allocations() {
                                                     return (
                                                         <tr key={i}>
                                                             <td>{prettifyName(alloc.mainLateralId)}</td>
+                                                            <td>
+                                                                {alloc.netWaterDemandM3 != null &&
+                                                                Number.isFinite(Number(alloc.netWaterDemandM3))
+                                                                    ? formatNumber(Number(alloc.netWaterDemandM3), 2)
+                                                                    : "—"}
+                                                            </td>
                                                             <td>{formatNumber(alloc.allocatedWaterM3, 2)}</td>
                                                             <td>
                                                                 {alloc.effectiveWaterM3 != null &&
@@ -940,6 +1035,9 @@ export default function Allocations() {
                                                             {formatNumber(deficitMetric.value, 2)}
                                                             {deficitMetric.unit ? ` ${deficitMetric.unit}` : ""}
                                                         </strong>
+                                                        <span className={cssStyles.primaryObjectiveContext}>
+                                                            Total unmet demand; lower is better.
+                                                        </span>
                                                     </div>
                                                 )}
                                                 {fairnessMetric && (
@@ -951,6 +1049,9 @@ export default function Allocations() {
                                                             {formatNumber(fairnessMetric.value, 2)}
                                                             {fairnessMetric.unit ? ` ${fairnessMetric.unit}` : ""}
                                                         </strong>
+                                                        <span className={cssStyles.primaryObjectiveContext}>
+                                                            Evenness of sharing; higher is better.
+                                                        </span>
                                                     </div>
                                                 )}
                                             </div>
@@ -972,6 +1073,18 @@ export default function Allocations() {
                                                     data={viewingHistorySolution.solutionSnapshot.allocationVector.map((a) => ({
                                                         name: prettifyName(a.mainLateralId),
                                                         allocated: Number(a.allocatedWaterM3) || 0,
+                                                        demand:
+                                                            typeof a.netWaterDemandM3 === "number" && Number.isFinite(a.netWaterDemandM3)
+                                                                ? a.netWaterDemandM3
+                                                                : 0,
+                                                        effective:
+                                                            typeof a.effectiveWaterM3 === "number" && Number.isFinite(a.effectiveWaterM3)
+                                                                ? a.effectiveWaterM3
+                                                                : 0,
+                                                        coverage:
+                                                            typeof a.coveragePercentage === "number" && Number.isFinite(a.coveragePercentage)
+                                                                ? a.coveragePercentage
+                                                                : 0,
                                                     }))}
                                                     margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
                                                 >
@@ -988,13 +1101,20 @@ export default function Allocations() {
                                                         axisLine={{ stroke: colors.border }}
                                                     />
                                                     <Tooltip
-                                                        formatter={(value: unknown) => [formatNumber(value, 2), "Allocated (m³)"]}
-                                                        labelFormatter={(label) => `Lateral: ${label}`}
-                                                        contentStyle={{
-                                                            borderRadius: "10px",
-                                                            border: `1px solid ${colors.border}`,
-                                                            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                                                        }}
+                                                        content={({ active, payload, label }) =>
+                                                            renderAllocationTooltip(
+                                                                active,
+                                                                payload as Array<{ payload?: AllocationBarPoint }>,
+                                                                label
+                                                            )
+                                                        }
+                                                    />
+                                                    <Legend verticalAlign="top" height={28} />
+                                                    <Bar
+                                                        dataKey="demand"
+                                                        fill={colors.chartPrevious}
+                                                        radius={[6, 6, 0, 0]}
+                                                        name="Net demand (m³)"
                                                     />
                                                     <Bar
                                                         dataKey="allocated"
@@ -1005,11 +1125,15 @@ export default function Allocations() {
                                                 </BarChart>
                                             </ResponsiveContainer>
                                         </div>
+                                        <p className={cssStyles.message} style={{ marginTop: "0.5rem" }}>
+                                            Compare each lateral&apos;s net demand against allocated water. Bars closer in height indicate better demand coverage.
+                                        </p>
                                         <div className={cssStyles.allocationTableWrap}>
                                             <table className={cssStyles.allocationTable}>
                                                 <thead>
                                                     <tr>
                                                         <th>Lateral</th>
+                                                        <th>Demand (m³)</th>
                                                         <th>Allocated (m³)</th>
                                                         <th>Effective (m³)</th>
                                                         <th>Coverage %</th>
@@ -1025,6 +1149,12 @@ export default function Allocations() {
                                                         return (
                                                             <tr key={i}>
                                                                 <td>{prettifyName(alloc.mainLateralId)}</td>
+                                                                <td>
+                                                                    {alloc.netWaterDemandM3 != null &&
+                                                                    Number.isFinite(Number(alloc.netWaterDemandM3))
+                                                                        ? formatNumber(Number(alloc.netWaterDemandM3), 2)
+                                                                        : "—"}
+                                                                </td>
                                                                 <td>{formatNumber(alloc.allocatedWaterM3, 2)}</td>
                                                                 <td>
                                                                     {alloc.effectiveWaterM3 != null &&

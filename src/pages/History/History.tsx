@@ -31,12 +31,15 @@ function DateRangeInput({
     min,
     max,
     onChange,
+    ariaLabel,
+    disabled = false,
 }: {
     value: string;
     min?: string;
     max?: string;
     onChange: (value: string) => void;
     ariaLabel?: string;
+    disabled?: boolean;
 }) {
     const date = value ? new Date(value + "T12:00:00.000Z") : null;
     const minDate = min ? new Date(min + "T00:00:00.000Z") : undefined;
@@ -54,6 +57,8 @@ function DateRangeInput({
             showYearDropdown
             dropdownMode="select"
             placeholderText="Select date"
+            ariaLabelledBy={ariaLabel}
+            disabled={disabled}
         />
     );
 }
@@ -87,6 +92,8 @@ export default function History() {
     const defaultEndDate = '2026-01-16';
     const endDate = searchParams.get('endDate') ?? defaultEndDate;
     const [boundsDateRange, setBoundsDateRange] = useState<{ startDate: string; endDate: string } | null>(null);
+    const [boundsLoading, setBoundsLoading] = useState(false);
+    const [boundsError, setBoundsError] = useState<string | null>(null);
     const startDate = searchParams.get('startDate') ?? boundsDateRange?.startDate ?? '';
     const effectiveEndDate = endDate || boundsDateRange?.endDate || todayIso;
     const limit = Number(searchParams.get('limit')) || 10;
@@ -114,17 +121,29 @@ export default function History() {
     useEffect(() => {
         let cancelled = false;
         const bootstrapBounds = async () => {
+            setBoundsLoading(true);
+            setBoundsError(null);
             const bounds = await getSensorDataBoundsByHistory(sensorType);
-            if (cancelled || bounds?.error || !bounds?.startDate || !bounds?.endDate) return;
+            if (cancelled) return;
+            if (bounds?.error || !bounds?.startDate || !bounds?.endDate) {
+                setBoundsLoading(false);
+                setBoundsError(
+                    typeof bounds?.error === 'string' ? bounds.error : 'Could not load date range'
+                );
+                return;
+            }
             setBoundsDateRange({ startDate: bounds.startDate, endDate: bounds.endDate });
+            const initialEnd = bounds.endDate || defaultEndDate;
             setSearchParams((prev) => {
                 const next = new URLSearchParams(prev);
                 next.set('startDate', bounds.startDate);
-                next.set('endDate', defaultEndDate);
+                next.set('endDate', initialEnd);
                 return next;
             });
             setLocalStartDate(bounds.startDate);
-            setLocalEndDate(defaultEndDate);
+            setLocalEndDate(initialEnd);
+            setBoundsError(null);
+            setBoundsLoading(false);
         };
         bootstrapBounds();
         return () => {
@@ -371,6 +390,8 @@ export default function History() {
                                 value={localStartDate}
                                 max={localEndDate || boundsDateRange?.endDate}
                                 onChange={setLocalStartDate}
+                                ariaLabel="Start date"
+                                disabled={boundsLoading}
                             />
                         </div>
                         <div className={cssStyles.dateRangeInline}>
@@ -379,8 +400,20 @@ export default function History() {
                                 value={localEndDate}
                                 min={localStartDate}
                                 onChange={setLocalEndDate}
+                                ariaLabel="End date"
+                                disabled={boundsLoading}
                             />
                         </div>
+                        {boundsLoading && (
+                            <Text variant="caption" style={{ margin: 0, color: '#6B7280' }}>
+                                Loading first and last available dates...
+                            </Text>
+                        )}
+                        {!boundsLoading && boundsError && (
+                            <Text variant="caption" style={{ margin: 0, color: '#B91C1C' }}>
+                                {boundsError}
+                            </Text>
+                        )}
                         <Text variant="subtitle" style={{ margin: 0 }}>
                             <span style={{ color: "#00684A" }}>
                                 Sensor Type:&nbsp;
@@ -417,8 +450,15 @@ export default function History() {
                         <button
                             type="button"
                             onClick={() => setDateRange(localStartDate, localEndDate)}
+                            disabled={boundsLoading || !localStartDate || !localEndDate}
                             className={`${cssStyles.setDatesButton}${localStartDate !== startDate || localEndDate !== endDate ? ` ${cssStyles.setDatesButtonDirty}` : ''}`}
-                            title={localStartDate !== startDate || localEndDate !== endDate ? "You have unsaved date changes — click to apply" : "Apply current date range"}
+                            title={
+                                boundsLoading
+                                    ? 'Loading first and last available dates'
+                                    : localStartDate !== startDate || localEndDate !== endDate
+                                        ? 'You have unsaved date changes — click to apply'
+                                        : 'Apply current date range'
+                            }
                         >
                             Set Dates
                         </button>
