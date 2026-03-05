@@ -63,11 +63,6 @@ function formatNumber(value: unknown, maximumFractionDigits = 2): string {
     });
 }
 
-function formatObjectiveValue(value: unknown): string {
-    if (typeof value === "number" && Number.isFinite(value)) return formatNumber(value, 2);
-    return value == null ? "—" : String(value);
-}
-
 function prettifyName(value?: string | null): string {
     if (!value) return "—";
     return value.replace(/_/g, " ").trim();
@@ -101,9 +96,6 @@ function renderAllocationTooltip(active?: boolean, payload?: Array<{ payload?: A
             <div>Coverage: {formatNumber(point.coverage, 1)}%</div>
             <div style={{ marginTop: "0.2rem", color: colors.chartNeutral }}>
                 {gapLabel}: {gapDisplay}
-            </div>
-            <div style={{ color: colors.chartNeutral }}>
-                Demand is required water; allocated is planned release; effective accounts for losses.
             </div>
         </div>
     );
@@ -497,17 +489,6 @@ export default function Allocations() {
                                             Avg coverage: {avgCoverage != null ? `${avgCoverage.toFixed(1)}%` : "—"}
                                         </span>
                                     </div>
-
-                                    <div className={cssStyles.solutionObjectives}>
-                                        {sol.objectiveValues &&
-                                            Object.entries(sol.objectiveValues).map(([key, obj]) => (
-                                                <span key={key} className={cssStyles.objectiveChip}>
-                                                    <strong>{key}:</strong>{" "}
-                                                    {formatObjectiveValue(obj?.value)}{" "}
-                                                    ({obj?.unit ?? ""})
-                                                </span>
-                                            ))}
-                                    </div>
                                     {(deficitMetric || fairnessMetric) && (
                                         <div className={cssStyles.primaryObjectiveRow}>
                                             {deficitMetric && (
@@ -610,6 +591,13 @@ export default function Allocations() {
                                         : null;
 
                                 const selectedAt = item.createdAt ? new Date(item.createdAt) : null;
+                                const selectedMonthStr =
+                                    selectedAt && Number.isFinite(selectedAt.getTime())
+                                        ? selectedAt.toLocaleDateString(undefined, {
+                                                year: "numeric",
+                                                month: "long",
+                                            })
+                                        : "—";
                                 const selectedDateStr =
                                     selectedAt && Number.isFinite(selectedAt.getTime())
                                         ? selectedAt.toLocaleDateString(undefined, {
@@ -632,7 +620,11 @@ export default function Allocations() {
                                     <div key={item._id} className={cssStyles.historyCard}>
                                         <div className={cssStyles.historyCardTop}>
                                             <span className={cssStyles.historyRunIdBadge}>
-                                                Run {item.runId}
+                                               {
+                                                item.runSnapshot?.inputSnapshot?.scenario === 'dry season'
+                                                    ? 'Dry Season Run'
+                                                    : 'Wet Season Run'
+                                                } — {selectedMonthStr} 
                                             </span>
                                             <div className={cssStyles.historyCardBadges}>
                                                 <span className={cssStyles.historyChronological}>
@@ -644,16 +636,20 @@ export default function Allocations() {
                                             </div>
                                         </div>
                                         <p className={cssStyles.historyMeta}>
-                                            <strong>Created at:</strong> {selectedDateStr} at {selectedTimeStr}
+                                            Created at:<strong> {selectedDateStr} at {selectedTimeStr}</strong>
                                         </p>
                                         <p className={cssStyles.historyMeta}>
-                                            Supply:{" "}
+                                            Supply: <strong>
                                             {item.runSnapshot?.inputSnapshot?.totalSeasonalWaterSupplyM3 != null
-                                                ? `${item.runSnapshot.inputSnapshot.totalSeasonalWaterSupplyM3} m³`
+                                                ? `${(item.runSnapshot.inputSnapshot.totalSeasonalWaterSupplyM3).toLocaleString()} m³`
                                                 : "—"}
+                                            </strong>
                                         </p>
                                         <p className={cssStyles.historyMeta}>
                                             Selected by: {item.selectedBy?.name ?? "—"}
+                                        </p>
+                                        <p className={cssStyles.historyMeta}>
+                                            Run ID: {item.runId}
                                         </p>
                                         <div className={cssStyles.historyMetricsRow}>
                                             <span className={cssStyles.historyMetricPill}>
@@ -663,17 +659,6 @@ export default function Allocations() {
                                                 Avg coverage: {avgCoverage != null ? `${avgCoverage.toFixed(1)}%` : "—"}
                                             </span>
                                         </div>
-                                        {Object.keys(objectiveValues).length > 0 && (
-                                            <div className={cssStyles.historyObjectives}>
-                                                {Object.entries(objectiveValues).slice(0, 3).map(([key, obj]) => (
-                                                    <span key={key} className={cssStyles.objectiveChip}>
-                                                        <strong>{key}:</strong>{" "}
-                                                        {formatObjectiveValue(obj?.value)}{" "}
-                                                        ({obj?.unit ?? ""})
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
                                         {(deficitMetric || fairnessMetric) && (
                                             <div className={cssStyles.primaryObjectiveRow}>
                                                 {deficitMetric && (
@@ -793,15 +778,6 @@ export default function Allocations() {
                                             return (
                                                 <>
                                         <p className={cssStyles.previewObjectivesTitle}>Objectives</p>
-                                        <div className={cssStyles.previewObjectives}>
-                                            {Object.entries(viewingSolution.objectiveValues).map(([key, obj]) => (
-                                                <span key={key} className={cssStyles.objectiveChip}>
-                                                    <strong>{key}:</strong>{" "}
-                                                    {formatObjectiveValue(obj?.value)}{" "}
-                                                    {obj?.unit ? `(${obj.unit})` : ""}
-                                                </span>
-                                            ))}
-                                        </div>
                                         {(deficitMetric || fairnessMetric) && (
                                             <div className={cssStyles.primaryObjectiveRow}>
                                                 {deficitMetric && (
@@ -848,14 +824,14 @@ export default function Allocations() {
                                         <BarChart
                                             data={viewingSolution.allocationVector.map((a) => ({
                                                 name: prettifyName(a.mainLateralId),
-                                                allocated: Number(a.allocatedWaterM3) || 0,
+                                                allocated: Number(Math.round(a.allocatedWaterM3)) || 0,
                                                 demand:
                                                     typeof a.netWaterDemandM3 === "number" && Number.isFinite(a.netWaterDemandM3)
-                                                        ? a.netWaterDemandM3
+                                                        ? Math.round(a.netWaterDemandM3)
                                                         : 0,
                                                 effective:
                                                     typeof a.effectiveWaterM3 === "number" && Number.isFinite(a.effectiveWaterM3)
-                                                        ? a.effectiveWaterM3
+                                                        ? Math.round(a.effectiveWaterM3)
                                                         : 0,
                                                 coverage:
                                                     typeof a.coveragePercentage === "number" && Number.isFinite(a.coveragePercentage)
@@ -928,14 +904,14 @@ export default function Allocations() {
                                                             <td>
                                                                 {alloc.netWaterDemandM3 != null &&
                                                                 Number.isFinite(Number(alloc.netWaterDemandM3))
-                                                                    ? formatNumber(Number(alloc.netWaterDemandM3), 2)
+                                                                    ? formatNumber(Number(alloc.netWaterDemandM3), 0)
                                                                     : "—"}
                                                             </td>
-                                                            <td>{formatNumber(alloc.allocatedWaterM3, 2)}</td>
+                                                            <td>{formatNumber(alloc.allocatedWaterM3, 0)}</td>
                                                             <td>
                                                                 {alloc.effectiveWaterM3 != null &&
                                                                 Number.isFinite(Number(alloc.effectiveWaterM3))
-                                                                    ? formatNumber(Number(alloc.effectiveWaterM3), 2)
+                                                                    ? formatNumber(Number(alloc.effectiveWaterM3), 0)
                                                                     : "—"}
                                                             </td>
                                                             <td>{covDisplay}</td>
@@ -982,19 +958,34 @@ export default function Allocations() {
                     <div className={cssStyles.previewModal} onClick={(e) => e.stopPropagation()}>
                         <div className={cssStyles.previewHeader}>
                             <h2 id="selected-history-title" className={cssStyles.previewTitle}>
-                                Selected solution history — <span className={cssStyles.previewRunIdBadge}>Run {viewingHistorySolution.runId}</span>
+                                Selected solution history 
+                                <span className={cssStyles.previewRunIdBadge}>
+                                    {
+                                        viewingHistorySolution.runSnapshot?.inputSnapshot?.scenario === 'dry season'
+                                            ? 'Dry Season Run'
+                                            : 'Wet Season Run'
+                                    } — {viewingHistorySolution.createdAt
+                                            ? new Date(viewingHistorySolution.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                                            : "—"
+                                        }
+                                </span>
                             </h2>
                             <p className={cssStyles.historyModalMeta}>
-                                <strong>Created at:</strong>{" "}
+                                Created at:&nbsp;
+                                <strong>
                                 {viewingHistorySolution.createdAt
                                     ? new Date(viewingHistorySolution.createdAt).toLocaleString()
                                     : "—"}
+                                </strong>
                             </p>
                             <p className={cssStyles.historyModalMeta}>
-                                Scenario: {viewingHistorySolution.runSnapshot?.inputSnapshot?.scenario ?? "—"}
+                                Supply:&nbsp;
+                                <strong>
+                                    {`${(viewingHistorySolution.runSnapshot?.inputSnapshot?.totalSeasonalWaterSupplyM3)?.toLocaleString()} m³`}
+                                </strong>
                             </p>
                             <p className={cssStyles.historyModalMeta}>
-                                Selected by {viewingHistorySolution.selectedBy?.name ?? "—"}
+                                Scenario: <strong>{viewingHistorySolution.runSnapshot?.inputSnapshot?.scenario ?? "—"}</strong>
                             </p>
                         </div>
                         <div className={cssStyles.previewBody}>
@@ -1013,17 +1004,6 @@ export default function Allocations() {
                                             return (
                                                 <>
                                         <p className={cssStyles.previewObjectivesTitle}>Objectives</p>
-                                        <div className={cssStyles.previewObjectives}>
-                                            {Object.entries(viewingHistorySolution.solutionSnapshot.objectiveValues).map(
-                                                ([key, obj]) => (
-                                                    <span key={key} className={cssStyles.objectiveChip}>
-                                                        <strong>{key}:</strong>{" "}
-                                                        {formatObjectiveValue(obj?.value)}{" "}
-                                                        {obj?.unit ? `(${obj.unit})` : ""}
-                                                    </span>
-                                                )
-                                            )}
-                                        </div>
                                         {(deficitMetric || fairnessMetric) && (
                                             <div className={cssStyles.primaryObjectiveRow}>
                                                 {deficitMetric && (
@@ -1072,14 +1052,14 @@ export default function Allocations() {
                                                 <BarChart
                                                     data={viewingHistorySolution.solutionSnapshot.allocationVector.map((a) => ({
                                                         name: prettifyName(a.mainLateralId),
-                                                        allocated: Number(a.allocatedWaterM3) || 0,
+                                                        allocated: Number(Math.round(a.allocatedWaterM3)) || 0,
                                                         demand:
                                                             typeof a.netWaterDemandM3 === "number" && Number.isFinite(a.netWaterDemandM3)
-                                                                ? a.netWaterDemandM3
+                                                                ? Math.round(a.netWaterDemandM3)
                                                                 : 0,
                                                         effective:
                                                             typeof a.effectiveWaterM3 === "number" && Number.isFinite(a.effectiveWaterM3)
-                                                                ? a.effectiveWaterM3
+                                                                ? Math.round(a.effectiveWaterM3)
                                                                 : 0,
                                                         coverage:
                                                             typeof a.coveragePercentage === "number" && Number.isFinite(a.coveragePercentage)
@@ -1152,14 +1132,14 @@ export default function Allocations() {
                                                                 <td>
                                                                     {alloc.netWaterDemandM3 != null &&
                                                                     Number.isFinite(Number(alloc.netWaterDemandM3))
-                                                                        ? formatNumber(Number(alloc.netWaterDemandM3), 2)
+                                                                        ? formatNumber(Number(alloc.netWaterDemandM3), 0)
                                                                         : "—"}
                                                                 </td>
-                                                                <td>{formatNumber(alloc.allocatedWaterM3, 2)}</td>
+                                                                <td>{formatNumber(alloc.allocatedWaterM3, 0)}</td>
                                                                 <td>
                                                                     {alloc.effectiveWaterM3 != null &&
                                                                     Number.isFinite(Number(alloc.effectiveWaterM3))
-                                                                        ? formatNumber(Number(alloc.effectiveWaterM3), 2)
+                                                                        ? formatNumber(Number(alloc.effectiveWaterM3), 0)
                                                                         : "—"}
                                                                 </td>
                                                                 <td>{covDisplay}</td>

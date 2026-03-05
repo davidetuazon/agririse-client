@@ -385,7 +385,7 @@
 
 .primaryObjectiveLabel {
   font-family: "Poppins-SemiBold";
-  font-size: 0.72rem;
+  font-size: 1.02rem;
   color: var(--color-text-secondary);
 }
 
@@ -520,6 +520,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  padding: 0.5rem;
 }
 
 .previewChartWrap {
