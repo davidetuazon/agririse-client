@@ -295,6 +295,7 @@ export default function DashboardTrends({ data }: Props) {
           }
         }}
         aria-label="Open trends modal"
+        title="Trends – Click to expand"
       >
         <div className={cssStyles.previewHeader}>
           <Text variant="heading" style={{ margin: 0 }}>

@@ -11,7 +11,7 @@ import { toCsv, downloadTextFile } from "../../utils/exportCsv";
 import { buildHistoryPdf } from "../../utils/exportPdf";
 import { SENSOR_TYPES } from "../../utils/constants";
 import ImportModal from "../../components/import/ImportModal";
-import { getUnitOptions, convertValue, getCalibrationStatus, type SensorType as UnitSensorType } from "../../utils/unitConversion";
+import { getUnitOptions, convertValue, getCalibrationStatus, normalizeSourceUnit, type SensorType as UnitSensorType } from "../../utils/unitConversion";
 import cssStyles from "./History.module.css";
 import { useGenerateImage } from "recharts-to-png";
 import DatePicker from "react-datepicker";
@@ -98,8 +98,9 @@ export default function History() {
     const effectiveEndDate = endDate || boundsDateRange?.endDate || todayIso;
     const limit = Number(searchParams.get('limit')) || 10;
 
-    // Unit conversion state
-    const sourceUnit = metaData?.unit ?? (SENSOR_TYPES as Record<string, { unit: string }>)[sensorType]?.unit ?? '';
+    // Unit conversion state: normalize API unit (e.g. "percent" -> "%") so dam water level converts correctly
+    const rawSourceUnit = metaData?.unit ?? (SENSOR_TYPES as Record<string, { unit: string }>)[sensorType]?.unit ?? '';
+    const sourceUnit = normalizeSourceUnit(rawSourceUnit, sensorType as UnitSensorType) || rawSourceUnit;
     const [selectedUnit, setSelectedUnit] = useState<string>(sourceUnit);
     const unitOptions = getUnitOptions(sensorType as UnitSensorType, sourceUnit);
     const calibrationStatus = getCalibrationStatus();

@@ -61,6 +61,58 @@
   background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(240, 253, 250, 0.5) 100%);
 }
 
+.canalOverviewSection {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(224, 242, 254, 0.4) 100%);
+  border-left: 4px solid #06b6d4;
+}
+
+.canalOverviewEmpty {
+  margin: 0.5rem 0 0;
+  font-family: "Poppins-Light";
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+}
+
+.canalOverviewTableWrap {
+  overflow-x: auto;
+  margin-top: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+}
+
+.canalOverviewTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: "Poppins-Light";
+  font-size: 0.85rem;
+}
+
+.canalOverviewTable th,
+.canalOverviewTable td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #E8EDEB;
+}
+
+.canalOverviewTable th {
+  background: #E3FCF7;
+  color: #023430;
+  font-family: "Poppins-SemiBold";
+  white-space: nowrap;
+}
+
+.canalOverviewTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.barangayCell {
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .resultsSection {
   padding: 1.35rem;
   border-left: 4px solid #7c3aed;

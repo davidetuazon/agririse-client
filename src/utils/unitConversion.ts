@@ -34,6 +34,31 @@ const getCalibrationConstants = () => {
 };
 
 /**
+ * Normalize API-returned unit string to the internal form used by conversion.
+ * Handles variants like "percent" -> "%" so history/analytics display correct conversions.
+ */
+export function normalizeSourceUnit(unit: string | null | undefined, sensorType: SensorType): string {
+  const u = (unit ?? '').trim().toLowerCase();
+  const fallbacks: Record<SensorType, string> = {
+    damWaterLevel: '%',
+    humidity: '%',
+    rainfall: 'mm',
+    temperature: '°C',
+  };
+  if (!u) return fallbacks[sensorType] ?? '';
+  switch (sensorType) {
+    case 'damWaterLevel':
+      if (u === 'percent' || u === 'pct') return '%';
+      if (u === 'm' || u === 'meters' || u === 'metre') return 'm';
+      if (u === 'ft' || u === 'feet') return 'ft';
+      if (u === 'mcm') return 'MCM';
+      return unit!.trim();
+    default:
+      return unit!.trim();
+  }
+}
+
+/**
  * Get available unit options for a sensor type, with source unit always first
  */
 export function getUnitOptions(sensorType: SensorType, sourceUnit: string): UnitOption[] {

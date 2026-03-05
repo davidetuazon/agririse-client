@@ -61,11 +61,13 @@ export default function SensorMetricCard(props: Props) {
             : cssStyles.deltaDown
         : cssStyles.deltaNeutral;
 
+    const tooltipTitle = `${label} – Click for options`;
     return (
         <button
             type="button"
             className={`${cssStyles.card} ${CARD_CLASS[sensorType] ?? ""}`}
             onClick={onClick}
+            title={tooltipTitle}
         >
             <div className={cssStyles.header}>
                 <span className={cssStyles.icon}>{getSensorIcon(sensorType)}</span>

@@ -74,6 +74,106 @@ function getDataRangeGapMessages(
   return messages;
 }
 
+type TrendPayload = {
+  direction?: string | null;
+  slope?: number | null;
+  percentChange?: number | null;
+  projection?: number | null;
+  rSquared?: number | null;
+  confidence?: number | string | null;
+  dataPoints?: number | null;
+  dataCompleteness?: number | null;
+  timeSpanDays?: number | null;
+};
+
+function TrendOverview({ trend, unit }: { trend: TrendPayload; unit: string }) {
+  const hasAny =
+    trend.direction != null ||
+    trend.slope != null ||
+    trend.percentChange != null ||
+    trend.projection != null ||
+    trend.rSquared != null ||
+    trend.confidence != null ||
+    trend.dataPoints != null ||
+    trend.timeSpanDays != null;
+  if (!hasAny) {
+    return (
+      <Text variant="caption" style={{ margin: 0, color: "#6B7280" }}>
+        No trend summary available for this range.
+      </Text>
+    );
+  }
+  const directionLabel =
+    trend.direction === "up"
+      ? "Increasing"
+      : trend.direction === "down"
+        ? "Decreasing"
+        : trend.direction === "stable"
+          ? "Stable"
+          : trend.direction ?? "—";
+  return (
+    <div className={cssStyles.trendOverview}>
+      <div className={cssStyles.trendRow}>
+        <span className={cssStyles.trendLabel}>Direction</span>
+        <span className={cssStyles.trendValue}>{directionLabel}</span>
+      </div>
+      {trend.percentChange != null && Number.isFinite(trend.percentChange) && (
+        <div className={cssStyles.trendRow}>
+          <span className={cssStyles.trendLabel}>Percent change</span>
+          <span className={cssStyles.trendValue}>
+            {trend.percentChange >= 0 ? "+" : ""}
+            {trend.percentChange.toFixed(2)}%
+          </span>
+        </div>
+      )}
+      {trend.slope != null && Number.isFinite(trend.slope) && (
+        <div className={cssStyles.trendRow}>
+          <span className={cssStyles.trendLabel}>Slope</span>
+          <span className={cssStyles.trendValue}>
+            {(trend.slope >= 0 ? "+" : "") + trend.slope.toFixed(4)}
+            {unit ? ` ${unit}/period` : ""}
+          </span>
+        </div>
+      )}
+      {trend.projection != null && Number.isFinite(trend.projection) && (
+        <div className={cssStyles.trendRow}>
+          <span className={cssStyles.trendLabel}>Projection (next period)</span>
+          <span className={cssStyles.trendValue}>
+            {trend.projection.toFixed(2)}
+            {unit}
+          </span>
+        </div>
+      )}
+      {trend.rSquared != null && Number.isFinite(trend.rSquared) && (
+        <div className={cssStyles.trendRow}>
+          <span className={cssStyles.trendLabel}>R²</span>
+          <span className={cssStyles.trendValue}>{trend.rSquared.toFixed(4)}</span>
+        </div>
+      )}
+      {trend.confidence != null && (
+        <div className={cssStyles.trendRow}>
+          <span className={cssStyles.trendLabel}>Confidence</span>
+          <span className={cssStyles.trendValue}>
+            {typeof trend.confidence === "number" && Number.isFinite(trend.confidence)
+              ? `${(trend.confidence * 100).toFixed(1)}%`
+              : String(trend.confidence)}
+          </span>
+        </div>
+      )}
+      {(trend.dataPoints != null || trend.timeSpanDays != null) && (
+        <div className={cssStyles.trendRow}>
+          <span className={cssStyles.trendLabel}>Data</span>
+          <span className={cssStyles.trendValue}>
+            {trend.dataPoints != null ? `${trend.dataPoints} points` : ""}
+            {trend.dataPoints != null && trend.timeSpanDays != null ? " · " : ""}
+            {trend.timeSpanDays != null ? `${trend.timeSpanDays} days` : ""}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DateRangeInput({
   value,
   min,
@@ -229,8 +329,16 @@ export default function Analytics() {
             types: typeof rawAnomalies.types === "object" && rawAnomalies.types != null ? rawAnomalies.types : {},
           }
         : { total: 0, critical: 0, warning: 0, info: 0, types: {} };
+      // API may return trend at top level (res.trend) or inside meta (res.meta.trend)
+      const trendFromResponse = (res as { trend?: TrendPayload }).trend ?? res.meta?.trend;
+      if (trendFromResponse != null) {
+        console.log("[Analytics] Trend from API:", trendFromResponse);
+      } else {
+        console.log("[Analytics] No trend in response. res.trend =", (res as { trend?: unknown }).trend, "res.meta?.trend =", res.meta?.trend);
+      }
       meta = {
         ...res.meta,
+        trend: trendFromResponse ?? res.meta?.trend,
         anomalies: anomaliesSummary,
       };
       allSeries = [...allSeries, ...nextSeries];
@@ -248,16 +356,13 @@ export default function Analytics() {
 
     setData(allSeries);
     setMetaData(meta);
+    console.log("[Analytics] metaData set, trend present:", meta?.trend != null, "trend =", meta?.trend);
     setLoading(false);
   }, [sensorType, startDate, effectiveEndDate]);
 
   useEffect(() => {
     fetchAllPages();
   }, [fetchAllPages]);
-
-  useEffect(() => {
-    console.log({data});
-  }, [data]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -647,6 +752,19 @@ export default function Analytics() {
                 />
               </div>
             </div>
+
+            {(() => {
+              const trend = (metaData as any)?.trend;
+              console.log("[Analytics render] metaData.trend =", trend, "show section =", trend != null);
+              return trend != null ? (
+                <div className={cssStyles.trendSection}>
+                  <Text variant="title" style={{ margin: 0 }}>
+                    Trend
+                  </Text>
+                  <TrendOverview trend={trend} unit={unit} />
+                </div>
+              ) : null;
+            })()}
 
             <div className={cssStyles.dateRangeBlock}>
               <DateRangeControls extra={

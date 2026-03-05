@@ -138,7 +138,7 @@ export default function Home() {
                             Live sensor snapshot
                         </span>
                     </div>
-                    <span className={cssStyles.dashboardMeta}>
+                    <span className={cssStyles.dashboardMeta} title="Time of last sensor data refresh">
                         {lastUpdated ? `Last refresh ${timeAgo(lastUpdated)}` : 'Last refresh —'}
                     </span>
                 </div>
@@ -161,7 +161,7 @@ export default function Home() {
                         <Text variant="heading" style={{ margin: 0 }}>
                             Optimization
                         </Text>
-                        <Link to="/allocations" className={cssStyles.optimizationLink}>
+                        <Link to="/allocations" className={cssStyles.optimizationLink} title="Go to Allocations to run optimization">
                             Run optimization →
                         </Link>
                     </div>

@@ -430,6 +430,57 @@ export default function Allocations() {
                             </div>
                         )}
                 </article>
+
+                <article className={cssStyles.canalOverviewSection} data-tour="allocations-canal-overview">
+                    <h3 className={cssStyles.formSectionTitle}>Overview of canal details</h3>
+                    <p className={cssStyles.formSubtext}>
+                        Input variables per main lateral (from current or last run). When a run is pending, the loader also shows these details.
+                    </p>
+                    {(() => {
+                        const canalInput = currentRun?.inputSnapshot?.canalInput ?? [];
+                        if (canalInput.length === 0) {
+                            return (
+                                <p className={cssStyles.canalOverviewEmpty}>
+                                    No canal details yet. Start a run to see variables (main lateral, barangays, TBS by dam, net demand, seepage, loss factor).
+                                </p>
+                            );
+                        }
+                        return (
+                            <div className={cssStyles.canalOverviewTableWrap}>
+                                <table className={cssStyles.canalOverviewTable}>
+                                    <thead>
+                                        <tr>
+                                            <th>Main Lateral</th>
+                                            <th>Barangays</th>
+                                            <th>TBS by Dam (ha)</th>
+                                            <th>Net Water Demand (m³)</th>
+                                            <th>Seepage (m³)</th>
+                                            <th>Loss Factor (%)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {canalInput.map((canal, index) => {
+                                            const barangays = canal.coverage?.map((c) => c.barangay).filter(Boolean);
+                                            const barangayDisplay = barangays?.length
+                                                ? barangays.map((b) => prettifyName(b)).join(", ")
+                                                : "—";
+                                            return (
+                                                <tr key={canal._id ?? `${canal.mainLateralId}-${index}`}>
+                                                    <td>{prettifyName(canal.mainLateralId)}</td>
+                                                    <td className={cssStyles.barangayCell}>{barangayDisplay}</td>
+                                                    <td>{formatNumber(canal.tbsByDamHa)}</td>
+                                                    <td>{formatNumber(canal.netWaterDemandM3)}</td>
+                                                    <td>{formatNumber(canal.seepageM3)}</td>
+                                                    <td>{formatNumber(canal.lossFactorPercentage)}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        );
+                    })()}
+                </article>
             </section>
 
             {runResults && runResults.paretoSolutions.length > 0 && showSolutions && (
