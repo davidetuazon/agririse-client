@@ -34,8 +34,8 @@ type Props = {
 };
 
 const CHART_COLORS = {
-  previous: colors.chartPrevious,
-  latest: colors.chartPositive,
+  previous: colors.primary,
+  latest: colors.primaryLight,
   grid: colors.chartGrid,
   axis: colors.chartAxis,
   positive: colors.chartPositive,
@@ -455,7 +455,7 @@ export default function DashboardTrends({ data }: Props) {
               <Text variant="caption" style={{ margin: 0 }}>
                 Showing {selectedLabel} comparison between previous and latest readings. 
                 <span style={{ color: CHART_COLORS.axis }}>
-                  {" Latest is shown in green and previous is shown in slate."}
+                  {" Previous is dark green and latest is light green."}
                 </span>
               </Text>
             </div>

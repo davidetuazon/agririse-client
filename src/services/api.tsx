@@ -94,7 +94,25 @@ export const getHistory = async (
     }
 }
 
+/** Fetch date bounds from server (min/max recordedAt in DB). Use for initial range on mount so everyone sees the same range for the same data. */
+export const getSensorDataBounds = async (sensorType: string) => {
+    try {
+        const res = await api.get('/iot/data-bounds', { params: { sensorType } });
+        const { startDate, endDate } = res.data ?? {};
+        if (!startDate || !endDate) return { data: null, error: 'Invalid bounds response' };
+        return { startDate, endDate };
+    } catch (e: any) {
+        const msg = e.response?.data?.error ?? e.message ?? 'Unknown error';
+        return { data: null, error: msg };
+    }
+};
+
+/** Uses server data-bounds when available; falls back to paginating history (last 365 days from client today). */
 export const getSensorDataBoundsByHistory = async (sensorType: string) => {
+    const server = await getSensorDataBounds(sensorType);
+    if (!server.error && server.startDate && server.endDate) {
+        return { startDate: server.startDate, endDate: server.endDate };
+    }
     const today = new Date();
     const endDate = today.toISOString().split('T')[0];
     const startDate = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
