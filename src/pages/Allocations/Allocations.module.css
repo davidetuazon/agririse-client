@@ -385,7 +385,7 @@
 
 .primaryObjectiveLabel {
   font-family: "Poppins-SemiBold";
-  font-size: 0.72rem;
+  font-size: 1.02rem;
   color: var(--color-text-secondary);
 }
 
@@ -393,6 +393,14 @@
   font-family: "Poppins-Bold";
   font-size: 0.95rem;
   color: var(--color-text-heading);
+}
+
+.primaryObjectiveContext {
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--color-text-secondary);
+  margin-top: 0.25rem;
+  font-weight: 500;
 }
 
 .objectiveChip {
@@ -512,6 +520,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  padding: 0.5rem;
 }
 
 .previewChartWrap {

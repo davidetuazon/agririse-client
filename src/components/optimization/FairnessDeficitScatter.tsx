@@ -33,6 +33,14 @@ function toNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function normalizeDeficitForX(value: number): number {
+  return Math.abs(value);
+}
+
+function normalizeFairnessForY(value: number): number {
+  return Math.abs(value);
+}
+
 function getObjectiveValue(
   objectiveValues: ParetoSolution["objectiveValues"],
   matcher: RegExp
@@ -51,15 +59,15 @@ export default function FairnessDeficitScatter({
     () =>
       (solutions ?? [])
         .map((solution, index) => {
-          const deficit = getObjectiveValue(solution.objectiveValues, /deficit/i);
-          const fairness = getObjectiveValue(solution.objectiveValues, /fair/i);
-          if (deficit == null || fairness == null) return null;
+          const deficitRaw = getObjectiveValue(solution.objectiveValues, /deficit/i);
+          const fairnessRaw = getObjectiveValue(solution.objectiveValues, /fair/i);
+          if (deficitRaw == null || fairnessRaw == null) return null;
           return {
             solutionId: solution._id,
             solutionLabel: `Solution ${index + 1}`,
             solutionNumber: index + 1,
-            deficit,
-            fairness,
+            deficit: normalizeDeficitForX(deficitRaw),
+            fairness: normalizeFairnessForY(fairnessRaw),
           };
         })
         .filter((point): point is ChartPoint => point != null),
@@ -74,6 +82,19 @@ export default function FairnessDeficitScatter({
     () => [...points].sort((a, b) => a.deficit - b.deficit),
     [points]
   );
+  const fairnessDomain = useMemo<[number, number]>(() => {
+    if (!points.length) return [0, 1];
+    const values = points.map((point) => point.fairness);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    if (min === max) {
+      const pad = Math.max(Math.abs(min) * 0.05, 0.01);
+      return [min - pad, max + pad];
+    }
+    const range = max - min;
+    const pad = Math.max(range * 0.05, 0.01);
+    return [min - pad, max + pad];
+  }, [points]);
 
   if (!points.length) {
     return (
@@ -96,38 +117,41 @@ export default function FairnessDeficitScatter({
   }
 
   return (
-    <div style={{ width: "100%", height }}>
+    <div style={{ width: "100%", height, marginBottom: 25, }}>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={linePoints} margin={{ top: 10, right: 16, bottom: 20, left: 28 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
+        <ComposedChart data={linePoints} margin={{ top: 16, right: 24, bottom: 42, left: 36 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={colors.borderMedium} />
           <XAxis
             type="number"
             dataKey="deficit"
-            tick={{ fontSize: 11, fill: colors.chartNeutral }}
+            tick={{ fontSize: 12, fill: colors.textPrimary }}
             tickLine={false}
-            axisLine={{ stroke: colors.border }}
+            axisLine={{ stroke: colors.chartAxis }}
             tickFormatter={(value: number) => value.toFixed(2)}
             label={{
-              value: "Deficit (lower is better)",
-              position: "insideBottom",
-              offset: -10,
-              style: { fontSize: 10, fill: colors.chartNeutral },
+              value: "Deficit Score (Lower is Better)",
+              position: "bottom",
+              offset: 12,
+              style: { fontSize: 12, fontWeight: 600, fill: colors.textPrimary },
             }}
           />
           <YAxis
             type="number"
             dataKey="fairness"
-            width={46}
-            tick={{ fontSize: 11, fill: colors.chartNeutral }}
+            width={52}
+            tick={{ fontSize: 12, fill: colors.textPrimary }}
             tickLine={false}
-            axisLine={{ stroke: colors.border }}
+            axisLine={{ stroke: colors.chartAxis }}
             tickFormatter={(value: number) => value.toFixed(2)}
-            domain={[0, 1]}
+            domain={fairnessDomain}
+            reversed={true}
             label={{
-              value: "Fairness ↑",
+              value: "Fairness (Higher is Better)",
               angle: -90,
-              position: "insideLeft",
-              style: { fontSize: 10, fill: colors.chartNeutral },
+              position: "left",
+              offset: 12,
+              dy: -80,
+              style: { fontSize: 12, fontWeight: 600, fill: colors.textPrimary },
             }}
           />
           <Tooltip
@@ -145,14 +169,12 @@ export default function FairnessDeficitScatter({
                     borderRadius: "10px",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                     padding: "0.5rem 0.65rem",
-                    fontSize: "0.78rem",
+                    fontSize: "0.82rem",
                   }}
                 >
-                  <div>
-                    <strong>{point.solutionLabel}</strong> (#{point.solutionNumber})
-                  </div>
-                  <div>Deficit: {point.deficit.toFixed(4)}</div>
-                  <div>Fairness: {point.fairness.toFixed(4)}</div>
+                  <div><strong>{point.solutionLabel}</strong> (#{point.solutionNumber})</div>
+                  <div style={{ marginTop: "0.25rem" }}>Deficit: {point.deficit.toFixed(4)}</div>
+                  <div style={{ marginTop: "0.25rem" }}>Fairness: {point.fairness.toFixed(4)}</div>
                 </div>
               );
             }}
@@ -189,12 +211,11 @@ export default function FairnessDeficitScatter({
       {variant === "full" && (
         <p
           style={{
-            margin: "0.35rem 0 0",
-            color: colors.chartNeutral,
-            fontSize: "0.74rem",
+            color: colors.textMuted,
+            fontSize: "0.64rem",
           }}
         >
-          Better solutions trend toward the upper-left (higher fairness, lower deficit).
+          *Better solutions trend toward the lower-left (higher fairness, lower deficit).
         </p>
       )}
     </div>

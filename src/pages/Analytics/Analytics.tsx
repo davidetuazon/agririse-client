@@ -46,12 +46,6 @@ function formatDateLabel(iso: string): string {
   return `${Number(m)}/${Number(d)}/${y}`;
 }
 
-function addDays(iso: string, delta: number): string {
-  const d = new Date(iso + "T12:00:00.000Z");
-  d.setUTCDate(d.getUTCDate() + delta);
-  return d.toISOString().slice(0, 10);
-}
-
 function formatAnomalyTimestamp(ts: string): string {
   return new Date(ts).toISOString().replace("T", " ").slice(0, 19) + " UTC";
 }
@@ -74,13 +68,8 @@ function getDataRangeGapMessages(
   const first = dates.reduce((a, b) => (a < b ? a : b));
   const last = dates.reduce((a, b) => (a > b ? a : b));
   const messages: string[] = [];
-  if (first > startDate) {
-    const to = addDays(first, -1);
-    messages.push(`No available data from ${formatDateLabel(startDate)} to ${formatDateLabel(to)}`);
-  }
-  if (last < endDate) {
-    const from = addDays(last, 1);
-    messages.push(`No available data from ${formatDateLabel(from)} to ${formatDateLabel(endDate)}`);
+  if (first > startDate || last < endDate) {
+    messages.push(`Last data recorded is at ${formatDateLabel(last)}`);
   }
   return messages;
 }
@@ -90,12 +79,15 @@ function DateRangeInput({
   min,
   max,
   onChange,
+  ariaLabel,
+  disabled = false,
 }: {
   value: string;
   min?: string;
   max?: string;
   onChange: (value: string) => void;
   ariaLabel?: string;
+  disabled?: boolean;
 }) {
   const date = value ? new Date(value + "T12:00:00.000Z") : null;
   const minDate = min ? new Date(min + "T00:00:00.000Z") : undefined;
@@ -113,6 +105,8 @@ function DateRangeInput({
       showYearDropdown
       dropdownMode="select"
       placeholderText="Select date"
+      ariaLabelledBy={ariaLabel}
+      disabled={disabled}
     />
   );
 }
@@ -144,6 +138,8 @@ export default function Analytics() {
   const defaultEndDate = "2026-01-16";
   const endDate = searchParams.get("endDate") ?? defaultEndDate;
   const [boundsDateRange, setBoundsDateRange] = useState<{ startDate: string; endDate: string } | null>(null);
+  const [boundsLoading, setBoundsLoading] = useState(false);
+  const [boundsError, setBoundsError] = useState<string | null>(null);
   const startDate = searchParams.get("startDate") ?? boundsDateRange?.startDate ?? "";
   const effectiveEndDate = endDate || boundsDateRange?.endDate || todayIso;
 
@@ -164,17 +160,29 @@ export default function Analytics() {
   useEffect(() => {
     let cancelled = false;
     const bootstrapBounds = async () => {
+      setBoundsLoading(true);
+      setBoundsError(null);
       const bounds = await getSensorDataBoundsByHistory(sensorType);
-      if (cancelled || bounds?.error || !bounds?.startDate || !bounds?.endDate) return;
+      if (cancelled) return;
+      if (bounds?.error || !bounds?.startDate || !bounds?.endDate) {
+        setBoundsLoading(false);
+        setBoundsError(
+          typeof bounds?.error === "string" ? bounds.error : "Could not load date range"
+        );
+        return;
+      }
       setBoundsDateRange({ startDate: bounds.startDate, endDate: bounds.endDate });
+      const initialEnd = bounds.endDate || defaultEndDate;
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev);
         next.set("startDate", bounds.startDate);
-        next.set("endDate", defaultEndDate);
+        next.set("endDate", initialEnd);
         return next;
       });
       setLocalStartDate(bounds.startDate);
-      setLocalEndDate(defaultEndDate);
+      setLocalEndDate(initialEnd);
+      setBoundsError(null);
+      setBoundsLoading(false);
     };
     bootstrapBounds();
     return () => {
@@ -246,6 +254,10 @@ export default function Analytics() {
   useEffect(() => {
     fetchAllPages();
   }, [fetchAllPages]);
+
+  useEffect(() => {
+    console.log({data});
+  }, [data]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -467,6 +479,20 @@ export default function Analytics() {
           stdDev: latest.stdDev ?? 0,
         },
         chartPngDataUrl: chartPng,
+        anomalies: {
+          summary: anomalySummary,
+          groups: anomalyGroups.map((g) => ({
+            timestamp: g.timestamp,
+            label: g.label,
+            total: g.total,
+            counts: g.counts,
+            items: g.items.map((item) => ({
+              severity: item.severity,
+              type: item.type,
+              message: item.message,
+            })),
+          })),
+        },
       });
       doc.save(`${exportFilenameBase}.pdf`);
     } finally {
@@ -485,6 +511,7 @@ export default function Analytics() {
           max={localEndDate || boundsDateRange?.endDate}
           onChange={setLocalStartDate}
           ariaLabel="Start date"
+          disabled={boundsLoading}
         />
       </div>
       <div className={cssStyles.dateRangeInline}>
@@ -494,14 +521,32 @@ export default function Analytics() {
           min={localStartDate}
           onChange={setLocalEndDate}
           ariaLabel="End date"
+          disabled={boundsLoading}
         />
       </div>
+      {boundsLoading && (
+        <Text variant="caption" style={{ margin: 0, color: "#6B7280" }}>
+          Loading first and last available dates...
+        </Text>
+      )}
+      {!boundsLoading && boundsError && (
+        <Text variant="caption" style={{ margin: 0, color: "#B91C1C" }}>
+          {boundsError}
+        </Text>
+      )}
       {extra}
       <button
         type="button"
         onClick={() => setDateRange(localStartDate, localEndDate)}
+        disabled={boundsLoading || !localStartDate || !localEndDate}
         className={`${cssStyles.setDatesButton}${isDateDirty ? ` ${cssStyles.setDatesButtonDirty}` : ""}`}
-        title={isDateDirty ? "You have unsaved date changes — click to apply" : "Apply current date range"}
+        title={
+          boundsLoading
+            ? "Loading first and last available dates"
+            : isDateDirty
+              ? "You have unsaved date changes — click to apply"
+              : "Apply current date range"
+        }
       >
         Set Dates
       </button>
@@ -551,19 +596,15 @@ export default function Analytics() {
               <DateRangeControls />
             </div>
           </div>
-        ) : showDataRangeGapPrompt ? (
-          <div className={cssStyles.gapOnlyView}>
-            <div className={cssStyles.dataRangeGapBanner} role="alert">
-              <p className={cssStyles.dataRangeGapText}>
-                {dataRangeGapMessages.join(". ")}. Adjust the date range to see only dates with data.
-              </p>
-            </div>
-            <div className={cssStyles.dateRangeBlock}>
-              <DateRangeControls />
-            </div>
-          </div>
         ) : latest ? (
           <div key={latest.timestamp} style={styles.summary}>
+            {showDataRangeGapPrompt && (
+              <div className={cssStyles.dataRangeGapBanner} role="alert">
+                <p className={cssStyles.dataRangeGapText}>
+                  {dataRangeGapMessages.join(". ")}. Adjust the date range to see only dates with data.
+                </p>
+              </div>
+            )}
             <div style={{ padding: "0px clamp(0.75rem, 2vw, 1.25rem)" }}>
               <Text variant="title" style={{ margin: 0 }}>
                 Aggregated Metrics
@@ -752,6 +793,17 @@ export default function Analytics() {
               </div>
             )}
           </div>
+        ) : showDataRangeGapPrompt ? (
+          <div className={cssStyles.gapOnlyView}>
+            <div className={cssStyles.dataRangeGapBanner} role="alert">
+              <p className={cssStyles.dataRangeGapText}>
+                {dataRangeGapMessages.join(". ")}. Adjust the date range to see only dates with data.
+              </p>
+            </div>
+            <div className={cssStyles.dateRangeBlock}>
+              <DateRangeControls />
+            </div>
+          </div>
         ) : (
           <div className={cssStyles.emptyState}>
             <Text variant="title">No data available for this date range.</Text>
@@ -762,7 +814,7 @@ export default function Analytics() {
         )}
       </Section>
 
-      {!showDataRangeGapPrompt && (
+      {(latest || loading) && (
       <Section style={styles.chartsSection}>
         <div className={cssStyles.chartSectionHeader}>
           <Text variant="title" style={{ margin: 0 }}>
@@ -919,6 +971,98 @@ export default function Analytics() {
             <AnalyticsMetricCard type="min" label="Minimum Value" value={latest.min ?? undefined} unit={unit} />
             <AnalyticsMetricCard type="max" label="Maximum Value" value={latest.max ?? undefined} unit={unit} />
             <AnalyticsMetricCard type="stdDev" label="Variability (σ)" value={latest.stdDev ?? undefined} />
+          </div>
+        )}
+
+        {anomalySummary.total > 0 && (
+          <div className={cssStyles.anomaliesSection}>
+            <div className={cssStyles.anomaliesHeader}>
+              <Text variant="title" style={{ margin: 0 }}>
+                Anomalies
+              </Text>
+            </div>
+            <div className={cssStyles.anomalyOverviewGrid}>
+              <div className={cssStyles.anomalyOverviewCard}>
+                <span className={cssStyles.anomalyOverviewLabel}>Total</span>
+                <span className={cssStyles.anomalyOverviewValue}>{anomalySummary.total}</span>
+              </div>
+              <div className={cssStyles.anomalyOverviewCard}>
+                <span className={cssStyles.anomalyOverviewLabel}>Critical</span>
+                <span className={cssStyles.anomalyOverviewValueCritical}>{anomalySummary.critical}</span>
+              </div>
+              <div className={cssStyles.anomalyOverviewCard}>
+                <span className={cssStyles.anomalyOverviewLabel}>Warning</span>
+                <span className={cssStyles.anomalyOverviewValueWarning}>{anomalySummary.warning}</span>
+              </div>
+              <div className={cssStyles.anomalyOverviewCard}>
+                <span className={cssStyles.anomalyOverviewLabel}>Info</span>
+                <span className={cssStyles.anomalyOverviewValueInfo}>{anomalySummary.info}</span>
+              </div>
+            </div>
+            {topAnomalyTypes.length > 0 && (
+              <div className={cssStyles.anomalyTypesRow}>
+                <span className={cssStyles.anomalyTypesLabel}>Top types:</span>
+                <div className={cssStyles.anomalyTypeChips}>
+                  {topAnomalyTypes.map(([type, count]) => (
+                    <span key={type} className={cssStyles.anomalyTypeChip}>
+                      {type}: {count}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className={cssStyles.anomalyTimeline}>
+              <Text variant="subtitle" style={{ margin: "0 0 0.5rem 0" }}>
+                Grouped timeline
+              </Text>
+              <ul className={cssStyles.anomalyTimelineList}>
+                {anomalyGroups.map((group) => (
+                  <li key={group.timestamp} className={cssStyles.anomalyTimelineItem}>
+                    <div className={cssStyles.anomalyTimelineHeader}>
+                      <span className={cssStyles.anomalyListTime}>{group.label}</span>
+                      <span className={cssStyles.anomalyTimelineTotal}>
+                        {group.total} event{group.total > 1 ? "s" : ""}
+                      </span>
+                      <span className={cssStyles.anomalySeverityBadges}>
+                        {group.counts.critical > 0 && (
+                          <span className={cssStyles.anomalyBadgeCritical}>
+                            Critical: {group.counts.critical}
+                          </span>
+                        )}
+                        {group.counts.warning > 0 && (
+                          <span className={cssStyles.anomalyBadgeWarning}>
+                            Warning: {group.counts.warning}
+                          </span>
+                        )}
+                        {group.counts.info > 0 && (
+                          <span className={cssStyles.anomalyBadgeInfo}>
+                            Info: {group.counts.info}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <ul className={cssStyles.anomalyListMessages}>
+                      {group.items.map((item) => (
+                        <li key={item.id} className={cssStyles.anomalyMessage}>
+                          <span
+                            className={
+                              item.severity === "critical"
+                                ? cssStyles.anomalySeverityCritical
+                                : item.severity === "warning"
+                                  ? cssStyles.anomalySeverityWarning
+                                  : cssStyles.anomalySeverityInfo
+                            }
+                          >
+                            [{item.severity}]
+                          </span>{" "}
+                          {item.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         )}
 
