@@ -62,7 +62,7 @@ function formatShortDate(value?: string): string {
 
 function describeObjectiveMetric(key: string): string {
   const normalized = key.trim().toLowerCase();
-  if (normalized.includes("deficit")) return "Total unmet water demand across laterals; lower is better.";
+  if (normalized.includes("deficit")) return "Total unmet water demand across laterals; lower is betters.";
   if (normalized.includes("fair")) return "How evenly water is shared across laterals; higher is better.";
   if (normalized.includes("coverage")) return "Share of demand satisfied; higher is better.";
   return "Objective score for this solution.";
@@ -251,7 +251,7 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
               >
                 <div><strong>{point.label}</strong> (#{point.chronologicalNumber})</div>
                 <div>Date: {point.dateTime.date}, {point.dateTime.time}</div>
-                <div style={{ marginTop: "0.25rem" }}>{selectedObjectiveKey}: {point.value.toFixed(2)}{objectiveUnit}</div>
+                <div style={{ marginTop: "0.25rem" }}>{selectedObjectiveKey}: {point.value.toFixed(2)}</div>
                 <div style={{ marginTop: "0.15rem", fontSize: "0.72rem", color: colors.chartNeutral }}>{selectedObjectiveDescription}</div>
                 {point.deficitValue != null && !/deficit/i.test(selectedObjectiveKey) && (
                   <>

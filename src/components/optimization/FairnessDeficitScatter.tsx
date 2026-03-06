@@ -38,7 +38,7 @@ function normalizeDeficitForX(value: number): number {
 }
 
 function normalizeFairnessForY(value: number): number {
-  return -Math.abs(value);
+  return Math.abs(value);
 }
 
 function getObjectiveValue(
@@ -117,9 +117,9 @@ export default function FairnessDeficitScatter({
   }
 
   return (
-    <div style={{ width: "100%", height }}>
+    <div style={{ width: "100%", height, marginBottom: 25, }}>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={linePoints} margin={{ top: 16, right: 24, bottom: 42, left: 58 }}>
+        <ComposedChart data={linePoints} margin={{ top: 16, right: 24, bottom: 42, left: 36 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={colors.borderMedium} />
           <XAxis
             type="number"
@@ -144,11 +144,13 @@ export default function FairnessDeficitScatter({
             axisLine={{ stroke: colors.chartAxis }}
             tickFormatter={(value: number) => value.toFixed(2)}
             domain={fairnessDomain}
+            reversed={true}
             label={{
               value: "Fairness (Higher is Better)",
               angle: -90,
               position: "left",
-              offset: 2,
+              offset: 12,
+              dy: -80,
               style: { fontSize: 12, fontWeight: 600, fill: colors.textPrimary },
             }}
           />
@@ -172,9 +174,7 @@ export default function FairnessDeficitScatter({
                 >
                   <div><strong>{point.solutionLabel}</strong> (#{point.solutionNumber})</div>
                   <div style={{ marginTop: "0.25rem" }}>Deficit: {point.deficit.toFixed(4)}</div>
-                  <div style={{ marginTop: "0.1rem", fontSize: "0.75rem", color: colors.textBody }}>Total unmet demand; lower is better.</div>
                   <div style={{ marginTop: "0.25rem" }}>Fairness: {point.fairness.toFixed(4)}</div>
-                  <div style={{ marginTop: "0.1rem", fontSize: "0.75rem", color: colors.textBody }}>Evenness of sharing; higher is better.</div>
                 </div>
               );
             }}
@@ -211,12 +211,11 @@ export default function FairnessDeficitScatter({
       {variant === "full" && (
         <p
           style={{
-            margin: "0.5rem 0 0",
-            color: colors.textBody,
-            fontSize: "0.84rem",
+            color: colors.textMuted,
+            fontSize: "0.64rem",
           }}
         >
-          Better solutions trend toward the upper-left (higher fairness, lower deficit).
+          *Better solutions trend toward the lower-left (higher fairness, lower deficit).
         </p>
       )}
     </div>
