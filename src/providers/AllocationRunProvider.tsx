@@ -263,10 +263,10 @@ export default function AllocationRunProvider({ children }: { children: ReactNod
                           <tr key={canal._id ?? `${canal.mainLateralId}-${index}`}>
                             <td>{prettifyName(canal.mainLateralId)}</td>
                             <td className={cssStyles.barangayCell}>{barangayDisplay}</td>
-                            <td>{formatNumber(canal.tbsByDamHa)}</td>
-                            <td>{formatNumber(canal.netWaterDemandM3)}</td>
-                            <td>{formatNumber(canal.seepageM3)}</td>
-                            <td>{formatNumber(canal.lossFactorPercentage)}</td>
+                            <td>{formatNumber(canal.tbsByDamHa, 2)}</td>
+                            <td>{formatNumber(canal.netWaterDemandM3, 0)}</td>
+                            <td>{formatNumber(canal.seepageM3, 0)}</td>
+                            <td>{formatNumber(canal.lossFactorPercentage, 0)}</td>
                           </tr>
                         );
                       })
