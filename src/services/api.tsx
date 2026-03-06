@@ -310,6 +310,25 @@ export const selectOptimizationSolution = async (runId: string, solutionId: stri
     return res.data;
 }
 
+export type CanalOverviewItem = {
+    mainLateralId?: string;
+    tbsByDamHa?: number;
+    netWaterDemandM3?: number;
+    seepageM3?: number;
+    lossFactorPercentage?: number;
+    coverage?: Array<{ barangay: string; fractionalAreaHa?: number }>;
+};
+
+export type CanalOverviewResponse = {
+    overview?: Record<string, unknown>;
+    canals: CanalOverviewItem[];
+};
+
+export const getCanalOverview = async (): Promise<CanalOverviewResponse> => {
+    const res = await api.get<CanalOverviewResponse>('/canal/overview');
+    return res.data;
+};
+
 export const getSelectedSolutionsHistory = async (params?: {
     year?: number;
     scenario?: 'dry season' | 'wet season';

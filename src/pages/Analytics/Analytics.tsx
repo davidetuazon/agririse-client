@@ -103,19 +103,37 @@ function TrendOverview({ trend, unit }: { trend: TrendPayload; unit: string }) {
       </Text>
     );
   }
+  const dir = typeof trend.direction === "string" ? trend.direction.toLowerCase() : "";
   const directionLabel =
-    trend.direction === "up"
+    dir === "up" || dir === "increasing"
       ? "Increasing"
-      : trend.direction === "down"
+      : dir === "down" || dir === "decreasing"
         ? "Decreasing"
-        : trend.direction === "stable"
+        : dir === "stable"
           ? "Stable"
           : trend.direction ?? "—";
+  const directionColorClass =
+    dir === "up" || dir === "increasing"
+      ? cssStyles.trendDirectionUp
+      : dir === "down" || dir === "decreasing"
+        ? cssStyles.trendDirectionDown
+        : dir === "stable"
+          ? cssStyles.trendDirectionStable
+          : "";
+  const confidenceStr = typeof trend.confidence === "string" ? trend.confidence.toLowerCase() : "";
+  const confidenceColorClass =
+    confidenceStr === "high"
+      ? cssStyles.trendConfidenceHigh
+      : confidenceStr === "medium"
+        ? cssStyles.trendConfidenceMedium
+        : confidenceStr === "low"
+          ? cssStyles.trendConfidenceLow
+          : "";
   return (
     <div className={cssStyles.trendOverview}>
       <div className={cssStyles.trendRow}>
         <span className={cssStyles.trendLabel}>Direction</span>
-        <span className={cssStyles.trendValue}>{directionLabel}</span>
+        <span className={`${cssStyles.trendValue} ${directionColorClass}`}>{directionLabel}</span>
       </div>
       {trend.percentChange != null && Number.isFinite(trend.percentChange) && (
         <div className={cssStyles.trendRow}>
@@ -131,13 +149,13 @@ function TrendOverview({ trend, unit }: { trend: TrendPayload; unit: string }) {
           <span className={cssStyles.trendLabel}>Slope</span>
           <span className={cssStyles.trendValue}>
             {(trend.slope >= 0 ? "+" : "") + trend.slope.toFixed(4)}
-            {unit ? ` ${unit}/period` : ""}
+            {unit ? ` ${unit}/bucket` : ""}
           </span>
         </div>
       )}
       {trend.projection != null && Number.isFinite(trend.projection) && (
         <div className={cssStyles.trendRow}>
-          <span className={cssStyles.trendLabel}>Projection (next period)</span>
+          <span className={cssStyles.trendLabel}>Projection (next bucket)</span>
           <span className={cssStyles.trendValue}>
             {trend.projection.toFixed(2)}
             {unit}
@@ -153,7 +171,7 @@ function TrendOverview({ trend, unit }: { trend: TrendPayload; unit: string }) {
       {trend.confidence != null && (
         <div className={cssStyles.trendRow}>
           <span className={cssStyles.trendLabel}>Confidence</span>
-          <span className={cssStyles.trendValue}>
+          <span className={`${cssStyles.trendValue} ${confidenceColorClass}`}>
             {typeof trend.confidence === "number" && Number.isFinite(trend.confidence)
               ? `${(trend.confidence * 100).toFixed(1)}%`
               : String(trend.confidence)}
@@ -753,19 +771,6 @@ export default function Analytics() {
               </div>
             </div>
 
-            {(() => {
-              const trend = (metaData as any)?.trend;
-              console.log("[Analytics render] metaData.trend =", trend, "show section =", trend != null);
-              return trend != null ? (
-                <div className={cssStyles.trendSection}>
-                  <Text variant="title" style={{ margin: 0 }}>
-                    Trend
-                  </Text>
-                  <TrendOverview trend={trend} unit={unit} />
-                </div>
-              ) : null;
-            })()}
-
             <div className={cssStyles.dateRangeBlock}>
               <DateRangeControls extra={
                 <>
@@ -999,6 +1004,15 @@ export default function Analytics() {
           </div>
         ) : null}
       </Section>
+      )}
+
+      {(latest || loading) && (metaData as any)?.trend != null && (
+        <Section>
+          <div className={cssStyles.trendSection}>
+            <h3 className={cssStyles.trendSectionTitle}>Trend</h3>
+            <TrendOverview trend={(metaData as any).trend} unit={unit} />
+          </div>
+        </Section>
       )}
 
       {modalOpen && hasData && metaData && (
