@@ -61,12 +61,22 @@ function normalizeSeverity(value?: string): AnomalySeverity {
 function getDataRangeGapMessages(
   data: { timestamp: string }[] | null,
   startDate: string,
-  endDate: string
+  endDate: string,
+  options?: { granularity?: string; requestEndDate?: string }
 ): string[] {
   if (!data || data.length === 0) return [];
   const dates = data.map((r) => new Date(r.timestamp).toISOString().slice(0, 10));
   const first = dates.reduce((a, b) => (a < b ? a : b));
-  const last = dates.reduce((a, b) => (a > b ? a : b));
+  let last = dates.reduce((a, b) => (a > b ? a : b));
+  // With weekly granularity, bucket timestamp is start-of-week (e.g. Sun 12/28); data in that bucket goes through end of week (e.g. 12/31). Use end-of-week so "last recorded" matches History.
+  if (options?.granularity === "weekly" && last) {
+    const endOfWeek = new Date(last + "T00:00:00.000Z");
+    endOfWeek.setUTCDate(endOfWeek.getUTCDate() + 6);
+    const endOfWeekStr = endOfWeek.toISOString().slice(0, 10);
+    last = options.requestEndDate && endOfWeekStr > options.requestEndDate
+      ? options.requestEndDate
+      : endOfWeekStr;
+  }
   const messages: string[] = [];
   if (first > startDate || last < endDate) {
     messages.push(`Last data recorded is at ${formatDateLabel(last)}`);
@@ -374,7 +384,6 @@ export default function Analytics() {
 
     setData(allSeries);
     setMetaData(meta);
-    console.log("[Analytics] metaData set, trend present:", meta?.trend != null, "trend =", meta?.trend);
     setLoading(false);
   }, [sensorType, startDate, effectiveEndDate]);
 
@@ -523,8 +532,14 @@ export default function Analytics() {
   const dataPointCount = data?.length ?? 0;
 
   const dataRangeGapMessages = useMemo(
-    () => (endDate ? getDataRangeGapMessages(data ?? [], startDate, endDate) : []),
-    [data, startDate, endDate]
+    () =>
+      endDate
+        ? getDataRangeGapMessages(data ?? [], startDate, endDate, {
+            granularity: metaData?.granularity,
+            requestEndDate: effectiveEndDate,
+          })
+        : [],
+    [data, startDate, endDate, metaData?.granularity, effectiveEndDate]
   );
   const showDataRangeGapPrompt = dataRangeGapMessages.length > 0;
 

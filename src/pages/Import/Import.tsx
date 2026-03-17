@@ -68,6 +68,7 @@ function normalizeJsonToImportRows(parsed: unknown): ImportRow[] {
 export default function Import() {
   const navigate = useNavigate();
   const [sensorType, setSensorType] = useState<SensorType>("damWaterLevel");
+  const [damWaterLevelInput, setDamWaterLevelInput] = useState<"elevation_m" | "%">("elevation_m");
   const [inputMode, setInputMode] = useState<"file" | "json">("file");
   const [jsonInput, setJsonInput] = useState("");
   const [parsedRows, setParsedRows] = useState<ImportRow[]>([]);
@@ -152,7 +153,11 @@ export default function Import() {
     resetMessages();
     setLoadingPreview(true);
     try {
-      const response = await processImportData({ data: parsedRows, sensorType });
+      const response = await processImportData({
+        data: parsedRows,
+        sensorType,
+        damWaterLevelInput: sensorType === "damWaterLevel" ? damWaterLevelInput : undefined,
+      });
       if (response?.error) {
         setPreview(null);
         const raw = typeof response.error === "string" ? response.error : JSON.stringify(response.error);
@@ -203,6 +208,7 @@ export default function Import() {
               value={sensorType}
               onChange={(e) => {
                 setSensorType(e.target.value as SensorType);
+                setDamWaterLevelInput("elevation_m");
                 setPreview(null);
                 resetMessages();
               }}
@@ -214,6 +220,24 @@ export default function Import() {
               ))}
             </select>
           </label>
+
+          {sensorType === "damWaterLevel" && (
+            <label className={cssStyles.controlItem}>
+              <span className={cssStyles.controlLabel}>Dam water level values are</span>
+              <select
+                className={cssStyles.select}
+                value={damWaterLevelInput}
+                onChange={(e) => {
+                  setDamWaterLevelInput(e.target.value as "elevation_m" | "%");
+                  setPreview(null);
+                  resetMessages();
+                }}
+              >
+                <option value="elevation_m">Reservoir elevation (m)</option>
+                <option value="%">Percent (%)</option>
+              </select>
+            </label>
+          )}
 
           <div className={cssStyles.modeToggle}>
             <Button

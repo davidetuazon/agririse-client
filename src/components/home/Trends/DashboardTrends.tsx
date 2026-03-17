@@ -50,16 +50,14 @@ function formatUtc(ts?: string | null): string {
   return `${d.toISOString().replace("T", " ").slice(0, 16)} UTC`;
 }
 
-function formatTickDate(ts?: string | null): string {
-  if (!ts) return "—";
-  const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return "—";
-  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
-}
-
 function formatNumber(value?: number | null): string {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   return value.toFixed(2);
+}
+
+function formatSignedNumber(value?: number | null): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  return `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
 }
 
 function getChangeColor(delta?: number | null): string {
@@ -229,6 +227,7 @@ export default function DashboardTrends({ data }: Props) {
       fill: string;
     }>,
     unit: string,
+    sensorLabel: string,
     previousValue: number,
     currentValue: number
   ) => {
@@ -252,16 +251,63 @@ export default function DashboardTrends({ data }: Props) {
             tickFormatter={(v) => (typeof v === "number" ? `${v.toFixed(1)}${unit}` : String(v))}
           />
           <Tooltip
-            labelFormatter={(label, payload) => {
-              const p = payload?.[0]?.payload as
-                | { name?: string; timestamp?: string | null }
+            cursor={{ fill: "rgba(15, 23, 42, 0.06)" }}
+            allowEscapeViewBox={{ x: false, y: true }}
+            reverseDirection={{ x: true, y: true }}
+            wrapperStyle={{ zIndex: 2000, pointerEvents: "none" }}
+            content={({ active, payload }) => {
+              const point = payload?.[0]?.payload as
+                | { name?: string; timestamp?: string | null; value?: number }
                 | undefined;
-              if (!p) return "";
-              return `${p.name ?? ""} - ${formatUtc(p.timestamp ?? null)}`;
+              if (!active || !point) return null;
+
+              const value =
+                typeof point.value === "number" && Number.isFinite(point.value)
+                  ? point.value
+                  : null;
+              const comparedPoint = chartData.find((item) => item.name !== point.name);
+              const comparedValue = typeof comparedPoint?.value === "number" ? comparedPoint.value : null;
+              const contextualDelta =
+                value != null && comparedValue != null ? value - comparedValue : null;
+              const contextualDeltaPct =
+                contextualDelta != null && comparedValue !== 0
+                  ? (contextualDelta / comparedValue) * 100
+                  : null;
+
+              return (
+                <div
+                  style={{
+                    background: "#fff",
+                    border: `1px solid ${CHART_COLORS.grid}`,
+                    borderRadius: "10px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                    padding: "0.65rem 0.75rem",
+                    fontSize: "0.78rem",
+                    minWidth: "240px",
+                    maxWidth: "300px",
+                  }}
+                >
+                  <div><strong>{sensorLabel}</strong></div>
+                  <div style={{ marginTop: "0.2rem" }}>
+                    Reading point: <strong>{point.name ?? "—"}</strong>
+                  </div>
+                  <div style={{ color: CHART_COLORS.axis }}>Recorded: {formatUtc(point.timestamp ?? null)}</div>
+                  <div style={{ marginTop: "0.2rem" }}>
+                    Value: {value != null ? `${value.toFixed(2)}${unit}` : "—"}
+                  </div>
+                  <div style={{ marginTop: "0.35rem", paddingTop: "0.35rem", borderTop: `1px solid ${CHART_COLORS.grid}` }}>
+                    <div style={{ color: CHART_COLORS.axis }}>
+                      Reference: <strong>{comparedPoint?.name ?? "—"}</strong>
+                    </div>
+                    <div style={{ color: CHART_COLORS.axis }}>
+                      Difference: {formatSignedNumber(contextualDelta)}
+                      {contextualDelta != null ? unit : ""}
+                      {contextualDeltaPct != null ? ` (${formatSignedNumber(contextualDeltaPct)}%)` : ""}
+                    </div>
+                  </div>
+                </div>
+              );
             }}
-            formatter={(value: unknown) =>
-              typeof value === "number" ? `${value.toFixed(2)}${unit}` : "—"
-            }
           />
           <Bar
             dataKey="value"
@@ -315,6 +361,7 @@ export default function DashboardTrends({ data }: Props) {
             renderChart(
               previewChartData, 
               previewUnit, 
+              SENSOR_TYPES[previewSensor].label,
               previewReading?.previousValue ?? 0, 
               previewReading?.value ?? 0
             )
@@ -401,6 +448,7 @@ export default function DashboardTrends({ data }: Props) {
                 renderChart(
                   selectedChartData, 
                   selectedUnit, 
+                  selectedLabel,
                   selectedReading.previousValue, 
                   selectedReading.value
                 )

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../providers/AuthProvider";
-import { getSelectedSolutionsHistory, latest, me } from "../../services/api";
+import { getHistory, getNextForecast, getSelectedSolutionsHistory, latest, me } from "../../services/api";
 import type { SelectedSolutionHistoryItem } from "../../services/api";
+import type { ForecastReading } from "../../services/api";
 import Text from "../../components/commons/Text";
 import Section from "../../components/commons/Section";
 import Dashboard from "../../components/home/Dashboard/Dashboard";
@@ -17,6 +18,7 @@ type IoTReadings = {
         unit: string,
         recordedAt: string,
         sensorType: string,
+        source?: string,
         delta?: number | null,
         percentChange?: number | null,
         previousValue?: number | null,
@@ -60,6 +62,7 @@ type IoTReadings = {
 
 export default function Home() {
     const [latestReadings, setLatestReadings] = useState<IoTReadings | null>(null);
+    const [nextDamForecast, setNextDamForecast] = useState<ForecastReading | null>(null);
     const [locality, setLocality] = useState<any>();
     const [optimizationHistory, setOptimizationHistory] = useState<SelectedSolutionHistoryItem[]>([]);
     const [optimizationLoading, setOptimizationLoading] = useState(true);
@@ -78,11 +81,40 @@ export default function Home() {
             const loggedUser = await me();
             setUser(loggedUser);
 
-            const res = await latest();
-            setLatestReadings(res.readings);
-            setLocality(res.locality);
+            const todayIso = new Date().toISOString().slice(0, 10);
+            const startIso = new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+            const [latestRes, forecastRes, latestDamAnyRes] = await Promise.all([
+                latest(),
+                getNextForecast('damWaterLevel'),
+                getHistory({ sensorType: 'damWaterLevel', startDate: startIso, endDate: todayIso, limit: 1, cursor: '' }),
+            ]);
+
+            const bestDam = latestDamAnyRes?.data?.[0];
+            const mergedReadings: IoTReadings = {
+                ...latestRes.readings,
+                damWaterLevel: bestDam
+                    ? {
+                        ...(latestRes.readings?.damWaterLevel ?? {}),
+                        value: bestDam.value,
+                        unit: bestDam.unit ?? (latestRes.readings?.damWaterLevel?.unit ?? '%'),
+                        recordedAt: bestDam.recordedAt,
+                        sensorType: latestRes.readings?.damWaterLevel?.sensorType ?? 'Dam Water Level',
+                        source: bestDam.source ?? latestRes.readings?.damWaterLevel?.source,
+                    }
+                    : latestRes.readings?.damWaterLevel,
+            };
+
+            setLatestReadings(mergedReadings);
+            setLocality(latestRes.locality);
+            const nextForecast =
+                forecastRes && typeof (forecastRes as any)?.error !== 'undefined'
+                    ? null
+                    : (forecastRes as ForecastReading | null);
+            setNextDamForecast(nextForecast);
         } catch (e) {
             setLatestReadings(null);
+            setNextDamForecast(null);
             console.error(e);
         }
     }
@@ -143,7 +175,10 @@ export default function Home() {
                     </span>
                 </div>
                 <div>
-                    <Dashboard data={latestReadings} />
+                    <Dashboard
+                        data={latestReadings}
+                        nextForecast={{ damWaterLevel: nextDamForecast }}
+                    />
                 </div>
             </Section>
 

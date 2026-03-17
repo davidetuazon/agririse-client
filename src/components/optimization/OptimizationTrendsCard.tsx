@@ -35,6 +35,11 @@ function normalizeNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function formatSignedNumber(value?: number | null): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  return `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
+}
+
 function formatDateTime(value?: string): { date: string; time: string } {
   if (!value) return { date: "—", time: "—" };
   const date = new Date(value);
@@ -58,14 +63,6 @@ function formatShortDate(value?: string): string {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return "—";
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function describeObjectiveMetric(key: string): string {
-  const normalized = key.trim().toLowerCase();
-  if (normalized.includes("deficit")) return "Total unmet water demand across laterals; lower is betters.";
-  if (normalized.includes("fair")) return "How evenly water is shared across laterals; higher is better.";
-  if (normalized.includes("coverage")) return "Share of demand satisfied; higher is better.";
-  return "Objective score for this solution.";
 }
 
 export default function OptimizationTrendsCard({ history, loading }: Props) {
@@ -120,7 +117,6 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
     : undefined;
   const objectiveUnit = selectedObjective?.unit ? ` (${selectedObjective.unit})` : "";
   const objectiveDirection = selectedObjective?.direction;
-  const selectedObjectiveDescription = describeObjectiveMetric(selectedObjectiveKey);
 
   const latestObjectiveValue = normalizeNumber(selectedObjective?.value);
   const previousObjectiveValue = normalizeNumber(
@@ -169,15 +165,6 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
           item.solutionSnapshot?.objectiveValues?.[selectedObjectiveKey]?.value
         );
         if (value == null) return null;
-        const objectiveValues = item.solutionSnapshot?.objectiveValues ?? {};
-        const deficitEntry = Object.entries(objectiveValues).find(([key]) =>
-          /deficit/i.test(key)
-        );
-        const fairnessEntry = Object.entries(objectiveValues).find(([key]) =>
-          /fair/i.test(key)
-        );
-        const deficitValue = normalizeNumber(deficitEntry?.[1]?.value);
-        const fairnessValue = normalizeNumber(fairnessEntry?.[1]?.value);
 
         return {
           key: item._id,
@@ -188,10 +175,6 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
           createdAt: item.createdAt,
           dateTime: formatDateTime(item.createdAt),
           chronologicalNumber: index + 1,
-          deficitLabel: deficitEntry?.[0] ?? "Deficit",
-          deficitValue,
-          fairnessLabel: fairnessEntry?.[0] ?? "Fairness",
-          fairnessValue,
         };
       })
       .filter((point): point is NonNullable<typeof point> => point != null)
@@ -224,20 +207,31 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
         />
         <Tooltip
           cursor={{ fill: "rgba(15, 23, 42, 0.06)" }}
+          allowEscapeViewBox={{ x: false, y: true }}
+          reverseDirection={{ x: true, y: true }}
+          wrapperStyle={{ zIndex: 2000, pointerEvents: "none" }}
           content={({ active, payload }) => {
             const point = payload?.[0]?.payload as
               | {
                   label: string;
                   value: number;
+                  createdAt: string;
                   dateTime: { date: string; time: string };
                   chronologicalNumber: number;
-                  deficitLabel: string;
-                  deficitValue: number | null;
-                  fairnessLabel: string;
-                  fairnessValue: number | null;
                 }
               | undefined;
             if (!active || !point) return null;
+            const comparedPoint = chartPoints.find((item) => item.label !== point.label);
+            const comparedValue =
+              typeof comparedPoint?.value === "number" && Number.isFinite(comparedPoint.value)
+                ? comparedPoint.value
+                : null;
+            const delta =
+              typeof point.value === "number" && comparedValue != null
+                ? point.value - comparedValue
+                : null;
+            const deltaPct = delta != null && comparedValue !== 0 ? (delta / comparedValue) * 100 : null;
+
             return (
               <div
                 style={{
@@ -245,26 +239,29 @@ export default function OptimizationTrendsCard({ history, loading }: Props) {
                   border: `1px solid ${colors.border}`,
                   borderRadius: "10px",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                  padding: "0.5rem 0.65rem",
+                  padding: "0.65rem 0.75rem",
                   fontSize: "0.78rem",
+                  minWidth: "240px",
+                  maxWidth: "300px",
                 }}
               >
-                <div><strong>{point.label}</strong> (#{point.chronologicalNumber})</div>
-                <div>Date: {point.dateTime.date}, {point.dateTime.time}</div>
-                <div style={{ marginTop: "0.25rem" }}>{selectedObjectiveKey}: {point.value.toFixed(2)}</div>
-                <div style={{ marginTop: "0.15rem", fontSize: "0.72rem", color: colors.chartNeutral }}>{selectedObjectiveDescription}</div>
-                {point.deficitValue != null && !/deficit/i.test(selectedObjectiveKey) && (
-                  <>
-                    <div style={{ marginTop: "0.25rem" }}>{point.deficitLabel}: {point.deficitValue.toFixed(2)}</div>
-                    <div style={{ marginTop: "0.1rem", fontSize: "0.72rem", color: colors.chartNeutral }}>Total unmet demand; lower is better.</div>
-                  </>
-                )}
-                {point.fairnessValue != null && !/fair/i.test(selectedObjectiveKey) && (
-                  <>
-                    <div style={{ marginTop: "0.25rem" }}>{point.fairnessLabel}: {point.fairnessValue.toFixed(2)}</div>
-                    <div style={{ marginTop: "0.1rem", fontSize: "0.72rem", color: colors.chartNeutral }}>Evenness of sharing; higher is better.</div>
-                  </>
-                )}
+                <div><strong>{selectedObjectiveKey || "Objective"}</strong></div>
+                <div style={{ marginTop: "0.2rem" }}>
+                  Reading point: <strong>{point.label}</strong> (#{point.chronologicalNumber})
+                </div>
+                <div style={{ color: colors.chartNeutral }}>
+                  Recorded: {point.dateTime.date}, {point.dateTime.time}
+                </div>
+                <div style={{ marginTop: "0.2rem" }}>Value: {point.value.toFixed(2)}</div>
+                <div style={{ marginTop: "0.35rem", paddingTop: "0.35rem", borderTop: `1px solid ${colors.border}` }}>
+                  <div style={{ color: colors.chartNeutral }}>
+                    Reference: <strong>{comparedPoint?.label ?? "—"}</strong>
+                  </div>
+                  <div style={{ color: colors.chartNeutral }}>
+                    Difference: {formatSignedNumber(delta)}
+                    {deltaPct != null ? ` (${formatSignedNumber(deltaPct)}%)` : ""}
+                  </div>
+                </div>
               </div>
             );
           }}

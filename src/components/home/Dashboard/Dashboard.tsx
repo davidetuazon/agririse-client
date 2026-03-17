@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getHistory } from "../../../services/api";
+import type { ForecastReading } from "../../../services/api";
 import { SENSOR_TYPES } from "../../../utils/constants";
 import SensorMetricCard from "./SensorMetricCard";
 import cssStyles from "./Dashboard.module.css";
@@ -11,6 +12,7 @@ type IoTReadings = {
         unit: string,
         recordedAt: string,
         sensorType: string,
+        source?: string,
     },
     humidity: {
         value: number,
@@ -35,6 +37,9 @@ type IoTReadings = {
 type Props = {
     style?: React.CSSProperties,
     data: IoTReadings | null,
+    nextForecast?: {
+        damWaterLevel?: ForecastReading | null,
+    },
 }
 
 type SensorType = 'damWaterLevel' | 'humidity' | 'rainfall' | 'temperature';
@@ -42,6 +47,7 @@ type SensorType = 'damWaterLevel' | 'humidity' | 'rainfall' | 'temperature';
 export default function Dashboard(props: Props) {
     const navigate = useNavigate();
     const { damWaterLevel, humidity, rainfall, temperature } = props.data || {};
+    const damForecast = props.nextForecast?.damWaterLevel ?? null;
     const [deltas, setDeltas] = useState<Record<SensorType, number | null>>({
         damWaterLevel: null,
         humidity: null,
@@ -137,6 +143,10 @@ export default function Dashboard(props: Props) {
                         unit={data?.unit ?? fallback.unit}
                         recordedAt={data?.recordedAt}
                         delta={deltas[type as SensorType]}
+                        dataSource={type === 'damWaterLevel' ? data?.source : undefined}
+                        forecastValue={type === 'damWaterLevel' ? damForecast?.value : undefined}
+                        forecastUnit={type === 'damWaterLevel' ? damForecast?.unit : undefined}
+                        forecastRecordedAt={type === 'damWaterLevel' ? damForecast?.recordedAt : undefined}
                         onClick={() => setSelectedSensor(type as SensorType)}
                     />
                 ))}

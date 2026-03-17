@@ -526,6 +526,7 @@ export default function History() {
                             const nextValue = idx === data.length - 1 ? null : data[idx + 1].value;
                             const convertedNextValue = nextValue !== null ? convertDisplayValue(nextValue) : null;
                             const delta: number | '-' = convertedNextValue !== null ? convertedValue - convertedNextValue : '-';
+                            const source = typeof d.source === 'string' ? d.source : '—';
 
                             return (
                             <div key={d._id} style={styles.gridContainer}>
@@ -535,7 +536,10 @@ export default function History() {
                                     borderLeft: `2px solid #001E2B`,
                                 }}>
                                     <Text variant="subtitle">
-                                        {new Date(d.recordedAt).toISOString().replace('T', ' ').slice(0,19)}
+                                        {new Date(d.recordedAt).toISOString().replace('T', ' ').slice(0,19)}{" "}
+                                        <span style={{ fontSize: '0.75rem', color: source === 'forecast' ? '#0f766e' : '#2F6F73' }}>
+                                            [{source}]
+                                        </span>
                                     </Text>
                                 </div>
                                 <div style={{
