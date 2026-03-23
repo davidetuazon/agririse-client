@@ -16,6 +16,10 @@ type Props = {
     unit?: string;
     recordedAt?: string;
     delta?: number | null;
+    dataSource?: string;
+    forecastValue?: number;
+    forecastUnit?: string;
+    forecastRecordedAt?: string;
     onClick?: () => void;
 };
 
@@ -50,8 +54,31 @@ const CARD_CLASS: Record<SensorType, string> = {
 };
 
 export default function SensorMetricCard(props: Props) {
-    const { sensorType, label, value, unit, recordedAt, delta, onClick } = props;
+    const {
+        sensorType,
+        label,
+        value,
+        unit,
+        recordedAt,
+        delta,
+        dataSource,
+        forecastValue,
+        forecastUnit,
+        forecastRecordedAt,
+        onClick
+    } = props;
     const formattedValue = typeof value === 'number' ? value.toFixed(2) : '--';
+    const formattedForecastValue = typeof forecastValue === 'number' ? forecastValue.toFixed(2) : null;
+    const forecastFriendlyDate = forecastRecordedAt
+        ? (() => {
+            const d = new Date(forecastRecordedAt);
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            if (d.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        })()
+        : null;
     const deltaLabel = typeof delta === 'number'
         ? `${delta >= 0 ? 'Higher' : 'Lower'} by ${Math.abs(delta).toFixed(2)}${unit ?? ''}`
         : 'No change data';
@@ -60,12 +87,24 @@ export default function SensorMetricCard(props: Props) {
             ? cssStyles.deltaUp
             : cssStyles.deltaDown
         : cssStyles.deltaNeutral;
+    const normalizeSource = (source?: string) => {
+        if (!source) return null;
+        const lower = source.toLowerCase();
+        if (lower === 'import') return 'Imported';
+        if (lower === 'iot') return 'IoT';
+        if (lower === 'forecast') return 'Forecasted';
+        if (lower === 'mock') return 'Mock';
+        return source;
+    };
+    const currentSourceLabel = normalizeSource(dataSource);
 
+    const tooltipTitle = `${label} – Click for options`;
     return (
         <button
             type="button"
             className={`${cssStyles.card} ${CARD_CLASS[sensorType] ?? ""}`}
             onClick={onClick}
+            title={tooltipTitle}
         >
             <div className={cssStyles.header}>
                 <span className={cssStyles.icon}>{getSensorIcon(sensorType)}</span>
@@ -82,11 +121,29 @@ export default function SensorMetricCard(props: Props) {
                     {deltaLabel}
                 </span>
             </div>
+            {currentSourceLabel && (
+                <div className={cssStyles.sourceRow}>
+                    <span className={cssStyles.sourceBadge}>Source: {currentSourceLabel}</span>
+                </div>
+            )}
             <span className={cssStyles.timestamp}>
                 {recordedAt
                     ? `Updated ${new Date(recordedAt).toISOString().replace('T', ' ').slice(0, 19)} UTC`
                     : 'No recent updates'}
             </span>
+            {formattedForecastValue && forecastFriendlyDate && (
+                <div className={cssStyles.forecastBlock}>
+                    <div className={cssStyles.forecastLabel}>
+                        {forecastFriendlyDate === 'Tomorrow' ? "Tomorrow's forecast" : `Forecast for ${forecastFriendlyDate}`}
+                    </div>
+                    <div className={cssStyles.forecastValueRow}>
+                        <span className={cssStyles.forecastValue}>
+                            {formattedForecastValue}
+                            <span className={cssStyles.forecastUnit}>{forecastUnit ?? unit}</span>
+                        </span>
+                    </div>
+                </div>
+            )}
         </button>
     );
 }

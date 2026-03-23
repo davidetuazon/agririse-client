@@ -46,6 +46,24 @@ export const latest = async () => {
     }
 }
 
+export type ForecastReading = {
+    sensorType: string;
+    value: number;
+    unit: string;
+    source: string;
+    recordedAt: string;
+};
+
+export const getNextForecast = async (sensorType = 'damWaterLevel') => {
+    try {
+        const res = await api.get('/forecast/next', { params: { sensorType } });
+        return res.data as ForecastReading;
+    } catch (e: any) {
+        if (e.response?.data?.error) return { data: null, error: e.response.data.error };
+        return { data: null, error: e.message || 'Unknown error occurred' };
+    }
+}
+
 export const getAnalytics = async (
     {
         sensorType,
@@ -159,17 +177,19 @@ export type ImportRow = {
     [key: string]: unknown;
 };
 
+export type ProcessImportDataParams = {
+    data: ImportRow[];
+    sensorType: string;
+    damWaterLevelInput?: 'elevation_m' | '%';
+};
+
 export const processImportData = async (
-    {
-        data,
-        sensorType,
-    }: {
-        data: ImportRow[];
-        sensorType: string;
-    }
+    { data, sensorType, damWaterLevelInput }: ProcessImportDataParams
 ) => {
     try {
-        const res = await api.post('/iot/data/import', { data, sensorType });
+        const body: { data: ImportRow[]; sensorType: string; damWaterLevelInput?: 'elevation_m' | '%' } = { data, sensorType };
+        if (damWaterLevelInput) body.damWaterLevelInput = damWaterLevelInput;
+        const res = await api.post('/iot/data/import', body);
         return res.data;
     } catch (e: any) {
         if (e.response?.data?.error) return { data: null, error: e.response.data.error };
@@ -309,6 +329,25 @@ export const selectOptimizationSolution = async (runId: string, solutionId: stri
     });
     return res.data;
 }
+
+export type CanalOverviewItem = {
+    mainLateralId?: string;
+    tbsByDamHa?: number;
+    netWaterDemandM3?: number;
+    seepageM3?: number;
+    lossFactorPercentage?: number;
+    coverage?: Array<{ barangay: string; fractionalAreaHa?: number }>;
+};
+
+export type CanalOverviewResponse = {
+    overview?: Record<string, unknown>;
+    canals: CanalOverviewItem[];
+};
+
+export const getCanalOverview = async (): Promise<CanalOverviewResponse> => {
+    const res = await api.get<CanalOverviewResponse>('/canal/overview');
+    return res.data;
+};
 
 export const getSelectedSolutionsHistory = async (params?: {
     year?: number;

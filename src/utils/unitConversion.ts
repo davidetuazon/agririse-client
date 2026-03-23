@@ -24,14 +24,43 @@ export type UnitOption = {
 
 // Calibration constants from environment variables
 const getCalibrationConstants = () => {
-  const maxDepthM = import.meta.env.VITE_DAM_MAX_DEPTH_M;
+  const minElevationM = import.meta.env.VITE_DAM_MIN_ELEVATION_M;
+  const maxElevationM = import.meta.env.VITE_DAM_MAX_ELEVATION_M;
+  // Back-compat: older env used VITE_DAM_MAX_DEPTH_M (previously treated as 100% meters from 0).
+  const legacyMaxDepthM = import.meta.env.VITE_DAM_MAX_DEPTH_M;
   const maxVolumeMCM = import.meta.env.VITE_DAM_MAX_VOLUME_MCM;
   
   return {
-    damMaxDepthMeters: maxDepthM ? parseFloat(maxDepthM) : null,
+    damMinElevationM: minElevationM ? parseFloat(minElevationM) : null,
+    damMaxElevationM: maxElevationM ? parseFloat(maxElevationM) : (legacyMaxDepthM ? parseFloat(legacyMaxDepthM) : null),
     damMaxVolumeMCM: maxVolumeMCM ? parseFloat(maxVolumeMCM) : null,
   };
 };
+
+/**
+ * Normalize API-returned unit string to the internal form used by conversion.
+ * Handles variants like "percent" -> "%" so history/analytics display correct conversions.
+ */
+export function normalizeSourceUnit(unit: string | null | undefined, sensorType: SensorType): string {
+  const u = (unit ?? '').trim().toLowerCase();
+  const fallbacks: Record<SensorType, string> = {
+    damWaterLevel: '%',
+    humidity: '%',
+    rainfall: 'mm',
+    temperature: '°C',
+  };
+  if (!u) return fallbacks[sensorType] ?? '';
+  switch (sensorType) {
+    case 'damWaterLevel':
+      if (u === 'percent' || u === 'pct') return '%';
+      if (u === 'm' || u === 'meters' || u === 'metre') return 'm';
+      if (u === 'ft' || u === 'feet') return 'ft';
+      if (u === 'mcm') return 'MCM';
+      return unit!.trim();
+    default:
+      return unit!.trim();
+  }
+}
 
 /**
  * Get available unit options for a sensor type, with source unit always first
@@ -78,22 +107,23 @@ export function getUnitOptions(sensorType: SensorType, sourceUnit: string): Unit
         { value: sourceUnit, label: sourceUnit }, // Source first
       ];
       
-      // Add derived units with calibration checks
+      // Add derived units with calibration checks (elevation m/ft need min/max elevation)
+      const elevationAvailable = calibration.damMaxElevationM != null;
       if (sourceUnit !== 'm') {
         damOptions.push({
           value: 'm',
-          label: 'm',
-          disabled: !calibration.damMaxDepthMeters,
-          disabledReason: !calibration.damMaxDepthMeters ? 'Missing VITE_DAM_MAX_DEPTH_M' : undefined,
+          label: 'm (elevation)',
+          disabled: !elevationAvailable,
+          disabledReason: !elevationAvailable ? 'Missing VITE_DAM_MAX_ELEVATION_M' : undefined,
         });
       }
       
       if (sourceUnit !== 'ft') {
         damOptions.push({
           value: 'ft',
-          label: 'ft',
-          disabled: !calibration.damMaxDepthMeters,
-          disabledReason: !calibration.damMaxDepthMeters ? 'Missing VITE_DAM_MAX_DEPTH_M' : undefined,
+          label: 'ft (elevation)',
+          disabled: !elevationAvailable,
+          disabledReason: !elevationAvailable ? 'Missing VITE_DAM_MAX_ELEVATION_M' : undefined,
         });
       }
       
@@ -267,6 +297,8 @@ function convertHumidity(value: number, from: string, to: string): number {
 
 function convertDamWaterLevel(value: number, from: string, to: string): number {
   const calibration = getCalibrationConstants();
+  const minElev = calibration.damMinElevationM ?? 0;
+  const maxElev = calibration.damMaxElevationM;
   
   // Convert to percentage first
   let percent: number;
@@ -275,13 +307,13 @@ function convertDamWaterLevel(value: number, from: string, to: string): number {
       percent = value;
       break;
     case 'm':
-      if (!calibration.damMaxDepthMeters) return value;
-      percent = (value / calibration.damMaxDepthMeters) * 100;
+      if (!maxElev) return value;
+      percent = ((value - minElev) / (maxElev - minElev)) * 100;
       break;
     case 'ft':
-      if (!calibration.damMaxDepthMeters) return value;
+      if (!maxElev) return value;
       const meters = value / 3.280839895;
-      percent = (meters / calibration.damMaxDepthMeters) * 100;
+      percent = ((meters - minElev) / (maxElev - minElev)) * 100;
       break;
     case 'MCM':
       if (!calibration.damMaxVolumeMCM) return value;
@@ -296,11 +328,11 @@ function convertDamWaterLevel(value: number, from: string, to: string): number {
     case '%':
       return percent;
     case 'm':
-      if (!calibration.damMaxDepthMeters) return value;
-      return (percent / 100) * calibration.damMaxDepthMeters;
+      if (!maxElev) return value;
+      return minElev + (percent / 100) * (maxElev - minElev);
     case 'ft':
-      if (!calibration.damMaxDepthMeters) return value;
-      const metersResult = (percent / 100) * calibration.damMaxDepthMeters;
+      if (!maxElev) return value;
+      const metersResult = minElev + (percent / 100) * (maxElev - minElev);
       return metersResult * 3.280839895;
     case 'MCM':
       if (!calibration.damMaxVolumeMCM) return value;
@@ -316,9 +348,9 @@ function convertDamWaterLevel(value: number, from: string, to: string): number {
 export function getCalibrationStatus() {
   const calibration = getCalibrationConstants();
   return {
-    damDepthAvailable: calibration.damMaxDepthMeters !== null,
+    damDepthAvailable: calibration.damMaxElevationM !== null,
     damVolumeAvailable: calibration.damMaxVolumeMCM !== null,
-    damMaxDepthMeters: calibration.damMaxDepthMeters,
+    damMaxDepthMeters: calibration.damMaxElevationM,
     damMaxVolumeMCM: calibration.damMaxVolumeMCM,
   };
 }

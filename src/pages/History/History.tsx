@@ -11,7 +11,7 @@ import { toCsv, downloadTextFile } from "../../utils/exportCsv";
 import { buildHistoryPdf } from "../../utils/exportPdf";
 import { SENSOR_TYPES } from "../../utils/constants";
 import ImportModal from "../../components/import/ImportModal";
-import { getUnitOptions, convertValue, getCalibrationStatus, type SensorType as UnitSensorType } from "../../utils/unitConversion";
+import { getUnitOptions, convertValue, getCalibrationStatus, normalizeSourceUnit, type SensorType as UnitSensorType } from "../../utils/unitConversion";
 import cssStyles from "./History.module.css";
 import { useGenerateImage } from "recharts-to-png";
 import DatePicker from "react-datepicker";
@@ -98,8 +98,9 @@ export default function History() {
     const effectiveEndDate = endDate || boundsDateRange?.endDate || todayIso;
     const limit = Number(searchParams.get('limit')) || 10;
 
-    // Unit conversion state
-    const sourceUnit = metaData?.unit ?? (SENSOR_TYPES as Record<string, { unit: string }>)[sensorType]?.unit ?? '';
+    // Unit conversion state: normalize API unit (e.g. "percent" -> "%") so dam water level converts correctly
+    const rawSourceUnit = metaData?.unit ?? (SENSOR_TYPES as Record<string, { unit: string }>)[sensorType]?.unit ?? '';
+    const sourceUnit = normalizeSourceUnit(rawSourceUnit, sensorType as UnitSensorType) || rawSourceUnit;
     const [selectedUnit, setSelectedUnit] = useState<string>(sourceUnit);
     const unitOptions = getUnitOptions(sensorType as UnitSensorType, sourceUnit);
     const calibrationStatus = getCalibrationStatus();
@@ -525,6 +526,17 @@ export default function History() {
                             const nextValue = idx === data.length - 1 ? null : data[idx + 1].value;
                             const convertedNextValue = nextValue !== null ? convertDisplayValue(nextValue) : null;
                             const delta: number | '-' = convertedNextValue !== null ? convertedValue - convertedNextValue : '-';
+                            const rawSource = typeof d.source === 'string' ? d.source : null;
+                            const sourceLabel = rawSource
+                                ? (() => {
+                                    const lower = rawSource.toLowerCase();
+                                    if (lower === 'import') return 'Import';
+                                    if (lower === 'iot') return 'IoT';
+                                    if (lower === 'forecast') return 'Forecast';
+                                    if (lower === 'mock') return 'Mock';
+                                    return rawSource;
+                                  })()
+                                : '—';
 
                             return (
                             <div key={d._id} style={styles.gridContainer}>
@@ -534,7 +546,10 @@ export default function History() {
                                     borderLeft: `2px solid #001E2B`,
                                 }}>
                                     <Text variant="subtitle">
-                                        {new Date(d.recordedAt).toISOString().replace('T', ' ').slice(0,19)}
+                                        {new Date(d.recordedAt).toISOString().replace('T', ' ').slice(0,19)}{" "}
+                                        <span style={{ fontSize: '0.75rem', color: rawSource === 'forecast' ? '#0f766e' : '#2F6F73' }}>
+                                            [{sourceLabel}]
+                                        </span>
                                     </Text>
                                 </div>
                                 <div style={{

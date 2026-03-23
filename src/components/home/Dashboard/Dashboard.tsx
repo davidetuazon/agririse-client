@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getHistory } from "../../../services/api";
+import type { ForecastReading } from "../../../services/api";
 import { SENSOR_TYPES } from "../../../utils/constants";
 import SensorMetricCard from "./SensorMetricCard";
 import cssStyles from "./Dashboard.module.css";
@@ -11,30 +12,40 @@ type IoTReadings = {
         unit: string,
         recordedAt: string,
         sensorType: string,
+        source?: string,
     },
     humidity: {
         value: number,
         unit: string,
         recordedAt: string,
         sensorType: string,
+        source?: string,
     },
     rainfall: {
         value: number,
         unit: string,
         recordedAt: string,
         sensorType: string,
+        source?: string,
     },
     temperature: {
         value: number,
         unit: string,
         recordedAt: string,
         sensorType: string,
+        source?: string,
     }
 }
 
 type Props = {
     style?: React.CSSProperties,
     data: IoTReadings | null,
+    nextForecast?: {
+        damWaterLevel?: ForecastReading | null,
+        humidity?: ForecastReading | null,
+        rainfall?: ForecastReading | null,
+        temperature?: ForecastReading | null,
+    },
 }
 
 type SensorType = 'damWaterLevel' | 'humidity' | 'rainfall' | 'temperature';
@@ -42,6 +53,12 @@ type SensorType = 'damWaterLevel' | 'humidity' | 'rainfall' | 'temperature';
 export default function Dashboard(props: Props) {
     const navigate = useNavigate();
     const { damWaterLevel, humidity, rainfall, temperature } = props.data || {};
+    const forecastByType: Record<SensorType, ForecastReading | null> = {
+        damWaterLevel: props.nextForecast?.damWaterLevel ?? null,
+        humidity: props.nextForecast?.humidity ?? null,
+        rainfall: props.nextForecast?.rainfall ?? null,
+        temperature: props.nextForecast?.temperature ?? null,
+    };
     const [deltas, setDeltas] = useState<Record<SensorType, number | null>>({
         damWaterLevel: null,
         humidity: null,
@@ -137,6 +154,10 @@ export default function Dashboard(props: Props) {
                         unit={data?.unit ?? fallback.unit}
                         recordedAt={data?.recordedAt}
                         delta={deltas[type as SensorType]}
+                        dataSource={data?.source}
+                        forecastValue={forecastByType[type as SensorType]?.value}
+                        forecastUnit={forecastByType[type as SensorType]?.unit}
+                        forecastRecordedAt={forecastByType[type as SensorType]?.recordedAt}
                         onClick={() => setSelectedSensor(type as SensorType)}
                     />
                 ))}
