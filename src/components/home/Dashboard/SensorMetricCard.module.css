@@ -106,3 +106,56 @@
   color: #2F6F73;
   background: rgba(47, 111, 115, 0.12);
 }
+
+.sourceRow {
+  display: flex;
+  align-items: center;
+}
+
+.sourceBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-family: "Poppins-Medium";
+  color: #0e7490;
+  background: rgba(14, 116, 144, 0.12);
+  border: 1px solid rgba(14, 116, 144, 0.22);
+}
+
+.forecastBlock {
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(6, 182, 212, 0.08);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.forecastLabel {
+  font-family: "Poppins-Medium";
+  font-size: 0.7rem;
+  color: #0e7490;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+}
+
+.forecastValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.forecastValue {
+  font-family: "Poppins-SemiBold";
+  font-size: 1rem;
+  color: #0f766e;
+}
+
+.forecastUnit {
+  font-family: "Poppins-Regular";
+  font-size: 0.8rem;
+  color: #0e7490;
+  margin-left: 0.15rem;
+}
