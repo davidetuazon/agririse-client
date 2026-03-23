@@ -62,7 +62,12 @@ type IoTReadings = {
 
 export default function Home() {
     const [latestReadings, setLatestReadings] = useState<IoTReadings | null>(null);
-    const [nextDamForecast, setNextDamForecast] = useState<ForecastReading | null>(null);
+    const [nextForecasts, setNextForecasts] = useState<Record<'damWaterLevel' | 'humidity' | 'rainfall' | 'temperature', ForecastReading | null>>({
+        damWaterLevel: null,
+        humidity: null,
+        rainfall: null,
+        temperature: null,
+    });
     const [locality, setLocality] = useState<any>();
     const [optimizationHistory, setOptimizationHistory] = useState<SelectedSolutionHistoryItem[]>([]);
     const [optimizationLoading, setOptimizationLoading] = useState(true);
@@ -84,13 +89,23 @@ export default function Home() {
             const todayIso = new Date().toISOString().slice(0, 10);
             const startIso = new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-            const [latestRes, forecastRes, latestDamAnyRes] = await Promise.all([
+            const [latestRes, damForecastRes, humidityForecastRes, rainfallForecastRes, temperatureForecastRes, latestDamAnyRes, latestHumidityAnyRes, latestRainfallAnyRes, latestTemperatureAnyRes] = await Promise.all([
                 latest(),
                 getNextForecast('damWaterLevel'),
+                getNextForecast('humidity'),
+                getNextForecast('rainfall'),
+                getNextForecast('temperature'),
                 getHistory({ sensorType: 'damWaterLevel', startDate: startIso, endDate: todayIso, limit: 1, cursor: '' }),
+                getHistory({ sensorType: 'humidity', startDate: startIso, endDate: todayIso, limit: 1, cursor: '' }),
+                getHistory({ sensorType: 'rainfall', startDate: startIso, endDate: todayIso, limit: 1, cursor: '' }),
+                getHistory({ sensorType: 'temperature', startDate: startIso, endDate: todayIso, limit: 1, cursor: '' }),
             ]);
 
             const bestDam = latestDamAnyRes?.data?.[0];
+            const bestHumidity = latestHumidityAnyRes?.data?.[0];
+            const bestRainfall = latestRainfallAnyRes?.data?.[0];
+            const bestTemperature = latestTemperatureAnyRes?.data?.[0];
+            
             const mergedReadings: IoTReadings = {
                 ...latestRes.readings,
                 damWaterLevel: bestDam
@@ -103,18 +118,58 @@ export default function Home() {
                         source: bestDam.source ?? latestRes.readings?.damWaterLevel?.source,
                     }
                     : latestRes.readings?.damWaterLevel,
+                humidity: bestHumidity
+                    ? {
+                        ...(latestRes.readings?.humidity ?? {}),
+                        value: bestHumidity.value,
+                        unit: bestHumidity.unit ?? (latestRes.readings?.humidity?.unit ?? '%'),
+                        recordedAt: bestHumidity.recordedAt,
+                        sensorType: latestRes.readings?.humidity?.sensorType ?? 'Humidity',
+                        source: bestHumidity.source ?? latestRes.readings?.humidity?.source,
+                    }
+                    : latestRes.readings?.humidity,
+                rainfall: bestRainfall
+                    ? {
+                        ...(latestRes.readings?.rainfall ?? {}),
+                        value: bestRainfall.value,
+                        unit: bestRainfall.unit ?? (latestRes.readings?.rainfall?.unit ?? 'mm'),
+                        recordedAt: bestRainfall.recordedAt,
+                        sensorType: latestRes.readings?.rainfall?.sensorType ?? 'Rainfall',
+                        source: bestRainfall.source ?? latestRes.readings?.rainfall?.source,
+                    }
+                    : latestRes.readings?.rainfall,
+                temperature: bestTemperature
+                    ? {
+                        ...(latestRes.readings?.temperature ?? {}),
+                        value: bestTemperature.value,
+                        unit: bestTemperature.unit ?? (latestRes.readings?.temperature?.unit ?? '°C'),
+                        recordedAt: bestTemperature.recordedAt,
+                        sensorType: latestRes.readings?.temperature?.sensorType ?? 'Temperature',
+                        source: bestTemperature.source ?? latestRes.readings?.temperature?.source,
+                    }
+                    : latestRes.readings?.temperature,
             };
 
             setLatestReadings(mergedReadings);
             setLocality(latestRes.locality);
-            const nextForecast =
-                forecastRes && typeof (forecastRes as any)?.error !== 'undefined'
-                    ? null
-                    : (forecastRes as ForecastReading | null);
-            setNextDamForecast(nextForecast);
+            const normalizeForecast = (value: unknown): ForecastReading | null =>
+                value && typeof (value as any)?.error === 'undefined'
+                    ? (value as ForecastReading)
+                    : null;
+            setNextForecasts({
+                damWaterLevel: normalizeForecast(damForecastRes),
+                humidity: normalizeForecast(humidityForecastRes),
+                rainfall: normalizeForecast(rainfallForecastRes),
+                temperature: normalizeForecast(temperatureForecastRes),
+            });
         } catch (e) {
             setLatestReadings(null);
-            setNextDamForecast(null);
+            setNextForecasts({
+                damWaterLevel: null,
+                humidity: null,
+                rainfall: null,
+                temperature: null,
+            });
             console.error(e);
         }
     }
@@ -177,7 +232,7 @@ export default function Home() {
                 <div>
                     <Dashboard
                         data={latestReadings}
-                        nextForecast={{ damWaterLevel: nextDamForecast }}
+                        nextForecast={nextForecasts}
                     />
                 </div>
             </Section>

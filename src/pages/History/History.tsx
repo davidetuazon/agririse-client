@@ -526,7 +526,17 @@ export default function History() {
                             const nextValue = idx === data.length - 1 ? null : data[idx + 1].value;
                             const convertedNextValue = nextValue !== null ? convertDisplayValue(nextValue) : null;
                             const delta: number | '-' = convertedNextValue !== null ? convertedValue - convertedNextValue : '-';
-                            const source = typeof d.source === 'string' ? d.source : '—';
+                            const rawSource = typeof d.source === 'string' ? d.source : null;
+                            const sourceLabel = rawSource
+                                ? (() => {
+                                    const lower = rawSource.toLowerCase();
+                                    if (lower === 'import') return 'Import';
+                                    if (lower === 'iot') return 'IoT';
+                                    if (lower === 'forecast') return 'Forecast';
+                                    if (lower === 'mock') return 'Mock';
+                                    return rawSource;
+                                  })()
+                                : '—';
 
                             return (
                             <div key={d._id} style={styles.gridContainer}>
@@ -537,8 +547,8 @@ export default function History() {
                                 }}>
                                     <Text variant="subtitle">
                                         {new Date(d.recordedAt).toISOString().replace('T', ' ').slice(0,19)}{" "}
-                                        <span style={{ fontSize: '0.75rem', color: source === 'forecast' ? '#0f766e' : '#2F6F73' }}>
-                                            [{source}]
+                                        <span style={{ fontSize: '0.75rem', color: rawSource === 'forecast' ? '#0f766e' : '#2F6F73' }}>
+                                            [{sourceLabel}]
                                         </span>
                                     </Text>
                                 </div>

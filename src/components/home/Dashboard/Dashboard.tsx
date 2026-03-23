@@ -19,18 +19,21 @@ type IoTReadings = {
         unit: string,
         recordedAt: string,
         sensorType: string,
+        source?: string,
     },
     rainfall: {
         value: number,
         unit: string,
         recordedAt: string,
         sensorType: string,
+        source?: string,
     },
     temperature: {
         value: number,
         unit: string,
         recordedAt: string,
         sensorType: string,
+        source?: string,
     }
 }
 
@@ -39,6 +42,9 @@ type Props = {
     data: IoTReadings | null,
     nextForecast?: {
         damWaterLevel?: ForecastReading | null,
+        humidity?: ForecastReading | null,
+        rainfall?: ForecastReading | null,
+        temperature?: ForecastReading | null,
     },
 }
 
@@ -47,7 +53,12 @@ type SensorType = 'damWaterLevel' | 'humidity' | 'rainfall' | 'temperature';
 export default function Dashboard(props: Props) {
     const navigate = useNavigate();
     const { damWaterLevel, humidity, rainfall, temperature } = props.data || {};
-    const damForecast = props.nextForecast?.damWaterLevel ?? null;
+    const forecastByType: Record<SensorType, ForecastReading | null> = {
+        damWaterLevel: props.nextForecast?.damWaterLevel ?? null,
+        humidity: props.nextForecast?.humidity ?? null,
+        rainfall: props.nextForecast?.rainfall ?? null,
+        temperature: props.nextForecast?.temperature ?? null,
+    };
     const [deltas, setDeltas] = useState<Record<SensorType, number | null>>({
         damWaterLevel: null,
         humidity: null,
@@ -143,10 +154,10 @@ export default function Dashboard(props: Props) {
                         unit={data?.unit ?? fallback.unit}
                         recordedAt={data?.recordedAt}
                         delta={deltas[type as SensorType]}
-                        dataSource={type === 'damWaterLevel' ? data?.source : undefined}
-                        forecastValue={type === 'damWaterLevel' ? damForecast?.value : undefined}
-                        forecastUnit={type === 'damWaterLevel' ? damForecast?.unit : undefined}
-                        forecastRecordedAt={type === 'damWaterLevel' ? damForecast?.recordedAt : undefined}
+                        dataSource={data?.source}
+                        forecastValue={forecastByType[type as SensorType]?.value}
+                        forecastUnit={forecastByType[type as SensorType]?.unit}
+                        forecastRecordedAt={forecastByType[type as SensorType]?.recordedAt}
                         onClick={() => setSelectedSensor(type as SensorType)}
                     />
                 ))}

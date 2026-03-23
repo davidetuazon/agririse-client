@@ -96,7 +96,7 @@ export default function SensorMetricCard(props: Props) {
         if (lower === 'mock') return 'Mock';
         return source;
     };
-    const currentSourceLabel = sensorType === 'damWaterLevel' ? normalizeSource(dataSource) : null;
+    const currentSourceLabel = normalizeSource(dataSource);
 
     const tooltipTitle = `${label} – Click for options`;
     return (
